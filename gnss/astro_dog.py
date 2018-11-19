@@ -1,0 +1,278 @@
+import os
+from helpers import get_constellation, get_closest, get_el_az, get_prns_from_constellation
+from ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, parse_rinex_nav_msg_glonass
+from downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
+from downloader import download_cors_station
+from trop import saast
+from iono import parse_ionex
+from dcb import parse_dcbs
+from dgps import get_closest_station_names, parse_dgps
+import constants as constants
+
+if os.getenv("EXTERNAL"):
+  DEFAULT_CACHE_DIR = '/cache/gnss/'
+else:
+  DEFAULT_CACHE_DIR = '/raid.dell2/gnss/'
+
+SUPPORTED_CONSTELLATIONS = ['GPS', 'GLONASS']
+MAX_DGPS_DISTANCE = 100000  # in meters, because we're not barbarians
+
+
+class AstroDog(object):
+  def __init__(self, auto_update=True, cache_dir=DEFAULT_CACHE_DIR, pull_orbit=True, dgps=False):
+    self.auto_update = auto_update
+    self.orbits = {}
+    self.nav = {}
+    self.dcbs = {}
+    self.cache_dir = cache_dir
+    self.dgps = dgps
+    self.dgps_delays = []
+    self.bad_sats = []
+    self.ionex_maps = []
+    self.pull_orbit = pull_orbit
+    self.cached_orbit = {}
+    self.cached_nav = {}
+    self.cached_dcb = {}
+    self.cached_ionex = None
+    self.cached_dgps = None
+    prns = sum([get_prns_from_constellation(const) for const in SUPPORTED_CONSTELLATIONS], [])
+    for prn in prns:
+      self.cached_nav[prn] = None
+      self.cached_orbit[prn] = None
+      self.cached_dcb[prn] = None
+      self.orbits[prn] = []
+      self.dcbs[prn] = []
+      self.nav[prn] = []
+
+  def get_ionex(self, time):
+    if self.cached_ionex is not None and self.cached_ionex.valid(time):
+      return self.cached_ionex
+
+    self.cached_ionex = get_closest(time, self.ionex_maps)
+    if self.cached_ionex is not None and self.cached_ionex.valid(time):
+      return self.cached_ionex
+
+    self.get_ionex_data(time)
+    self.cached_ionex = get_closest(time, self.ionex_maps)
+    if self.cached_ionex is not None and self.cached_ionex.valid(time):
+      return self.cached_ionex
+    elif self.auto_update:
+      raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
+    else:
+      return None
+
+  def get_nav(self, prn, time):
+    if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
+      return self.cached_nav[prn]
+
+    self.cached_nav[prn] = get_closest(time, self.nav[prn])
+    if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
+      return self.cached_nav[prn]
+
+    self.get_nav_data(time)
+    self.cached_nav[prn] = get_closest(time, self.nav[prn])
+    if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
+      return self.cached_nav[prn]
+    else:
+      self.bad_sats.append(prn)
+      return None
+
+  def get_orbit(self, prn, time):
+    if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
+      return self.cached_orbit[prn]
+
+    self.cached_orbit[prn] = get_closest(time, self.orbits[prn])
+    if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
+      return self.cached_orbit[prn]
+
+    self.get_orbit_data(time)
+    self.cached_orbit[prn] = get_closest(time, self.orbits[prn])
+    if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
+      return self.cached_orbit[prn]
+    else:
+      self.bad_sats.append(prn)
+      return None
+
+  def get_dcb(self, prn, time):
+    if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
+      return self.cached_dcb[prn]
+
+    self.cached_dcb[prn] = get_closest(time, self.dcbs[prn])
+    if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
+      return self.cached_dcb[prn]
+
+    self.get_dcb_data(time)
+    self.cached_dcb[prn] = get_closest(time, self.dcbs[prn])
+    if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
+      return self.cached_dcb[prn]
+    else:
+      self.bad_sats.append(prn)
+      return None
+
+  def get_dgps_corrections(self, time, recv_pos):
+    if self.cached_dgps is not None and self.cached_dgps.valid(time, recv_pos):
+      return self.cached_dgps
+
+    self.cached_dgps = get_closest(time, self.dgps_delays, recv_pos=recv_pos)
+    if self.cached_dgps is not None and self.cached_dgps.valid(time, recv_pos):
+      return self.cached_dgps
+
+    self.get_dgps_data(time, recv_pos)
+    self.cached_dgps = get_closest(time, self.dgps_delays, recv_pos=recv_pos)
+    if self.cached_dgps is not None and self.cached_dgps.valid(time, recv_pos):
+      return self.cached_dgps
+    elif self.auto_update:
+      raise RuntimeError("Pulled dgps, but still can't get valid for time " + str(time))
+    else:
+      return None
+
+
+  def add_ephem(self, new_ephem, ephems):
+    prn = new_ephem.prn
+    for eph in ephems[prn]:
+      if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
+        raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
+    ephems[prn].append(new_ephem)
+
+  def get_nav_data(self, time):
+    file_path_gps = download_nav(time, cache_dir=self.cache_dir, constellation='GPS')
+    ephems_gps = parse_rinex_nav_msg_gps(file_path_gps)
+    file_path_glonass = download_nav(time, cache_dir=self.cache_dir, constellation='GLONASS')
+    ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
+    for ephem in (ephems_gps + ephems_glonass):
+      self.add_ephem(ephem, self.nav)
+    detected_prns = set([e.prn for e in ephems_gps + ephems_glonass])
+    for constellation in SUPPORTED_CONSTELLATIONS:
+      for prn in get_prns_from_constellation(constellation):
+        if prn not in detected_prns and prn not in self.bad_sats:
+          print 'No nav data found for prn : %s flagging as bad' % prn
+          self.bad_sats.append(prn)
+
+  def get_orbit_data(self, time):
+    file_paths_sp3 = download_orbits_russia(time, cache_dir=self.cache_dir)
+    ephems_sp3 = parse_sp3_orbits(file_paths_sp3, SUPPORTED_CONSTELLATIONS)
+    if len(ephems_sp3) < 5:
+      print "Russian orbit data seems broken, using NASA's"
+      file_paths_sp3 = download_orbits(time, cache_dir=self.cache_dir)
+      ephems_sp3 = parse_sp3_orbits(file_paths_sp3, SUPPORTED_CONSTELLATIONS)
+    if len(ephems_sp3) < 5:
+      raise RuntimeError('No orbit data found on either servers')
+
+    for ephem in ephems_sp3:
+      self.add_ephem(ephem, self.orbits)
+    detected_prns = set([e.prn for e in ephems_sp3])
+    for constellation in SUPPORTED_CONSTELLATIONS:
+      for prn in get_prns_from_constellation(constellation):
+        if prn not in detected_prns and prn not in self.bad_sats:
+          print 'No orbit data found for prn : %s flagging as bad' % prn
+          self.bad_sats.append(prn)
+
+  def get_dcb_data(self, time):
+    file_path_dcb = download_dcb(time, cache_dir=self.cache_dir)
+    dcbs = parse_dcbs(file_path_dcb, SUPPORTED_CONSTELLATIONS)
+    for dcb in dcbs:
+      self.dcbs[dcb.prn].append(dcb)
+    detected_prns = set([dcb.prn for dcb in dcbs])
+    for constellation in SUPPORTED_CONSTELLATIONS:
+      for prn in get_prns_from_constellation(constellation):
+        if prn not in detected_prns and prn not in self.bad_sats:
+          print 'No dcb data found for prn : %s flagging as bad' % prn
+          self.bad_sats.append(prn)
+
+  def get_ionex_data(self, time):
+    file_path_ionex = download_ionex(time, cache_dir=self.cache_dir)
+    ionex_maps = parse_ionex(file_path_ionex)
+    for im in ionex_maps:
+      self.ionex_maps.append(im)
+
+  def get_dgps_data(self, time, recv_pos):
+    station_names = get_closest_station_names(recv_pos, k=8, max_distance=MAX_DGPS_DISTANCE)
+    for station_name in station_names:
+      file_path_station = download_cors_station(time, station_name, cache_dir=self.cache_dir)
+      if file_path_station:
+        dgps = parse_dgps(station_name, file_path_station,
+                         self, max_distance=MAX_DGPS_DISTANCE,
+                         required_constellations=SUPPORTED_CONSTELLATIONS)
+        if dgps is not None:
+          self.dgps_delays.append(dgps)
+          break
+
+
+  def get_tgd_from_nav(self, prn, time):
+    if prn in self.bad_sats:
+      return None
+    if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
+      return None
+
+    eph = self.get_nav(prn, time)
+
+    if eph:
+      return eph.get_tgd()
+    else:
+      return None
+
+  def get_sat_info(self, prn, time):
+    if prn in self.bad_sats:
+      return None
+    if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
+      return None
+
+    if self.pull_orbit:
+      eph = self.get_orbit(prn, time)
+    else:
+      eph = self.get_nav(prn, time)
+
+    if eph:
+      return eph.get_sat_info(time)
+    else:
+      return None
+
+  def get_glonass_channel(self, prn, time):
+    nav = self.get_nav(prn, time)
+    if nav:
+      return nav.channel
+
+  def get_frequency(self, prn, time, signal='C1C'):
+    if get_constellation(prn) == 'GPS':
+      if signal[1] == '1':
+        return constants.GPS_L1
+      elif signal[1] == '2':
+        return constants.GPS_L2
+      else:
+        raise NotImplementedError('Dont know this frequency')
+    elif get_constellation(prn) == 'GLONASS':
+      n = self.get_glonass_channel(prn, time)
+      if signal[1] == '1':
+        return constants.GLONASS_L1 + n * constants.GLONASS_L1_DELTA
+      if signal[1] == '2':
+        return constants.GLONASS_L2 + n * constants.GLONASS_L2_DELTA
+      else:
+        raise NotImplementedError('Dont know this frequency')
+
+  def get_delay(self, prn, time, rcv_pos, no_dgps=False, signal='C1C', freq=None):
+    sat_info = self.get_sat_info(prn, time)
+    if sat_info is None:
+      return None
+    sat_pos = sat_info[0]
+    el, az = get_el_az(rcv_pos, sat_pos)
+    if el < 0.2:
+      return None
+    if self.dgps and not no_dgps:
+      dgps_corrections = self.get_dgps_corrections(time, rcv_pos)
+      if dgps_corrections is None:
+        return None
+      dgps_delay = dgps_corrections.get_delay(prn, time)
+      if dgps_delay is None:
+        return None
+      return dgps_corrections.get_delay(prn, time)
+    else:
+      if not freq:
+        freq = self.get_frequency(prn, time, signal)
+      ionex = self.get_ionex(time)
+      dcb = self.get_dcb(prn, time)
+      if ionex is None or dcb is None:
+        return None
+      iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq)
+      trop_delay = saast(rcv_pos, el)
+      code_bias = dcb.get_delay(signal)
+      return iono_delay + trop_delay + code_bias
