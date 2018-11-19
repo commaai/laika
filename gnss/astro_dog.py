@@ -14,7 +14,7 @@ if os.getenv("EXTERNAL"):
 else:
   DEFAULT_CACHE_DIR = '/raid.dell2/gnss/'
 
-SUPPORTED_CONSTELLATIONS = ['GPS', 'GLONASS']
+SUPPORTED_CONSTELLATIONS = ['GPS']
 MAX_DGPS_DISTANCE = 100000  # in meters, because we're not barbarians
 
 
