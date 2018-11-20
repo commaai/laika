@@ -10,6 +10,17 @@ from downloader import download_cors_coords
 from helpers import get_constellation
 
 
+def mean_filter(delay):
+  d2 = delay.copy()
+  max_step = 10
+  for i in xrange(max_step, len(delay) - max_step):
+    finite_idxs = np.where(np.isfinite(delay[i - max_step:i + max_step]))
+    if max_step in finite_idxs[0]:
+      step = min([max_step, finite_idxs[0][-1] - max_step, max_step - finite_idxs[0][0]])
+      d2[i] = np.nanmean(delay[i - step:i + step + 1])
+  return d2
+
+
 def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
   if not os.path.isfile(cors_station_positions_path):
     cors_stations = {}
@@ -113,7 +124,7 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
 
   # remove clock errors and smooth out signal
   for prn in station_delays['C1C']:
-    station_delays['C1C'][prn] = station_delays['C1C'][prn] - station_clock_errs
+    station_delays['C1C'][prn] = mean_filter(station_delays['C1C'][prn] - station_clock_errs)
   for prn in station_delays['C2P']:
     station_delays['C2P'][prn] = station_delays['C2P'][prn] - station_clock_errs
 
