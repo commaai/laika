@@ -14,7 +14,7 @@ if os.getenv("EXTERNAL"):
 else:
   DEFAULT_CACHE_DIR = '/raid.dell2/gnss/'
 
-SUPPORTED_CONSTELLATIONS = ['GPS']
+SUPPORTED_CONSTELLATIONS = ['GPS']  # GLONASS not great on ublox
 MAX_DGPS_DISTANCE = 100000  # in meters, because we're not barbarians
 
 
