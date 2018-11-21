@@ -19,9 +19,6 @@ To confirm the quality of Laika's GNSS processing, we ran laika's processing and
 ![altitude distributionplot](distplot_rav4.png)
 
 
-
-Laika's altitude accuracy is clearly much higher, and the distribution less biased.
-
 ## Astrodog
 Astrodog is the main component of the laika. It is a python object, and like the [soviet space dogs](https://en.wikipedia.org/wiki/Soviet_space_dogs) to which it owes it's name, an astrodog will do everything in its power to make the life of its master easier. Which in this case is fetch and process all the neccesary data to transform raw GNSS observables into useable distance measurements and satellite positions ready for position estimation.
 
