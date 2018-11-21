@@ -14,8 +14,13 @@ Since this problem is generally overdetermined (more than 4 satellites to solve 
 However, the above description is over-simplified. Getting accurate distance estimates to satellites and the satellite's position from the receiver observations is not trivial. This is what we call processing of the GNSS observables and it is this procedure laika is designed to make easy.
 
 ## Laika's accuracy
-To confirm the quality of Laika's GNSS processing, we ran laika's processing and a simple kalman filter from raw GNSS data on 2000 minutes of driving of a regular commute in San Francisco. The data comes from a "u-blox M8" chip. The fixes computed with laika's processed data are compared to the live navigation fixes given by the u-blox chip. They compared by looking at the standard deviation of all measured altitudes within every 5x5m square in the dataset. There is no way to compare horizontal accuracy without ground truth, but there is no reason to believe that vertical and horizontal accuracy are equally correlated for laika computed positions and ublox's live positions.
+To confirm the quality of Laika's GNSS processing, we ran laika's processing and a simple kalman filter (procedure described in examples) on 2000 minutes of driving of a regular commute in San Francisco. The data comes from a "u-blox M8" chip. The fixes computed with laika's processed data are compared to the live navigation fixes given by the u-blox chip. They compared by looking at the standard deviation of all measured altitudes within every 5x5m square in the dataset. There is no way to compare horizontal accuracy without ground truth, but there is no reason to believe that vertical and horizontal accuracy are not equally correlated for laika computed positions and ublox's live positions.
 ![altitude distributionplot](distplot_civic.png)
+![altitude distributionplot](distplot_rav4.png)
+
+
+
+Laika's altitude accuracy is clearly much higher, and the distribution less biased.
 
 ## Astrodog
 Astrodog is the main component of the laika. It is a python object, and like the [soviet space dogs](https://en.wikipedia.org/wiki/Soviet_space_dogs) to which it owes it's name, an astrodog will do everything in its power to make the life of its master easier. Which in this case is fetch and process all the neccesary data to transform raw GNSS observables into useable distance measurements and satellite positions ready for position estimation.
