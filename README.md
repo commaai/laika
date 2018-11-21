@@ -41,7 +41,9 @@ These files are then parsed by AstroDog and kept in memory. Every one of these p
 
 
 ## Examples
-A comprehensive walkthrough of the main functions of AstroDog and other useful laika functions can be found in the examples folder. There is also an example of computing a CORS stations's position using laika.
+- A comprehensive walkthrough of the main functions of AstroDog and other useful laika functions
+- Computation of a Continuously Operating Reference Station (CORS) position with laika
+- Using laika with a kalman filter to get more accurate position fixes from a GPS module
 
 
 ## Useful GNSS references
