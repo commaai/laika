@@ -1,7 +1,7 @@
 
 # Laika
 
-Laika is an open-source GNSS processing library, it will process raw GNSS observations with data gathered online from various analysis groups to produce GNSS data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being easy to use.
+Laika is an open-source GNSS processing library, it will process raw GNSS observations with data gathered online from various analysis groups to produce GNSS data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable easy to use.
 ![alt text](https://www.thoughtco.com/thmb/RABYtJPM_H6BS_Wv8sNltm188vY=/768x0/filters:no_upscale():max_bytes(150000):strip_icc()/laika-515031406-58e80f1f3df78c5162a95267.jpg)
 
 ## The GNSS problem
@@ -12,11 +12,6 @@ GNSS satellites orbit the earth broadcasting signals that allow the receiver to 
 Since this problem is generally overdetermined (more than 4 satellites to solve the 4d problem) there is a variety of methods to compute a position estimate from the measurements. Laika provides a basic [weighted least squares](https://en.wikipedia.org/wiki/Weighted_least_squares) solver for experimental purposes. This is far from optimal due to the dynamic nature of the system, this makes a bayesian estimator like a [Kalman filter](https://en.wikipedia.org/wiki/Kalman_filter) the preferred estimator.
 
 However, the above description is over-simplified. Getting accurate distance estimates to satellites and the satellite's position from the receiver observations is not trivial. This is what we call processing of the GNSS observables and it is this procedure laika is designed to make easy.
-
-## Laika's accuracy
-To confirm the quality of Laika's GNSS processing, we ran laika's processing and a simple kalman filter (procedure described in examples) on 2000 minutes of driving of a regular commute in San Francisco. The data comes from a "u-blox M8" chip. The fixes computed with laika's processed data are compared to the live navigation fixes given by the u-blox chip. They compared by looking at the standard deviation of all measured altitudes within every 5x5m square in the dataset. There is no way to compare horizontal accuracy without ground truth, but there is no reason to believe that vertical and horizontal accuracy are not equally correlated for laika computed positions and ublox's live positions. Data with the antenna on the roof and antenna inside the car are compared separately, since the results are significantly different. 
-![altitude distributionplot](distplot_civic.png)
-![altitude distributionplot](distplot_rav4.png)
 
 
 ## Astrodog
@@ -44,6 +39,10 @@ These files are then parsed by AstroDog and kept in memory. Every one of these p
 
 
 
+## Laika's accuracy
+To confirm the quality of Laika's GNSS processing, we ran laika's processing and a simple kalman filter (procedure described in examples) on 2000 minutes of driving of a regular commute in San Francisco. The data comes from a "u-blox M8" chip. The fixes computed with laika's processed data are compared to the live navigation fixes given by the u-blox chip. They compared by looking at the standard deviation of all measured altitudes within every 5x5m square in the dataset. There is no way to compare horizontal accuracy without ground truth, but there is no reason to believe that vertical and horizontal accuracy are not equally correlated for laika computed positions and ublox's live positions. Data with the antenna on the roof and antenna inside the car are compared separately, since the results are significantly different. 
+![altitude distributionplot](distplot_civic.png)
+![altitude distributionplot](distplot_rav4.png)
 
 
 ## Examples
