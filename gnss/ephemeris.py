@@ -281,7 +281,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
         epoch = GPSTime.from_datetime(datetime(year, month, day, hour, minute, second))
       # pos line
       elif line[0] == 'P':
-        prn = line[1:4]
+        prn = line[1:4].replace(' ','0')
         if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
           continue
         if prn not in data:
