@@ -1,4 +1,3 @@
-import os
 from helpers import get_constellation, get_closest, get_el_az, get_prns_from_constellation
 from ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, parse_rinex_nav_msg_glonass
 from downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
@@ -9,17 +8,24 @@ from dcb import parse_dcbs
 from dgps import get_closest_station_names, parse_dgps
 import constants as constants
 
-if os.getenv("EXTERNAL"):
-  DEFAULT_CACHE_DIR = '/cache/gnss/'
-else:
-  DEFAULT_CACHE_DIR = '/raid.dell2/gnss/'
-
-SUPPORTED_CONSTELLATIONS = ['GPS']  # GLONASS not great on ublox
 MAX_DGPS_DISTANCE = 100000  # in meters, because we're not barbarians
 
 
 class AstroDog(object):
-  def __init__(self, auto_update=True, cache_dir=DEFAULT_CACHE_DIR, pull_orbit=True, dgps=False):
+  '''
+  auto_update: flag indicating whether laika should fetch files from web
+  cache_dir:   directory where data files are downloaded to and cached
+  pull_orbit:  flag indicating whether laika should fetch sp3 orbits
+                 instead of nav files (orbits are more accurate)
+  dgps:        flag indicating whether laika should use dgps (CORS)
+               data to calculate pseudorange corrections
+  valid_const: list of constellation identifiers laika will try process
+
+  '''
+  def __init__(self, auto_update=True,
+               cache_dir='/tmp/gnss/',
+               pull_orbit=True, dgps=False,
+               valid_const=['GPS', 'GLONASS']):
     self.auto_update = auto_update
     self.orbits = {}
     self.nav = {}
@@ -35,7 +41,8 @@ class AstroDog(object):
     self.cached_dcb = {}
     self.cached_ionex = None
     self.cached_dgps = None
-    prns = sum([get_prns_from_constellation(const) for const in SUPPORTED_CONSTELLATIONS], [])
+    self.valid_const = valid_const
+    prns = sum([get_prns_from_constellation(const) for const in self.valid_const], [])
     for prn in prns:
       self.cached_nav[prn] = None
       self.cached_orbit[prn] = None
@@ -142,7 +149,7 @@ class AstroDog(object):
     for ephem in (ephems_gps + ephems_glonass):
       self.add_ephem(ephem, self.nav)
     detected_prns = set([e.prn for e in ephems_gps + ephems_glonass])
-    for constellation in SUPPORTED_CONSTELLATIONS:
+    for constellation in self.valid_const:
       for prn in get_prns_from_constellation(constellation):
         if prn not in detected_prns and prn not in self.bad_sats:
           print 'No nav data found for prn : %s flagging as bad' % prn
@@ -150,18 +157,18 @@ class AstroDog(object):
 
   def get_orbit_data(self, time):
     file_paths_sp3 = download_orbits_russia(time, cache_dir=self.cache_dir)
-    ephems_sp3 = parse_sp3_orbits(file_paths_sp3, SUPPORTED_CONSTELLATIONS)
+    ephems_sp3 = parse_sp3_orbits(file_paths_sp3, self.valid_const)
     if len(ephems_sp3) < 5:
       print "Russian orbit data seems broken, using NASA's"
       file_paths_sp3 = download_orbits(time, cache_dir=self.cache_dir)
-      ephems_sp3 = parse_sp3_orbits(file_paths_sp3, SUPPORTED_CONSTELLATIONS)
+      ephems_sp3 = parse_sp3_orbits(file_paths_sp3, self.valid_const)
     if len(ephems_sp3) < 5:
       raise RuntimeError('No orbit data found on either servers')
 
     for ephem in ephems_sp3:
       self.add_ephem(ephem, self.orbits)
     detected_prns = set([e.prn for e in ephems_sp3])
-    for constellation in SUPPORTED_CONSTELLATIONS:
+    for constellation in self.valid_const:
       for prn in get_prns_from_constellation(constellation):
         if prn not in detected_prns and prn not in self.bad_sats:
           print 'No orbit data found for prn : %s flagging as bad' % prn
@@ -169,11 +176,11 @@ class AstroDog(object):
 
   def get_dcb_data(self, time):
     file_path_dcb = download_dcb(time, cache_dir=self.cache_dir)
-    dcbs = parse_dcbs(file_path_dcb, SUPPORTED_CONSTELLATIONS)
+    dcbs = parse_dcbs(file_path_dcb, self.valid_const)
     for dcb in dcbs:
       self.dcbs[dcb.prn].append(dcb)
     detected_prns = set([dcb.prn for dcb in dcbs])
-    for constellation in SUPPORTED_CONSTELLATIONS:
+    for constellation in self.valid_const:
       for prn in get_prns_from_constellation(constellation):
         if prn not in detected_prns and prn not in self.bad_sats:
           print 'No dcb data found for prn : %s flagging as bad' % prn
@@ -192,7 +199,7 @@ class AstroDog(object):
       if file_path_station:
         dgps = parse_dgps(station_name, file_path_station,
                          self, max_distance=MAX_DGPS_DISTANCE,
-                         required_constellations=SUPPORTED_CONSTELLATIONS)
+                         required_constellations=self.valid_const)
         if dgps is not None:
           self.dgps_delays.append(dgps)
           break
@@ -201,7 +208,7 @@ class AstroDog(object):
   def get_tgd_from_nav(self, prn, time):
     if prn in self.bad_sats:
       return None
-    if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
+    if get_constellation(prn) not in self.valid_const:
       return None
 
     eph = self.get_nav(prn, time)
@@ -214,7 +221,7 @@ class AstroDog(object):
   def get_sat_info(self, prn, time):
     if prn in self.bad_sats:
       return None
-    if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
+    if get_constellation(prn) not in self.valid_const:
       return None
 
     if self.pull_orbit:
