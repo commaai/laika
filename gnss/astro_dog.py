@@ -142,10 +142,15 @@ class AstroDog(object):
     ephems[prn].append(new_ephem)
 
   def get_nav_data(self, time):
-    file_path_gps = download_nav(time, cache_dir=self.cache_dir, constellation='GPS')
-    ephems_gps = parse_rinex_nav_msg_gps(file_path_gps)
-    file_path_glonass = download_nav(time, cache_dir=self.cache_dir, constellation='GLONASS')
-    ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
+    ephems_gps, ephems_glonass = [], []
+    if 'GPS' in self.valid_const:
+      file_path_gps = download_nav(time, cache_dir=self.cache_dir, constellation='GPS')
+      if file_path_gps:
+        ephems_gps = parse_rinex_nav_msg_gps(file_path_gps)
+    if 'GLONASS' in self.valid_const:
+      file_path_glonass = download_nav(time, cache_dir=self.cache_dir, constellation='GLONASS')
+      if file_path_glonass:
+         ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
     for ephem in (ephems_gps + ephems_glonass):
       self.add_ephem(ephem, self.nav)
     detected_prns = set([e.prn for e in ephems_gps + ephems_glonass])
