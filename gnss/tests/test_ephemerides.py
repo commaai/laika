@@ -4,6 +4,7 @@ from datetime import datetime
 
 from laika.gnss.gps_time import GPSTime
 from laika.gnss.astro_dog import AstroDog
+from laika.gnss.constants import SECS_IN_DAY
 
 gps_times_list = [[1950, 415621.0],
     [1895, 455457.0],
@@ -17,7 +18,7 @@ class TestAstroDog(unittest.TestCase):
   def test_nav_vs_orbit_now(self):
     dog_orbit = AstroDog(pull_orbit=True)
     dog_nav = AstroDog(pull_orbit=False)
-    gps_time = GPSTime.from_datetime(datetime.utcnow())
+    gps_time = GPSTime.from_datetime(datetime.utcnow()) - SECS_IN_DAY*2
     for svId in svIds:
       sat_info_nav = dog_nav.get_sat_info(svId, gps_time)
       sat_info_orbit = dog_orbit.get_sat_info(svId, gps_time)
@@ -25,7 +26,7 @@ class TestAstroDog(unittest.TestCase):
       np.testing.assert_allclose(sat_info_nav[1], sat_info_orbit[1], rtol=0, atol=.1)
       np.testing.assert_allclose(sat_info_nav[2], sat_info_orbit[2], rtol=0, atol=1e-7)
       np.testing.assert_allclose(sat_info_nav[3], sat_info_orbit[3], rtol=0, atol=1e-11)
-'''
+
   def test_nav_vs_orbit__old(self):
     dog_orbit = AstroDog(pull_orbit=True)
     dog_nav = AstroDog(pull_orbit=False)
@@ -37,7 +38,6 @@ class TestAstroDog(unittest.TestCase):
         np.testing.assert_allclose(sat_info_nav[1], sat_info_orbit[1], rtol=0, atol=.1)
         np.testing.assert_allclose(sat_info_nav[2], sat_info_orbit[2], rtol=0, atol=1e-7)
         np.testing.assert_allclose(sat_info_nav[3], sat_info_orbit[3], rtol=0, atol=1e-11)
-'''
 
 if __name__ == "__main__":
   unittest.main()
