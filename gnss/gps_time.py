@@ -1,5 +1,6 @@
 import datetime
 
+
 def datetime_to_tow(t):
     """
     Convert a Python datetime object to GPS Week and Time Of Week.
@@ -25,6 +26,7 @@ def datetime_to_tow(t):
     tow = ((t - wk_ref) - datetime.timedelta((wk - refwk) * 7.0)).total_seconds()
     return wk, tow
 
+
 def tow_to_datetime(tow, week):
     """
     Convert a GPS Week and Time Of Week to Python datetime object.
@@ -49,53 +51,32 @@ def tow_to_datetime(tow, week):
     t += datetime.timedelta(weeks=week)
     return t
 
+
 def get_leap_seconds(time):
-  if time <= datetime.datetime(2006, 1, 1):
+  if time <= GPSTime.from_datetime(datetime.datetime(2006, 1, 1)):
     raise ValueError("Don't know how many leap seconds to use before 2006")
-  elif time <= datetime.datetime(2009, 1, 1):
+  elif time <= GPSTime.from_datetime(datetime.datetime(2009, 1, 1)):
     return 14
-  elif time <= datetime.datetime(2012, 7, 1):
+  elif time <= GPSTime.from_datetime(datetime.datetime(2012, 7, 1)):
     return 15
-  elif time <= datetime.datetime(2015, 7, 1):
+  elif time <= GPSTime.from_datetime(datetime.datetime(2015, 7, 1)):
     return 16
-  elif time <= datetime.datetime(2017, 7, 1):
+  elif time <= GPSTime.from_datetime(datetime.datetime(2017, 7, 1)):
     return 17
   else:
     return 18
 
+
 def gpst_to_utc(t_gpst):
-    """
-    Convert a time on the GPST timescale (continuous, no leap seconds) to
-    a time on the UTC timescale (has leap seconds)
-
-    Parameters
-    ---------
-    t_gpst : datetime
-
-    Returns
-    -------
-    t_utc : datetime
-    """
-    t_utc = t_gpst - datetime.timedelta(seconds = get_leap_seconds(t_gpst))
-    if  (utc_to_gpst(t_utc) - t_gpst).total_seconds() != 0:
-      return t_utc + datetime.timedelta(seconds = 1)
+    t_utc = t_gpst - get_leap_seconds(t_gpst)
+    if utc_to_gpst(t_utc) - t_gpst != 0:
+      return t_utc + 1
     else:
       return t_utc
 
+
 def utc_to_gpst(t_utc):
-    """
-    Convert a time on the UTC timescale (has leap seconds) to
-    a time on the GPST timescale (continuous, no leap seconds)
-
-    Parameters
-    ---------
-    t_utc : datetime
-
-    Returns
-    -------
-    t_gpst : datetime
-    """
-    t_gpst = t_utc + datetime.timedelta(seconds = get_leap_seconds(t_utc))
+    t_gpst = t_utc + get_leap_seconds(t_utc)
     return t_gpst
 
 
@@ -142,6 +123,21 @@ class GPSTime(object):
     else:
       print "Type of added:", type(other)
       raise NotImplementedError
+
+  def __lt__(self, other):
+    return self - other < 0
+
+  def __gt__(self, other):
+    return self - other > 0
+
+  def __le__(self, other):
+    return self - other <= 0
+
+  def __ge__(self, other):
+    return self - other >= 0
+
+  def __eq__(self, other):
+    return self - other == 0
 
   def as_datetime(self):
     return tow_to_datetime(self.tow, self.week)

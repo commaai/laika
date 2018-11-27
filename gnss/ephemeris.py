@@ -1,6 +1,6 @@
 from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
-from gps_time import GPSTime
+from gps_time import GPSTime, utc_to_gpst
 from enum import Enum
 import numpy as np
 from constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, EARTH_ROTATION_RATE, EARTH_GM
@@ -81,7 +81,7 @@ class GLONASSEphemeris(Ephemeris):
 
     eph = self.data
     # TODO should handle leap seconds better
-    toc_gps_time = eph['toc'] + 18
+    toc_gps_time = utc_to_gpst(eph['toc'])
     tdiff = time - toc_gps_time
 
     # Clock correction (except for general relativity which is applied later)

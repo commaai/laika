@@ -89,17 +89,17 @@ class TestTime(unittest.TestCase):
                          '2017-10-23 06:42:34',
                          '2018-01-18 03:16:27',
                          '2017-07-01 00:00:05']
-    gps_times = [datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S') for dt_str in datetimes_strings]
-    np.testing.assert_allclose((gps_times[0] - gpst_to_utc(gps_times[0])).total_seconds(), 14, rtol=0, atol=1e-3)
-    np.testing.assert_allclose((gps_times[1] - gpst_to_utc(gps_times[1])).total_seconds(), 15, rtol=0, atol=1e-3)
-    np.testing.assert_allclose((gps_times[2] - gpst_to_utc(gps_times[2])).total_seconds(), 16, rtol=0, atol=1e-3)
-    np.testing.assert_allclose((gps_times[3] - gpst_to_utc(gps_times[3])).total_seconds(), 17, rtol=0, atol=1e-3)
-    np.testing.assert_allclose((gps_times[4] - gpst_to_utc(gps_times[4])).total_seconds(), 18, rtol=0, atol=1e-3)
-    np.testing.assert_allclose((gps_times[5] - gpst_to_utc(gps_times[5])).total_seconds(), 18, rtol=0, atol=1e-3)
-    np.testing.assert_allclose((gps_times[6] - gpst_to_utc(gps_times[6])).total_seconds(), 17, rtol=0, atol=1e-3)
+    gps_times = [GPSTime.from_datetime(datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')) for dt_str in datetimes_strings]
+    np.testing.assert_allclose((gps_times[0] - gpst_to_utc(gps_times[0])), 14, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[1] - gpst_to_utc(gps_times[1])), 15, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[2] - gpst_to_utc(gps_times[2])), 16, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[3] - gpst_to_utc(gps_times[3])), 17, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[4] - gpst_to_utc(gps_times[4])), 18, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[5] - gpst_to_utc(gps_times[5])), 18, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[6] - gpst_to_utc(gps_times[6])), 17, rtol=0, atol=1e-3)
 
-    np.testing.assert_allclose((gps_times[5] - utc_to_gpst(gpst_to_utc(gps_times[5]))).total_seconds(), 0, rtol=0, atol=1e-3)
-    np.testing.assert_allclose((gps_times[6] - utc_to_gpst(gpst_to_utc(gps_times[6]))).total_seconds(), 0, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[5] - utc_to_gpst(gpst_to_utc(gps_times[5]))), 0, rtol=0, atol=1e-3)
+    np.testing.assert_allclose((gps_times[6] - utc_to_gpst(gpst_to_utc(gps_times[6]))), 0, rtol=0, atol=1e-3)
 
 
 if __name__ == "__main__":
