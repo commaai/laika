@@ -15,7 +15,7 @@ gps_times = [GPSTime(*gps_time_list) for gps_time_list in gps_times_list]
 
 
 class TestAstroDog(unittest.TestCase):
-'''
+  '''
   def test_nav_vs_orbit_now(self):
     dog_orbit = AstroDog(pull_orbit=True)
     dog_nav = AstroDog(pull_orbit=False)
@@ -27,7 +27,7 @@ class TestAstroDog(unittest.TestCase):
       np.testing.assert_allclose(sat_info_nav[1], sat_info_orbit[1], rtol=0, atol=.1)
       np.testing.assert_allclose(sat_info_nav[2], sat_info_orbit[2], rtol=0, atol=1e-7)
       np.testing.assert_allclose(sat_info_nav[3], sat_info_orbit[3], rtol=0, atol=1e-11)
-'''
+  '''
   def test_nav_vs_orbit__old(self):
     dog_orbit = AstroDog(pull_orbit=True)
     dog_nav = AstroDog(pull_orbit=False)
