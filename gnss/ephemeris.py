@@ -1,7 +1,6 @@
 from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
 from gps_time import GPSTime, utc_to_gpst
-from enum import Enum
 import numpy as np
 from constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, EARTH_ROTATION_RATE, EARTH_GM
 from helpers import get_constellation
@@ -49,7 +48,7 @@ def convert_ublox_ephem(ublox_ephem):
   return ephem
 
 
-class EphemerisType(Enum):
+class EphemerisType(object):
   # TODO this isn't properly supported
   NAV = 0
   FINAL_ORBIT = 1

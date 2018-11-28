@@ -1,9 +1,8 @@
+#!/home/batman/one/laika/env
 #-*- coding: utf-8 -*-
 
-import codecs
 import os
-import re
-from setuptools import setup, Extension
+from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -13,20 +12,24 @@ setup(
   url='https://github.com/commaai/laika',
   author='comma.ai',
   author_email='harald@comma.ai',
-  packages=[
-    'gnss',
-    ],
-  package_dir = {'laika': 'gnss'},
+  packages=['gnss'],
+  package_dir={'laika': 'gnss'},
   platforms='any',
   license='MIT',
   install_requires=[
-    'libusb1 >= 1.6.4',
-    'hexdump >= 3.3',
-    'pycrypto >= 2.6.1',
-    'tqdm >= 4.14.0',
-    'requests'
+    'requests',
+    'numpy==1.14.5',
+    'scipy==1.0.0',
+    'IPython<6.0',
+    'ipykernel<5.0',
+    'jupyter-console==5.1.0',
+    'tqdm',
+    'jupyter',
+    'seaborn',
+    'pillow',
+    'matplotlib<3.0'
   ],
-  ext_modules = [],
+  ext_modules=[],
   description="GNSS library for use with the comma.ai ecosystem",
   long_description='See https://github.com/commaai/laika',
   classifiers=[
@@ -39,4 +42,3 @@ setup(
   setup_requires=['pytest-runner'],
   tests_require=['pytest'],
 )
-
