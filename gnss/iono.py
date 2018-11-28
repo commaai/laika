@@ -3,7 +3,7 @@ import datetime as dt
 import numpy as np
 from math import cos, sin, pi, floor
 from constants import SECS_IN_MIN, SECS_IN_HR, EARTH_RADIUS
-from common.transformations.coordinates import LocalCoord
+from lib.coordinates import LocalCoord
 from gps_time import GPSTime
 import re
 

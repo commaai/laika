@@ -1,5 +1,5 @@
 import numpy as np
-from common.transformations.coordinates import LocalCoord
+from lib.coordinates import LocalCoord
 
 GPS_OFFSET = 0
 GLONASS_OFFSET = 64
