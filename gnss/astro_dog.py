@@ -136,9 +136,10 @@ class AstroDog(object):
 
   def add_ephem(self, new_ephem, ephems):
     prn = new_ephem.prn
-    for eph in ephems[prn]:
-      if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
-        raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
+    # TODO make this check work
+    #for eph in ephems[prn]:
+    #  if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
+    #    raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
     ephems[prn].append(new_ephem)
 
   def get_nav_data(self, time):

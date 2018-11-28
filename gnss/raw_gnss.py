@@ -263,7 +263,7 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
   if n < 6:
       return []
 
-  Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight)
+  Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight, no_nans=True)
   opt_pos = opt.least_squares(Fx_pos, x0).x
   return opt_pos, Fx_pos(opt_pos, no_weight=True)
 
@@ -280,12 +280,12 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   if n < 6:
       return []
 
-  Fx_vel = prr_residual(measurements, est_pos, no_weight=no_weight)
+  Fx_vel = prr_residual(measurements, est_pos, no_weight=no_weight, no_nans=True)
   opt_vel = opt.least_squares(Fx_vel, v0).x
   return opt_vel, Fx_vel(opt_vel, no_weight=True)
 
 
-def pr_residual(measurements, signal='C1C', no_weight=False):
+def pr_residual(measurements, signal='C1C', no_weight=False, no_nans=False):
   # solve for pos
   def Fx_pos((x, y, z, bc, bg), no_weight=no_weight):
     rows = []
@@ -301,7 +301,8 @@ def pr_residual(measurements, signal='C1C', no_weight=False):
         sat_pos = meas.sat_pos
         theta = constants.EARTH_ROTATION_RATE * (pr - bc) / constants.SPEED_OF_LIGHT
       else:
-        rows.append(np.nan)
+        if not no_nans:
+          rows.append(np.nan)
         continue
       if no_weight:
         weight = 1
@@ -322,13 +323,14 @@ def pr_residual(measurements, signal='C1C', no_weight=False):
   return Fx_pos
 
 
-def prr_residual(measurements, est_pos, signal='D1C', no_weight=False):
+def prr_residual(measurements, est_pos, signal='D1C', no_weight=False, no_nans=False):
   # solve for vel
   def Fx_vel(vel, no_weight=no_weight):
     rows = []
     for meas in measurements:
       if signal not in meas.observables or not np.isfinite(meas.observables[signal]):
-        rows.append(np.nan)
+        if not no_nans:
+          rows.append(np.nan)
         continue
       if meas.corrected:
         sat_pos = meas.sat_pos_final
