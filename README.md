@@ -52,6 +52,12 @@ To confirm the quality of Laika's GNSS processing, we ran laika's processing and
 - Computation of a Continuously Operating Reference Station (CORS) position with laika
 - Using laika with a kalman filter to get more accurate position fixes from a GPS module
 
+## Installation
+Laika runs in python 2.x, installing should be as easy as
+```
+python setup.py install
+```
+Then you should be able to run the tests and the notebooks. Note that if numpy compiled laika will be much slower.
 
 ## Useful GNSS references
 - [Comphrensive handbook of all things GNSS](https://www.springer.com/us/book/9783319429267)
