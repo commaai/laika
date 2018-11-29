@@ -199,7 +199,7 @@ class AstroDog(object):
       self.ionex_maps.append(im)
 
   def get_dgps_data(self, time, recv_pos):
-    station_names = get_closest_station_names(recv_pos, k=8, max_distance=MAX_DGPS_DISTANCE)
+    station_names = get_closest_station_names(recv_pos, k=8, max_distance=MAX_DGPS_DISTANCE, cache_dir=self.cache_dir)
     for station_name in station_names:
       file_path_station = download_cors_station(time, station_name, cache_dir=self.cache_dir)
       if file_path_station:

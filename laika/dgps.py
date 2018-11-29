@@ -52,7 +52,7 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
     cors_station_positions_file.close()
 
 
-def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/raid.dell2/gnss/'):
+def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gnss/'):
   cors_station_positions_path = cache_dir + 'cors_coord/cors_station_postions'
   download_and_parse_station_postions(cors_station_positions_path, cache_dir)
   cors_station_positions_file = open(cors_station_positions_path, 'r')
@@ -67,7 +67,7 @@ def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/raid.de
   return np.array(station_ids)[idxs]
 
 
-def get_station_position(station_id, cache_dir='/raid.dell2/gnss/', time=GPSTime.from_datetime(datetime.utcnow())):
+def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_datetime(datetime.utcnow())):
   cors_station_positions_path = cache_dir + 'cors_coord/cors_station_postions'
   download_and_parse_station_postions(cors_station_positions_path, cache_dir)
   cors_station_positions_file = open(cors_station_positions_path, 'r')
@@ -78,7 +78,7 @@ def get_station_position(station_id, cache_dir='/raid.dell2/gnss/', time=GPSTime
 
 
 def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, required_constellations=['GPS']):
-  station_pos = get_station_position(station_id)
+  station_pos = get_station_position(station_id, cache_dir=dog.cache_dir)
   obsdata = RINEXFile(station_obs_file_path)
   measurements = raw.read_rinex_obs(obsdata)
   proc_measurements = []
