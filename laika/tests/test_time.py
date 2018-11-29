@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from laika.gnss.gps_time import GPSTime, TimeSyncer, gpst_to_utc, utc_to_gpst
+from laika.gps_time import GPSTime, TimeSyncer, gpst_to_utc, utc_to_gpst
 from datetime import datetime
 
 datetimes_strings = ['1985-10-10 19:27:01',
