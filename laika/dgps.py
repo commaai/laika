@@ -116,7 +116,6 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
     if get_constellation(prn) == 'GPS':
       model_delays[prn] = np.nan*np.zeros(n)
       for i in xrange(n):
-        print prn, i, station_id
         model_delays[prn][i] = dog.get_delay(prn, times[i], station_pos, no_dgps=True)
   station_clock_errs = np.zeros(n)
   for i in xrange(n):
