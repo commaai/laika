@@ -57,7 +57,7 @@ Laika runs in python 2.x, installing should be as easy as
 ```
 python setup.py install
 ```
-Then you should be able to run the tests and the notebooks. Note that if numpy is not compiled laika will be much slower.
+Then you should be able to run the tests and the notebooks. Note that if numpy is not compiled laika will be much slower. The notebooks can be opened by running `jupyter notebook` and then navigating to the desired .ipynb file.
 
 ## Useful GNSS references
 - [Comphrensive handbook of all things GNSS](https://www.springer.com/us/book/9783319429267)
