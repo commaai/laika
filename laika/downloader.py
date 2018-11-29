@@ -10,10 +10,6 @@ from unlzw import unlzw
 
 
 def ftpcache_path(url):
-  ci = os.environ.get('CI', False)
-  if ci:
-    return url
-
   p = urlparse(url)
   return 'http://ftpcache.comma.life/'+p.netloc.replace(".", "-")+p.path
 
@@ -26,36 +22,42 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
   filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
 
   url = url_base + folder_path + filename_zipped
-  url = ftpcache_path(url)
+  url_cache = ftpcache_path(url)
 
   if not os.path.isfile(filepath) or overwrite:
-    print "pulling from", url, "to", filepath
     if not os.path.exists(folder_path_abs):
       os.makedirs(folder_path_abs)
+
+    # try to download
     try:
-      urlf = urllib2.urlopen(url)
-      data_zipped = urlf.read()
-      with open(filepath_zipped, 'wb') as wf:
-        wf.write(data_zipped)
-      if compression == '':
-        return filepath_zipped
-      elif compression == '.gz':
-        f = gzip.open(filepath_zipped, 'rb')
-        uncompressed_data = f.read()
-        f .close()
-      elif compression == '.Z':
-        f = open(filepath_zipped, 'r')
-        compressed_data = f.read()
-        uncompressed_data = unlzw(compressed_data)
-        f.close()
-      else:
-        raise NotImplementedError('unknown compression: ', compression)
-      f = open(filepath, 'w')
-      f.write(uncompressed_data)
-      f.close()
+      print "pulling from", url_cache, "to", filepath
+      urlf = urllib2.urlopen(url_cache)
     except IOError as e:
-      print "  download failed", e
-      raise IOError("Could not download file from: " + url)
+      print "cache download failed, pulling from", url, "to", filepath
+      try:
+        urlf = urllib2.urlopen(url_cache)
+      except IOError as e:
+        raise IOError("Could not download file from: " + url)
+
+    data_zipped = urlf.read()
+    with open(filepath_zipped, 'wb') as wf:
+      wf.write(data_zipped)
+    if compression == '':
+      return filepath_zipped
+    elif compression == '.gz':
+      f = gzip.open(filepath_zipped, 'rb')
+      uncompressed_data = f.read()
+      f .close()
+    elif compression == '.Z':
+      f = open(filepath_zipped, 'r')
+      compressed_data = f.read()
+      uncompressed_data = unlzw(compressed_data)
+      f.close()
+    else:
+      raise NotImplementedError('unknown compression: ', compression)
+    f = open(filepath, 'w')
+    f.write(uncompressed_data)
+    f.close()
   return filepath
 
 
