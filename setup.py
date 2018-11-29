@@ -28,6 +28,7 @@ setup(
     'pillow',
     'matplotlib<3.0',
     'cffi',
+    'gmplot',
     'sympy'
   ],
   ext_modules=[],
