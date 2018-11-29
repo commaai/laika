@@ -1,7 +1,7 @@
 
 # Laika
 
-Laika is an open-source GNSS processing library, it will process raw GNSS observations with data gathered online from various analysis groups to produce GNSS data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable easy to use.
+Laika is an open-source GNSS processing library, it will process raw GNSS observations with data gathered online from various analysis groups to produce data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable easy to use. Laika is the perfect tool to develop accurate GNSS-only or GNSS-fusion localisation algorithms.
 ![alt text](https://www.thoughtco.com/thmb/RABYtJPM_H6BS_Wv8sNltm188vY=/768x0/filters:no_upscale():max_bytes(150000):strip_icc()/laika-515031406-58e80f1f3df78c5162a95267.jpg)
 
 ## The GNSS problem
