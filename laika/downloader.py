@@ -31,11 +31,11 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
     # try to download
     try:
       print "pulling from", url_cache, "to", filepath
-      urlf = urllib2.urlopen(url_cache)
+      urlf = urllib2.urlopen(url_cache, timeout=5)
     except IOError as e:
       print "cache download failed, pulling from", url, "to", filepath
       try:
-        urlf = urllib2.urlopen(url_cache)
+        urlf = urllib2.urlopen(url)
       except IOError as e:
         raise IOError("Could not download file from: " + url)
 
