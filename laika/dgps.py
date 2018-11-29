@@ -53,7 +53,7 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
 
 
 def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gnss/'):
-  cors_station_positions_path = cache_dir + 'cors_coord/cors_station_postions'
+  cors_station_positions_path = cache_dir + 'cors_coord/cors_station_positions'
   download_and_parse_station_postions(cors_station_positions_path, cache_dir)
   cors_station_positions_file = open(cors_station_positions_path, 'r')
   cors_station_positions_dict = np.load(cors_station_positions_file).item()
