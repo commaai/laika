@@ -27,6 +27,7 @@ setup(
     'seaborn',
     'pillow',
     'matplotlib<3.0',
+    'cffi',
     'sympy'
   ],
   ext_modules=[],

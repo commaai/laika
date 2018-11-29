@@ -4,8 +4,8 @@ from bisect import bisect_right
 import sympy as sp
 import numpy as np
 from numpy import dot
-from common.ffi_wrapper import ffi_wrap, compile_code, wrap_compiled
-from common.sympy_helpers import sympy_into_c
+from ffi_wrapper import ffi_wrap, compile_code, wrap_compiled
+from sympy_helpers import sympy_into_c
 import scipy
 from scipy.stats import chi2
 
