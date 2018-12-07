@@ -2,6 +2,7 @@ import scipy.optimize as opt
 import constants
 import numpy as np
 import datetime
+from lib.coordinates import LocalCoord
 from gps_time import GPSTime
 from helpers import rinex3_obs_from_rinex2_obs, \
                     get_nmea_id_from_prn, \
@@ -350,7 +351,8 @@ def prr_residual(measurements, est_pos, signal='D1C', no_weight=False, no_nans=F
 
 
 def get_Q(recv_pos, sat_positions):
-  sat_positions_rel = sat_positions - recv_pos
+  local = LocalCoord.from_ecef(recv_pos)
+  sat_positions_rel = local.ecef2ned(sat_positions)
   sat_distances = np.linalg.norm(sat_positions_rel, axis=1)
   A = np.column_stack((sat_positions_rel[:,0]/sat_distances,
                        sat_positions_rel[:,1]/sat_distances,
