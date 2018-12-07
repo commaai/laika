@@ -349,7 +349,7 @@ def prr_residual(measurements, est_pos, signal='D1C', no_weight=False, no_nans=F
   return Fx_vel
 
 
-def get_DOP(recv_pos, sat_positions):
+def get_Q(recv_pos, sat_positions):
   sat_positions_rel = sat_positions - recv_pos
   sat_distances = np.linalg.norm(sat_positions_rel, axis=1)
   A = np.column_stack((sat_positions_rel[:,0]/sat_distances,
@@ -357,7 +357,22 @@ def get_DOP(recv_pos, sat_positions):
                        sat_positions_rel[:,2]/sat_distances,
                        -np.ones(len(sat_distances))))
   if A.shape[0] < 4 or np.linalg.matrix_rank(A) < 4:
-    return np.inf
+    return np.inf*np.ones((4,4))
   else:
     Q = np.linalg.inv(A.T.dot(A))
-    return np.sqrt(np.trace(Q))
+    return Q
+
+
+def get_DOP(recv_pos, sat_positions):
+  Q = get_Q(recv_pos, sat_positions)
+  return np.sqrt(np.trace(Q))
+
+
+def get_HDOP(recv_pos, sat_positions):
+  Q = get_Q(recv_pos, sat_positions)
+  return np.sqrt(np.trace(Q[:2,:2]))
+
+
+def get_VDOP(recv_pos, sat_positions):
+  Q = get_Q(recv_pos, sat_positions)
+  return np.sqrt(Q[3,3])
