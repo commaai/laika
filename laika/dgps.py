@@ -81,6 +81,15 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
   station_pos = get_station_position(station_id, cache_dir=dog.cache_dir)
   obsdata = RINEXFile(station_obs_file_path)
   measurements = raw.read_rinex_obs(obsdata)
+
+  # if not all constellations in first 100 epochs bail
+  detected_constellations = set()
+  for m in sum(measurements[:100],[]):
+    detected_constellations.add(get_constellation(m.prn))
+  for constellation in required_constellations:
+    if constellation not in detected_constellations:
+      return None
+
   proc_measurements = []
   for measurement in measurements:
     proc_measurements.append(raw.process_measurements(measurement, dog=dog))
@@ -92,7 +101,6 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
 
   station_delays = {}
   n = len(proc_measurements)
-  detected_constellations = set()
   for signal in ['C1C', 'C2P']:
     times = []
     station_delays[signal] = {}
@@ -102,7 +110,6 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
       residual = -np.array(Fx_pos(list(station_pos) + [0, 0]))
       for j, m in enumerate(proc_measurement):
         prn = m.prn
-        detected_constellations.add(get_constellation(prn))
         if prn not in station_delays[signal]:
           station_delays[signal][prn] = np.nan*np.ones(n)
         station_delays[signal][prn][i] = residual[j]
@@ -128,9 +135,6 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
   for prn in station_delays['C2P']:
     station_delays['C2P'][prn] = station_delays['C2P'][prn] - station_clock_errs
 
-  for constellation in required_constellations:
-    if constellation not in detected_constellations:
-      return None
   return DGPSDelay(station_id, station_pos, station_delays,
                    times, max_distance)
 
