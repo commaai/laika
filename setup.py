@@ -15,9 +15,9 @@ setup(
   packages=find_packages(),
   platforms='any',
   license='MIT',
+  setup_requires=['numpy', 'pytest-runner'],
   install_requires=[
     'requests',
-    'numpy==1.14.5',
     'scipy==1.0.0',
     'tqdm'
   ],
@@ -30,6 +30,5 @@ setup(
     "Programming Language :: Python :: 2",
     "Topic :: System :: Hardware",
   ],
-  setup_requires=['pytest-runner'],
   tests_require=['pytest'],
 )
