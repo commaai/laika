@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import dot, inner, array, linalg
-from common.transformations.coordinates import LocalCoord
+from coordinates import LocalCoord
 
 
 '''
