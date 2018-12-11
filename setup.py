@@ -19,17 +19,7 @@ setup(
     'requests',
     'numpy==1.14.5',
     'scipy==1.0.0',
-    'IPython<6.0',
-    'ipykernel<5.0',
-    'jupyter-console==5.1.0',
-    'tqdm',
-    'jupyter',
-    'seaborn',
-    'pillow',
-    'matplotlib<3.0',
-    'cffi',
-    'gmplot',
-    'sympy'
+    'tqdm'
   ],
   ext_modules=[],
   description="GNSS library for use with the comma.ai ecosystem",
