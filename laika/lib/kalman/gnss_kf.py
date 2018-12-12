@@ -3,6 +3,7 @@ import numpy as np
 
 from kalman_helpers import ObservationKind
 from ekf_sym import EKF_sym
+from laika.raw_gnss import GNSSMeasurement
 
 def parse_prr(m):
   sat_pos_vel_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
