@@ -58,7 +58,7 @@ Laika runs in python 2.x, and has only been tested on ubuntu 16.04
 #### laika
 If you do not yet have numpy and scipy installed. Install them with pip. Having accelerated numpy will make laika much faster.
 ```
-pip install scipy numpy --user
+pip install numpy scipy --user
 ```
 Then laika can be installed with
 ```
