@@ -1,4 +1,4 @@
-from laika.gnss.raw_gnss import GNSSMeasurement
+from laika.raw_gnss import GNSSMeasurement
 import numpy as np
 import os
 from bisect import bisect
