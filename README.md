@@ -53,11 +53,29 @@ To confirm the quality of Laika's GNSS processing, we ran laika's processing and
 - Using laika with a kalman filter to get more accurate position fixes from a GPS module
 
 ## Installation
-Laika runs in python 2.x, installing should be as easy as
+Laika runs in python 2.x, and has only been tested on ubuntu 16.04
+
+#### laika
+If you do not yet have numpy and scipy installed. Install them with pip. Having accelerated numpy will make laika much faster.
+```
+pip install scipy numpy --user
+```
+Then laika can be installed with
 ```
 python setup.py install
 ```
-Then you should be able to run the tests and the notebooks. Note that if numpy is not compiled laika will be much slower. The notebooks can be opened by running `jupyter notebook` and then navigating to the desired .ipynb file.
+The tests should now pass.
+
+#### notebook examples
+The notebook examples require some visualisation packages. To install them first you need
+```
+sudo apt-get install libfreetype6-dev
+```
+and then with pip
+```
+pip install -r requirements_examples.txt --user
+```
+Then you should be able to run the notebooks. The notebooks can be opened by running `jupyter notebook` and then navigating to the desired .ipynb file.
 
 ## Useful GNSS references
 - [Comphrensive handbook of all things GNSS](https://www.springer.com/us/book/9783319429267)
