@@ -48,9 +48,10 @@ To confirm the quality of Laika's GNSS processing, we ran laika's processing and
 
 
 ## Examples
-- A comprehensive walkthrough of the main functions of AstroDog and other useful laika functions
-- Computation of a Continuously Operating Reference Station (CORS) position with laika
-- Using laika with a kalman filter to get more accurate position fixes from a GPS module
+- [A comprehensive walkthrough of the main functions of AstroDog and other useful laika functions](https://github.com/commaai/laika/blob/master/examples/Walkthrough.ipynb)
+- [Computation of a Continuously Operating Reference Station (CORS) position with laika]
+(https://github.com/commaai/laika/blob/master/examples/Compute_station_pos.ipynb)
+- [Using laika with a kalman filter to get more accurate position fixes from a GPS module](https://github.com/commaai/laika/blob/master/examples/Kalman.ipynb)
 
 ## Installation
 Laika runs in python 2.x, and has only been tested on ubuntu 16.04. Running in a virtualenv is reccomended.
