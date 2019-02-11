@@ -200,7 +200,7 @@ def read_raw_ublox(report):
         prn = 'R%02i' % i.svId
       observables = {}
       observables_std = {}
-      if i.trackingStatus.pseudorangeValid:
+      if i.trackingStatus.pseudorangeValid and i.sigId==0:
         observables['C1C'] = i.pseudorange
         # Empirically it seems obvious ublox's std is
         # actually a variation
@@ -217,12 +217,12 @@ def read_raw_ublox(report):
           observables['L1C'] = i.carrierCycles
         else:
           observables['L1C'] = np.nan
-      measurements.append(GNSSMeasurement(prn,
-                                  recv_time.week,
-                                  recv_time.tow,
-                                  observables,
-                                  observables_std,
-                                  glonass_freq))
+        measurements.append(GNSSMeasurement(prn,
+                                    recv_time.week,
+                                    recv_time.tow,
+                                    observables,
+                                    observables_std,
+                                    glonass_freq))
   return measurements
 
 
