@@ -181,7 +181,7 @@ class GPSEphemeris(Ephemeris):
     if not self.healthy:
       return None
     eph = self.data
-    tdiff = time - eph['toe']  # Time of clock
+    tdiff = time - eph['toc']  # Time of clock
     clock_err = eph['af0'] + tdiff * (eph['af1'] + tdiff * eph['af2'])
     clock_rate_err = eph['af1'] + 2 * tdiff * eph['af2']
 
