@@ -162,21 +162,20 @@ class AstroDog(object):
           self.bad_sats.append(prn)
 
   def get_orbit_data(self, time):
-    file_paths_sp3 = download_orbits_russia(time, cache_dir=self.cache_dir)
-    ephems_sp3 = parse_sp3_orbits(file_paths_sp3, self.valid_const)
-    if len(ephems_sp3) < 5:
-      print "Russian orbit data seems broken, using NASA's"
-      file_paths_sp3 = download_orbits(time, cache_dir=self.cache_dir)
-      ephems_sp3 = parse_sp3_orbits(file_paths_sp3, self.valid_const)
+    file_paths_sp3_ru = download_orbits_russia(time, cache_dir=self.cache_dir)
+    ephems_sp3_ru = parse_sp3_orbits(file_paths_sp3_ru, self.valid_const)
+    file_paths_sp3_us = download_orbits(time, cache_dir=self.cache_dir)
+    ephems_sp3_us = parse_sp3_orbits(file_paths_sp3_us, self.valid_const)
+    ephems_sp3 = ephems_sp3_ru + ephems_sp3_us
     if len(ephems_sp3) < 5:
       raise RuntimeError('No orbit data found on either servers')
 
     for ephem in ephems_sp3:
       self.add_ephem(ephem, self.orbits)
-    detected_prns = set([e.prn for e in ephems_sp3])
     for constellation in self.valid_const:
       for prn in get_prns_from_constellation(constellation):
-        if prn not in detected_prns and prn not in self.bad_sats:
+        closest = get_closest(time, self.orbits[prn])
+        if ((closest is None) or ((closest is not None) and (not closest.valid(time)))) and (prn not in self.bad_sats):
           print 'No orbit data found for prn : %s flagging as bad' % prn
           self.bad_sats.append(prn)
 
