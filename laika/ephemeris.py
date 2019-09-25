@@ -305,7 +305,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
       continue
     for i in range(len(data[prn]) - deg):
       times, x, y, z, clock = [],[],[],[],[]
-      epoch = data[prn][i + deg/2][0]
+      epoch = data[prn][i + deg//2][0]
       for j in range(deg + 1):
         times.append(data[prn][i + j][0] - epoch)
         x.append(data[prn][i + j][1])
@@ -319,7 +319,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
       poly_data['x'] = np.polyfit(times, x, deg)
       poly_data['y'] = np.polyfit(times, y, deg)
       poly_data['z'] = np.polyfit(times, z, deg)
-      poly_data['clock'] = [(data[prn][i + deg/2 + 1][4] - data[prn][i + deg/2 - 1][4])/1800, data[prn][i + deg/2][4]]
+      poly_data['clock'] = [(data[prn][i + deg//2 + 1][4] - data[prn][i + deg//2 - 1][4])/1800, data[prn][i + deg//2][4]]
       poly_data['deg'] = deg
       poly_data['deg_t'] = deg_t
       ephems.append(PolyEphemeris(prn, poly_data, epoch, healthy=True, eph_type=EphemerisType.RAPID_ORBIT))
