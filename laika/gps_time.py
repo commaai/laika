@@ -22,7 +22,7 @@ def datetime_to_tow(t):
     # DateTime to GPS week and TOW
     wk_ref = datetime.datetime(2014, 2, 16, 0, 0, 0, 0, None)
     refwk = 1780
-    wk = (t - wk_ref).days / 7 + refwk
+    wk = (t - wk_ref).days // 7 + refwk
     tow = ((t - wk_ref) - datetime.timedelta((wk - refwk) * 7.0)).total_seconds()
     return wk, tow
 
