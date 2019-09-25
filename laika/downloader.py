@@ -49,13 +49,13 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
       uncompressed_data = f.read()
       f .close()
     elif compression == '.Z':
-      f = open(filepath_zipped, 'r')
+      f = open(filepath_zipped, 'rb')
       compressed_data = f.read()
       uncompressed_data = unlzw(compressed_data)
       f.close()
     else:
       raise NotImplementedError('unknown compression: ', compression)
-    f = open(filepath, 'w')
+    f = open(filepath, 'wb')
     f.write(uncompressed_data)
     f.close()
   return filepath
