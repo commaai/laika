@@ -62,7 +62,7 @@ class IonexMap:
     self.grid_TEC2 = np.array([], dtype='uint16')
     self.t1 = GPSTime.from_datetime(dt.datetime(*list(map(int, data1[0].split()[:6]))))
     self.t2 = GPSTime.from_datetime(dt.datetime(*list(map(int, data2[0].split()[:6]))))
-    assert self.t2 - self.t1 == SECS_IN_HR
+    assert np.allclose([self.t2 - self.t1], [SECS_IN_HR])
     assert len(data1) == len(data2)
 
     self.max_time_diff = SECS_IN_MIN*30
