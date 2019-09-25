@@ -1,12 +1,12 @@
-from helpers import get_constellation, get_closest, get_el_az, get_prns_from_constellation
-from ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, parse_rinex_nav_msg_glonass
-from downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
-from downloader import download_cors_station
-from trop import saast
-from iono import parse_ionex
-from dcb import parse_dcbs
-from dgps import get_closest_station_names, parse_dgps
-import constants as constants
+from .helpers import get_constellation, get_closest, get_el_az, get_prns_from_constellation
+from .ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, parse_rinex_nav_msg_glonass
+from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
+from .downloader import download_cors_station
+from .trop import saast
+from .iono import parse_ionex
+from .dcb import parse_dcbs
+from .dgps import get_closest_station_names, parse_dgps
+from . import constants
 
 MAX_DGPS_DISTANCE = 100000  # in meters, because we're not barbarians
 
@@ -158,7 +158,7 @@ class AstroDog(object):
     for constellation in self.valid_const:
       for prn in get_prns_from_constellation(constellation):
         if prn not in detected_prns and prn not in self.bad_sats:
-          print 'No nav data found for prn : %s flagging as bad' % prn
+          print('No nav data found for prn : %s flagging as bad' % prn)
           self.bad_sats.append(prn)
 
   def get_orbit_data(self, time):
@@ -176,7 +176,7 @@ class AstroDog(object):
       for prn in get_prns_from_constellation(constellation):
         closest = get_closest(time, self.orbits[prn])
         if ((closest is None) or ((closest is not None) and (not closest.valid(time)))) and (prn not in self.bad_sats):
-          print 'No orbit data found for prn : %s flagging as bad' % prn
+          print('No orbit data found for prn : %s flagging as bad' % prn)
           self.bad_sats.append(prn)
 
   def get_dcb_data(self, time):
@@ -188,7 +188,7 @@ class AstroDog(object):
     for constellation in self.valid_const:
       for prn in get_prns_from_constellation(constellation):
         if prn not in detected_prns and prn not in self.bad_sats:
-          print 'No dcb data found for prn : %s flagging as bad' % prn
+          print('No dcb data found for prn : %s flagging as bad' % prn)
           self.bad_sats.append(prn)
 
   def get_ionex_data(self, time):

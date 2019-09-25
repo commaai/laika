@@ -1,19 +1,19 @@
 import os
 import numpy as np
-import raw_gnss as raw
 from datetime import datetime
-from gps_time import GPSTime
-from constants import SECS_IN_YEAR
-from rinex_file import RINEXFile
 from scipy.spatial import cKDTree
-from downloader import download_cors_coords
-from helpers import get_constellation
 
+from .gps_time import GPSTime
+from .constants import SECS_IN_YEAR
+from . import raw_gnss as raw
+from .rinex_file import RINEXFile
+from .downloader import download_cors_coords
+from .helpers import get_constellation
 
 def mean_filter(delay):
   d2 = delay.copy()
   max_step = 10
-  for i in xrange(max_step, len(delay) - max_step):
+  for i in range(max_step, len(delay) - max_step):
     finite_idxs = np.where(np.isfinite(delay[i - max_step:i + max_step]))
     if max_step in finite_idxs[0]:
       step = min([max_step, finite_idxs[0][-1] - max_step, max_step - finite_idxs[0][0]])
@@ -31,7 +31,7 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
         with open(coord_file_path, 'r+') as coord_file:
           contents = coord_file.readlines()
         phase_center = False
-        for line_number in xrange(len(contents)):
+        for line_number in range(len(contents)):
           if 'L1 Phase Center' in contents[line_number]:
             phase_center = True
           if not phase_center and 'IGS08 POSITION' in contents[line_number]:
@@ -122,10 +122,10 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
   for prn in station_delays['C1C']:
     if get_constellation(prn) == 'GPS':
       model_delays[prn] = np.nan*np.zeros(n)
-      for i in xrange(n):
+      for i in range(n):
         model_delays[prn][i] = dog.get_delay(prn, times[i], station_pos, no_dgps=True)
   station_clock_errs = np.zeros(n)
-  for i in xrange(n):
+  for i in range(n):
     station_clock_errs[i] = np.nanmean([(station_delays['C1C'][prn][i] - model_delays[prn][i]) for prn in model_delays])
 
 

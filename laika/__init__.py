@@ -1,1 +1,1 @@
-from astro_dog import AstroDog
+from .astro_dog import AstroDog

@@ -109,7 +109,7 @@ class GPSTime(object):
         new_week -= 1
       return GPSTime(new_week, new_tow)
     else:
-      print "Type of subtraced:", type(other)
+      print("Type of subtraced:", type(other))
       raise NotImplementedError
 
   def __add__(self, other):
@@ -121,7 +121,7 @@ class GPSTime(object):
         new_week += 1
       return GPSTime(new_week, new_tow)
     else:
-      print "Type of added:", type(other)
+      print("Type of added:", type(other))
       raise NotImplementedError
 
   def __lt__(self, other):

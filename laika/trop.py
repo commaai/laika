@@ -2,7 +2,7 @@
 # ! encoding: UTF8
 
 from numpy import cos, exp, pi
-from lib.coordinates import ecef2geodetic
+from .lib.coordinates import ecef2geodetic
 
 
 def saast(pos, el, humi=0.75, temp0=15.0):
