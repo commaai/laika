@@ -194,7 +194,7 @@ def download_cors_coords(cache_dir):
   cache_subdir = cache_dir + 'cors_coord/'
   url_base = 'ftp://geodesy.noaa.gov/cors/coord/coord_08/'
   url_path = urllib.request.urlopen(url_base)
-  file_names = [file_string.split()[-1] for file_string in url_path.read().split('\r\n') if len(file_string) > 5]
+  file_names = [file_string.split()[-1] for file_string in str(url_path.read()).split('\\r\\n') if len(file_string) > 5]
   file_names = [file_name for file_name in file_names if file_name[-9:] == 'coord.txt']
   filepaths = []
   for file_name in file_names:

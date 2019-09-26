@@ -228,14 +228,14 @@ def read_raw_ublox(report):
 
 def read_rinex_obs(obsdata):
   measurements = []
-  first_sat = obsdata.data.keys()[0]
+  first_sat = list(obsdata.data.keys())[0]
   n = len(obsdata.data[first_sat]['Epochs'])
   for i in range(0, n):
     recv_time_datetime = obsdata.data[first_sat]['Epochs'][i]
     recv_time_datetime = recv_time_datetime.astype(datetime.datetime)
     recv_time = GPSTime.from_datetime(recv_time_datetime)
     measurements.append([])
-    for sat_str in obsdata.data.keys():
+    for sat_str in list(obsdata.data.keys()):
       if np.isnan(obsdata.data[sat_str]['C1'][i]):
         continue
       observables, observables_std = {}, {}
