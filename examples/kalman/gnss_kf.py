@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
 
-from kalman_helpers import ObservationKind
-from ekf_sym import EKF_sym
+from .kalman_helpers import ObservationKind
+from .ekf_sym import EKF_sym
 from laika.raw_gnss import GNSSMeasurement
 
 def parse_prr(m):

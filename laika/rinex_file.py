@@ -29,7 +29,7 @@ def digitorzero(x):
 
 def padline(l, n=16):
   x = len(l)
-  x_ = n * ((x + n - 1) / n)
+  x_ = n * ((x + n - 1) // n)
   padded = l + ' ' * (x_ - x)
   while len(padded) < 70:
     padded += ' ' * 16
@@ -130,7 +130,7 @@ class RINEXFile:
     for i in range(n_sat):
       # Join together observations for a single satellite if split across lines.
       obs_line = ''.join(
-        padline(f.readline()[:-1], 16) for _ in range((len(self.obs_types) + 4) / 5))
+        padline(f.readline()[:-1], 16) for _ in range((len(self.obs_types) + 4) // 5))
       for j in range(len(self.obs_types)):
         obs_record = obs_line[16 * j:16 * (j + 1)]
         obs[int(sat_map[i]), j] = floatornan(obs_record[0:14])
@@ -188,7 +188,7 @@ class RINEXFile:
           self.data[sv]['Epochs'] = np.append(self.data[sv]['Epochs'], epochs)
         else:
           self.data[sv]['Epochs'] = epochs
-    for sat in self.data.keys():
+    for sat in list(self.data.keys()):
       if np.all(np.isnan(self.data[sat]['C1'])):
         del self.data[sat]
 

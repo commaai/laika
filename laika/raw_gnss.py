@@ -1,10 +1,10 @@
 import scipy.optimize as opt
-import constants
 import numpy as np
 import datetime
-from lib.coordinates import LocalCoord
-from gps_time import GPSTime
-from helpers import rinex3_obs_from_rinex2_obs, \
+from . import constants
+from .lib.coordinates import LocalCoord
+from .gps_time import GPSTime
+from .helpers import rinex3_obs_from_rinex2_obs, \
                     get_nmea_id_from_prn, \
                     get_prn_from_nmea_id, \
                     get_constellation
@@ -228,14 +228,14 @@ def read_raw_ublox(report):
 
 def read_rinex_obs(obsdata):
   measurements = []
-  first_sat = obsdata.data.keys()[0]
+  first_sat = list(obsdata.data.keys())[0]
   n = len(obsdata.data[first_sat]['Epochs'])
-  for i in xrange(0, n):
+  for i in range(0, n):
     recv_time_datetime = obsdata.data[first_sat]['Epochs'][i]
     recv_time_datetime = recv_time_datetime.astype(datetime.datetime)
     recv_time = GPSTime.from_datetime(recv_time_datetime)
     measurements.append([])
-    for sat_str in obsdata.data.keys():
+    for sat_str in list(obsdata.data.keys()):
       if np.isnan(obsdata.data[sat_str]['C1'][i]):
         continue
       observables, observables_std = {}, {}
@@ -288,7 +288,8 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
 
 def pr_residual(measurements, signal='C1C', no_weight=False, no_nans=False):
   # solve for pos
-  def Fx_pos((x, y, z, bc, bg), no_weight=no_weight):
+  def Fx_pos(xxx_todo_changeme, no_weight=no_weight):
+    (x, y, z, bc, bg) = xxx_todo_changeme
     rows = []
 
     for meas in measurements:

@@ -1,8 +1,8 @@
-from constants import SECS_IN_HR, SECS_IN_WEEK, \
-                      SPEED_OF_LIGHT, GPS_L1, GPS_L2
-from gps_time import GPSTime
 from datetime import datetime
-from helpers import get_constellation
+from .constants import SECS_IN_HR, SECS_IN_WEEK, \
+                      SPEED_OF_LIGHT, GPS_L1, GPS_L2
+from .gps_time import GPSTime
+from .helpers import get_constellation
 
 
 class DCB(object):

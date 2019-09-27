@@ -1,9 +1,10 @@
+import numpy as np
 from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
-from gps_time import GPSTime, utc_to_gpst
-import numpy as np
-from constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, EARTH_ROTATION_RATE, EARTH_GM
-from helpers import get_constellation
+
+from .gps_time import GPSTime, utc_to_gpst
+from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, EARTH_ROTATION_RATE, EARTH_GM
+from .helpers import get_constellation
 
 
 def read4(f, rinex_ver):
@@ -152,14 +153,14 @@ class PolyEphemeris(Ephemeris):
     dt = time - self.data['t0']
     deg = self.data['deg']
     deg_t = self.data['deg_t']
-    sat_pos = np.array([sum([(dt**p)*self.data['x'][deg-p] for p in xrange(deg+1)]),
-                        sum([(dt**p)*self.data['y'][deg-p] for p in xrange(deg+1)]),
-                        sum([(dt**p)*self.data['z'][deg-p] for p in xrange(deg+1)])])
-    sat_vel = np.array([sum([p*(dt**(p-1))*self.data['x'][deg-p] for p in xrange(1,deg+1)]),
-                        sum([p*(dt**(p-1))*self.data['y'][deg-p] for p in xrange(1,deg+1)]),
-                        sum([p*(dt**(p-1))*self.data['z'][deg-p] for p in xrange(1,deg+1)])])
-    time_err = sum([(dt**p)*self.data['clock'][deg_t-p] for p in xrange(deg_t+1)])
-    time_err_rate = sum([p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in xrange(1,deg_t+1)])
+    sat_pos = np.array([sum([(dt**p)*self.data['x'][deg-p] for p in range(deg+1)]),
+                        sum([(dt**p)*self.data['y'][deg-p] for p in range(deg+1)]),
+                        sum([(dt**p)*self.data['z'][deg-p] for p in range(deg+1)])])
+    sat_vel = np.array([sum([p*(dt**(p-1))*self.data['x'][deg-p] for p in range(1,deg+1)]),
+                        sum([p*(dt**(p-1))*self.data['y'][deg-p] for p in range(1,deg+1)]),
+                        sum([p*(dt**(p-1))*self.data['z'][deg-p] for p in range(1,deg+1)])])
+    time_err = sum([(dt**p)*self.data['clock'][deg_t-p] for p in range(deg_t+1)])
+    time_err_rate = sum([p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in range(1,deg_t+1)])
     time_err_with_rel = time_err - 2*np.inner(sat_pos, sat_vel)/SPEED_OF_LIGHT**2
     return sat_pos, sat_vel, time_err_with_rel, time_err_rate
 
@@ -302,10 +303,10 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
     # Currently don't even bother with satellites that have unhealthy times
     if (np.array(data[prn])[:,4] > .99).any():
       continue
-    for i in xrange(len(data[prn]) - deg):
+    for i in range(len(data[prn]) - deg):
       times, x, y, z, clock = [],[],[],[],[]
-      epoch = data[prn][i + deg/2][0]
-      for j in xrange(deg + 1):
+      epoch = data[prn][i + deg//2][0]
+      for j in range(deg + 1):
         times.append(data[prn][i + j][0] - epoch)
         x.append(data[prn][i + j][1])
         y.append(data[prn][i + j][2])
@@ -318,7 +319,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
       poly_data['x'] = np.polyfit(times, x, deg)
       poly_data['y'] = np.polyfit(times, y, deg)
       poly_data['z'] = np.polyfit(times, z, deg)
-      poly_data['clock'] = [(data[prn][i + deg/2 + 1][4] - data[prn][i + deg/2 - 1][4])/1800, data[prn][i + deg/2][4]]
+      poly_data['clock'] = [(data[prn][i + deg//2 + 1][4] - data[prn][i + deg//2 - 1][4])/1800, data[prn][i + deg//2][4]]
       poly_data['deg'] = deg
       poly_data['deg_t'] = deg_t
       ephems.append(PolyEphemeris(prn, poly_data, epoch, healthy=True, eph_type=EphemerisType.RAPID_ORBIT))
