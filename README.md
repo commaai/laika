@@ -1,7 +1,7 @@
 
 # Laika
 
-Laika is an open-source GNSS processing library. Laika is similar projects like [RTKlib](https://github.com/tomojitakasu/RTKLIB) and [GPSTK](https://github.com/SGL-UT/GPSTk), but in Python and with a strong focus on readibility, usability and easy integration with other optimizers. Laika can process raw GNSS observations with data gathered online from various analysis groups to produce data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable easy to use. Laika is the perfect tool to develop accurate GNSS-only or GNSS-fusion localisation algorithms.
+Laika is an open-source GNSS processing library. Laika is similar to projects like [RTKlib](https://github.com/tomojitakasu/RTKLIB) and [GPSTK](https://github.com/SGL-UT/GPSTk), but in Python and with a strong focus on readibility, usability and easy integration with other optimizers. Laika can process raw GNSS observations with data gathered online from various analysis groups to produce data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable easy to use. Laika is the perfect tool to develop accurate GNSS-only or GNSS-fusion localisation algorithms.
 
 
 ![alt text](GNSS.png)
