@@ -1,7 +1,7 @@
 
 # Laika
 
-Laika is an open-source GNSS processing library. Laika is similar to projects like [RTKlib](https://github.com/tomojitakasu/RTKLIB) and [GPSTK](https://github.com/SGL-UT/GPSTk), but in Python and with a strong focus on readibility, usability and easy integration with other optimizers. Laika can process raw GNSS observations with data gathered online from various analysis groups to produce data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable easy to use. Laika is the perfect tool to develop accurate GNSS-only or GNSS-fusion localisation algorithms.
+Laika is an open-source GNSS processing library. Laika is similar to projects like [RTKlib](https://github.com/tomojitakasu/RTKLIB) and [GPSTK](https://github.com/SGL-UT/GPSTk), but in Python and with a strong focus on readibility, usability and easy integration with other optimizers. Laika can process raw GNSS observations with data gathered online from various analysis groups to produce data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable and easy to use. Laika is the perfect tool to develop accurate GNSS-only or GNSS-fusion localisation algorithms.
 
 
 ![alt text](GNSS.png)
@@ -18,7 +18,7 @@ However, the above description is over-simplified. Getting accurate distance est
 
 
 ## Astrodog
-Astrodog is the main component of the laika. It is a python object, and like the [soviet space dogs](https://en.wikipedia.org/wiki/Soviet_space_dogs) to which it owes its name, an astrodog will do everything in its power to make the life of its master easier. Which in this case is fetch and process all the necessary data to transform raw GNSS observables into usable distance measurements and satellite positions ready for position estimation.
+Astrodog is the main component of the laika. It is a python object, and like the [soviet space dogs](https://en.wikipedia.org/wiki/Soviet_space_dogs) to which it owes its name, an astrodog will do everything to make the life of its owner easier. Which in this case is fetch and process all the necessary data to transform raw GNSS observables into usable distance measurements and satellite positions ready for position estimation.
 
 #### Satellite info
 Astrodog has a get_sat_info function that will provide an accurate position, velocity and clock error for any satellite at any time in history. 
