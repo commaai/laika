@@ -212,4 +212,5 @@ def download_cors_station(time, station_name, cache_dir):
     filepath = download_file(url_base, folder_path, cache_subdir, filename, compression='.gz')
     return filepath
   except IOError:
+    print("File not downloaded, check availability on server.")
     return None

@@ -41,10 +41,16 @@ TOTAL_SATS = 96
 
 class RINEXFile:
   def __init__(self, filename):
-    with open(filename, 'r') as f:
-      self._read_header(f)
-      self._read_data(f)
-
+    try:
+      with open(filename, 'r') as f:
+        self._read_header(f)
+        self._read_data(f)
+    except TypeError:
+      print("TypeError, file likely not downloaded.")
+      raise SystemExit(-1)
+    except FileNotFoundError:
+      print("File not found in directory.")
+      raise SystemExit(-1)
   def _read_header(self, f):
     version_line = padline(f.readline(), 80)
 
