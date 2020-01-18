@@ -250,16 +250,32 @@ class AstroDog(object):
         return constants.GPS_L1
       elif signal[1] == '2':
         return constants.GPS_L2
+      elif signal[1] == '5':
+        return constants.GPS_L5
+      elif signal[1] == '6':
+        return constants.GALILEO_E6
+      elif signal[1] == '7':
+        return constants.GALILEO_E5B
+      elif signal[1] == '8':
+        return constants.GALILEO_E5AB
       else:
-        raise NotImplementedError('Dont know this frequency')
+        raise NotImplementedError('Dont know this GPS frequency: ', signal, prn)
     elif get_constellation(prn) == 'GLONASS':
       n = self.get_glonass_channel(prn, time)
       if signal[1] == '1':
         return constants.GLONASS_L1 + n * constants.GLONASS_L1_DELTA
       if signal[1] == '2':
         return constants.GLONASS_L2 + n * constants.GLONASS_L2_DELTA
+      if signal[1] == '5':
+        return constants.GLONASS_L5 + n * constants.GLONASS_L5_DELTA
+      if signal[1] == '6':
+        return constants.GALILEO_E6
+      if signal[1] == '7':
+        return constants.GALILEO_E5B
+      if signal[1] == '8':
+        return constants.GALILEO_E5AB
       else:
-        raise NotImplementedError('Dont know this frequency')
+        raise NotImplementedError('Dont know this GLONASS frequency: ', signal, prn)
 
   def get_delay(self, prn, time, rcv_pos, no_dgps=False, signal='C1C', freq=None):
     sat_info = self.get_sat_info(prn, time)

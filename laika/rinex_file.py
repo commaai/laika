@@ -36,7 +36,7 @@ def padline(l, n=16):
   return padded
 
 
-TOTAL_SATS = 96
+TOTAL_SATS = 132  # Increased to support Galileo
 
 
 class RINEXFile:
@@ -87,17 +87,34 @@ class RINEXFile:
         if self.marker_name == '':
           self.marker_name = 'UNKNOWN'
       if label == "# / TYPES OF OBSERV":
-        n_obs = int(line[0:6])
-        self.obs_types = []
-        for i in range(0, n_obs):
-          self.obs_types.append(line[10 + 6 * i:12 + 6 * i])
+        # RINEX files can have multiple line headers
+        # This code handles the case
+        try:
+          n_obs = int(line[0:6])
+          self.obs_types = []
+        except ValueError:
+          pass
+
+        if n_obs <= 9:
+          for i in range(0, n_obs):
+            self.obs_types.append(line[10 + 6 * i:12 + 6 * i])
+        if n_obs > 9:
+          for i in range(0, 9):
+            self.obs_types.append(line[10 + 6 * i:12 + 6 * i])
+          n_obs -= 9
 
   def _read_epoch_header(self, f):
     epoch_hdr = f.readline()
     if epoch_hdr == '':
       return None
-    if epoch_hdr.find('          4  1') != -1:
+    if epoch_hdr.find('0.0000000  4  5') != -1:
       epoch_hdr = f.readline()
+    if epoch_hdr.find('MARKER NUMBER') != -1:
+      epoch_hdr = f.readline()
+    for i in range(5):
+      if epoch_hdr.find('COMMENT') != -1:
+        epoch_hdr = f.readline()
+    if epoch_hdr.find('          4  1') != -1:
       epoch_hdr = f.readline()
 
     year = int(epoch_hdr[1:3])
