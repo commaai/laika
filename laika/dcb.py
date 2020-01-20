@@ -3,6 +3,7 @@ from .constants import SECS_IN_HR, SECS_IN_WEEK, \
                       SPEED_OF_LIGHT, GPS_L1, GPS_L2
 from .gps_time import GPSTime
 from .helpers import get_constellation
+import warnings
 
 
 class DCB(object):
@@ -35,6 +36,23 @@ class DCB(object):
       return (- SPEED_OF_LIGHT*1e-9*self.C1W_C2W*GPS_L1**2/(GPS_L1**2 - GPS_L2**2))
     if signal == 'C1P':
       return (SPEED_OF_LIGHT*1e-9*self.C1C_C1W)
+    ## Todo: update dcb database and get delay to include additional signals
+    if signal == 'C2C':
+      warnings.warn("Differential code bias not implemented for signal C2C", UserWarning)
+      return 0
+    if signal == 'C5C':
+      warnings.warn("Differential code bias not implemented for signal C5C", UserWarning)
+      return 0
+    if signal == 'C6C':
+      warnings.warn("Differential code bias not implemented for signal C6C", UserWarning)
+      return 0
+    if signal == 'C7C':
+      warnings.warn("Differential code bias not implemented for signal C7C", UserWarning)
+      return 0
+    if signal == 'C8C':
+      warnings.warn("Differential code bias not implemented for signal C8C", UserWarning)
+      return 0
+
 
 
 def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
