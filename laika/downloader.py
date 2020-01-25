@@ -40,6 +40,7 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
         raise IOError("Could not download file from: " + url)
 
     data_zipped = urlf.read()
+    urlf.close()
     with open(filepath_zipped, 'wb') as wf:
       wf.write(data_zipped)
     if compression == '':
