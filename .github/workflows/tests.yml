@@ -12,7 +12,7 @@ jobs:
     - name: Install Python 3
       run: |
         curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-        export PATH=$(pyenv root)/shims:$PATH
+        export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
         pyenv install 3.7.3
         pyenv global 3.7.3
         pyenv rehash
