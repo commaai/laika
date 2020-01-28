@@ -1,4 +1,4 @@
-name: Unittests
+name: Tests
 
 on: [push, pull_request]
 
@@ -24,3 +24,8 @@ jobs:
       run: |
         export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
         python -m unittest discover .
+    - name: Test install
+      run: |
+        export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
+        python setup.py install
+
