@@ -19,8 +19,6 @@ jobs:
     - name: Install dependencies
       run: |
         export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
-        sudo apt-get update
-        sudo apt-get install -y libatlas-base-dev gfortran
         pip install -r requirements_examples.txt
     - name: Run unittests
       run: |
