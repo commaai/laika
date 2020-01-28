@@ -11,7 +11,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        pip install -r requirements_examples.txt
     - name: Run unittests
       run: |
         python -m unittest discover .
