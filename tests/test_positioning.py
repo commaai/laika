@@ -14,6 +14,7 @@ import laika.raw_gnss as raw
 
 class TestPositioning(unittest.TestCase):
 
+  @unittest.skip("Takes way too long to download for ci")
   def test_station_position(self):
     print('WARNING THIS TAKE CAN TAKE A VERY LONG TIME THE FIRST RUN TO DOWNLOAD')
     dog = AstroDog()
@@ -21,23 +22,22 @@ class TestPositioning(unittest.TestCase):
     cache_directory = '/tmp/gnss/cors_coord/'
     try:
       os.mkdir('/tmp/gnss/')
-    except OSError as e:
+    except OSError:
       pass
 
     try:
       os.mkdir(cache_directory)
-    except OSError as e:
+    except OSError:
       pass
-    copyfile('../examples/cors_station_positions', cache_directory + 'cors_station_positions')
 
+    examples_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../examples')
+    copyfile(os.path.join(examples_directory, 'cors_station_positions'), os.path.join(cache_directory, 'cors_station_positions'))
 
     station_name = 'sc01'
     time = GPSTime.from_datetime(datetime(2020, 1, 11))
     slac_rinex_obs_file = download_cors_station(time, station_name, dog.cache_dir)
     obs_data = RINEXFile(slac_rinex_obs_file)
     sc01_exact_position = get_station_position('sc01')
-
-
 
     rinex_meas_grouped = raw.read_rinex_obs(obs_data)
     rinex_corr_grouped = []
@@ -54,7 +54,7 @@ class TestPositioning(unittest.TestCase):
       ests.append(fix)
     ests = np.array(ests)
 
-    mean_fix = np.mean(ests[:,:3], axis=0)
+    mean_fix = np.mean(ests[:, :3], axis=0)
     np.testing.assert_allclose(mean_fix, sc01_exact_position, rtol=0, atol=1)
 
 
