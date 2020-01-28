@@ -18,7 +18,7 @@ setup(
   setup_requires=['numpy', 'pytest-runner'],
   install_requires=[
     'requests',
-    'scipy==1.0.0',
+    'scipy',
     'tqdm'
   ],
   ext_modules=[],
