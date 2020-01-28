@@ -1,0 +1,17 @@
+name: Unittests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-16.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: Run unittests
+      run: |
+        python -m unittest discover .
