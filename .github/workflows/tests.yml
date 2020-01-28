@@ -9,6 +9,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install Python 3
+      run: |
+        curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+        export PATH=$(pyenv root)/shims:$PATH
+        pyenv install 3.7.3
+        pyenv global 3.7.3
+        pyenv rehash
     - name: Install dependencies
       run: |
         pip install -r requirements_examples.txt
