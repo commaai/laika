@@ -14,6 +14,7 @@ import laika.raw_gnss as raw
 
 class TestPositioning(unittest.TestCase):
 
+  @unittest.skip("Takes way too long to download for ci")
   def test_station_position(self):
     print('WARNING THIS TAKE CAN TAKE A VERY LONG TIME THE FIRST RUN TO DOWNLOAD')
     dog = AstroDog()
