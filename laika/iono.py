@@ -133,7 +133,7 @@ class IonexMap:
     if pos[0] in self.lats and pos[1] in self.lons:
       lat = self.find_nearest(self.lats, pos[0])
       lon = self.find_nearest(self.lons, pos[1])
-      E = self.grid_TEC[lat][lon]
+      E = self.grid_TEC1[lat][lon] + self.grid_TEC2[lat][lon]
       return E
     lat_idxs = closest_in_list(self.lats, pos[0])
     lon_idxs = closest_in_list(self.lons, pos[1])
