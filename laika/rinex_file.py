@@ -192,7 +192,6 @@ class RINEXFile:
     return obss[:i], llis[:i], signal_strengths[:i], epochs[:i], flags[:i]
 
   def _read_data(self, f):
-    obs_data_chunks = []
     self.data = {}
     while True:
       obss, llis, signal_strengths, epochs, flags = self._read_data_chunk(f)
