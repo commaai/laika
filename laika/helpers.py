@@ -1,5 +1,5 @@
 import numpy as np
-from .lib.coordinates import LocalCoord
+from laika.coordinates import LocalCoord
 
 GPS_OFFSET = 0
 GLONASS_OFFSET = 64

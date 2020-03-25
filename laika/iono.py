@@ -4,7 +4,7 @@ import numpy as np
 import re
 from math import cos, sin, pi, floor
 from .constants import SECS_IN_MIN, SECS_IN_HR, EARTH_RADIUS
-from .lib.coordinates import LocalCoord
+from laika.coordinates import LocalCoord
 from .gps_time import GPSTime
 
 # Altitude of Ionospheric-pierce-point
