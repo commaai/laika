@@ -57,11 +57,6 @@ Astrodog downloads files from FTP servers from these groups when it needs them. 
 Astrodog caches all downloaded files locally to avoid re-downloading.
 These files are then parsed by Astrodog and kept in memory.
 Every one of these parsed objects (DCBs, ionospheric models, satellite orbit polynomials, etc.) has a valid location area and/or a valid time window. 
-Within those windows these objects can provide information relevant to GNSS processing.
-
-## Accuracy
-To confirm the quality of Laika's GNSS processing, we ran laika's processing and a simple Kalman filter (procedure described in examples) on 2000 minutes of driving of a regular commute in San Francisco. The data comes from a "u-blox M8" chip. The fixes computed with laika's processed data are compared to the live navigation fixes given by the u-blox chip. They compared by looking at the standard deviation of all measured altitudes within every 5×5 m² in the dataset. There is no way to compare horizontal accuracy without ground truth, but there is no reason to believe that vertical and horizontal accuracy are not equally correlated for laika computed positions and u-blox's live positions. Data with the antenna on the roof and antenna inside the car are compared separately, since the results are significantly different. 
-![altitude distributionplot](distplot_laika.png)
 
 ## Installation
 For all dependencies, see

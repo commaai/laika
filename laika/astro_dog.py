@@ -26,6 +26,8 @@ class AstroDog(object):
     '''
     # Constructor
     def __init__(self, auto_update=True, cache_dir=ASTRODOG_CACHE_DIR, pull_orbit=True, dgps=False, valid_const=['GPS', 'GLONASS']):
+        # Use constant max DGPS distance
+        self.MAX_DGPS_DISTANCE = 100000  # m
         # Set auto-update mode
         self.auto_update = auto_update
         # Init empty dicts for orbits, navigation and dcbs
@@ -197,12 +199,12 @@ class AstroDog(object):
             self.ionex_maps.append(im)
 
     def get_dgps_data(self, time, recv_pos):
-        station_names = get_closest_station_names(recv_pos, k=8, max_distance=MAX_DGPS_DISTANCE, cache_dir=self.cache_dir)
+        station_names = get_closest_station_names(recv_pos, k=8, max_distance=self.MAX_DGPS_DISTANCE, cache_dir=self.cache_dir)
         for station_name in station_names:
             file_path_station = download_cors_station(time, station_name, cache_dir=self.cache_dir)
             if file_path_station:
                 dgps = parse_dgps(station_name, file_path_station,
-                                  self, max_distance=MAX_DGPS_DISTANCE,
+                                  self, max_distance=self.MAX_DGPS_DISTANCE,
                                   required_constellations=self.valid_const)
                 if dgps is not None:
                     self.dgps_delays.append(dgps)

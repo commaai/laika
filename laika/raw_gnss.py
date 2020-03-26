@@ -287,7 +287,9 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
     # If list of measurements does not have sufficient length, return empty list
     if len(measurements) < 6:
         return []
-    Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight, no_nans=True)
+    # Returns function as object to solve for position
+    Fx_pos = solve_for_position(measurements, signal=signal, no_weight=no_weight, no_nans=True)
+    # Optimize given function Fx_pos using least squares method
     opt_pos = opt.least_squares(Fx_pos, x0).x
     # Return list of positions and pseudo-range errors
     return opt_pos, Fx_pos(opt_pos, no_weight=True)
@@ -298,19 +300,19 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
     # If list of measurements does not have sufficient length, return empty list
     if len(measurements) < 6:
         return []
-    Fx_vel = prr_residual(measurements, est_pos, no_weight=no_weight, no_nans=True)
-    # Optimize using least squares method
+    # Returns function as object to solve for velocity
+    Fx_vel = solve_for_velocity(measurements, est_pos, no_weight=no_weight, no_nans=True)
+    # Optimize given function Fx_vel using least squares method
     opt_vel = opt.least_squares(Fx_vel, v0).x
     # Return list of velocities and pseudo-range errors
     return opt_vel, Fx_vel(opt_vel, no_weight=True)
 
 
-def pr_residual(measurements, signal='C1C', no_weight=False, no_nans=False):
-    # solve for pos
-    def Fx_pos(xxx_todo_changeme, no_weight=no_weight):
-        (x, y, z, bc, bg) = xxx_todo_changeme
+# Solve for position (nested) function
+def solve_for_position(measurements, signal='C1C', no_weight=False, no_nans=False):
+    def Fx_pos(coordinates, no_weight=no_weight):
+        (x, y, z, bc, bg) = coordinates
         rows = []
-
         for meas in measurements:
             if signal in meas.observables_final and np.isfinite(meas.observables_final[signal]):
                 pr = meas.observables_final[signal]
@@ -344,8 +346,8 @@ def pr_residual(measurements, signal='C1C', no_weight=False, no_nans=False):
     return Fx_pos
 
 
-def prr_residual(measurements, est_pos, signal='D1C', no_weight=False, no_nans=False):
-    # solve for vel
+# Solve for velocity (nested) function
+def solve_for_velocity(measurements, est_pos, signal='D1C', no_weight=False, no_nans=False):
     def Fx_vel(vel, no_weight=no_weight):
         rows = []
         for meas in measurements:
