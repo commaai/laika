@@ -21,8 +21,16 @@ Furthermore, the usage of a filter to improve the estimated position as well as 
 Therefore, the Kalman filter example from the original project is restructured and improved.
 
 ## The GNSS problem
-GNSS satellites orbit the earth broadcasting signals that allow the receiver to determine the distance to each satellite. These satellites have known orbits and so their positions are known. This makes determining the receiver's position a basic 3-dimensional [trilateration](https://en.wikipedia.org/wiki/Trilateration) problem. In practice observed distances to each satellite will be measured with some offset that is caused by the receiver's clock error. This offset also needs to be determined, making it a 4-dimensional trilateration problem. 
+GNSS satellites orbit the earth broadcasting signals that allow the receiver to determine the distance to each satellite.
+These satellites have known orbits and so their positions are known.
+This makes determining the receiver's position a basic 3-dimensional [trilateration](https://en.wikipedia.org/wiki/Trilateration) problem.
+In practice observed distances to each satellite will be measured with some offset that is caused by the receiver's clock error.
+This offset also needs to be determined, making it a 4-dimensional trilateration problem.
+
+
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/3spheres.svg/622px-3spheres.svg.png" width="50%">
+
+
 Since this problem is generally overdetermined (more than 4 satellites to solve the 4d problem) there is a variety of methods to compute a position estimate from the measurements.
 Laika provides a basic [weighted least squares](https://en.wikipedia.org/wiki/Weighted_least_squares) solver for experimental purposes.
 This is far from optimal due to the dynamic nature of the system
