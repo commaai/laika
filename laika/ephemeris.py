@@ -75,11 +75,7 @@ class GLONASSEphemeris(Ephemeris):
     def get_sat_info(self, time):
         if not self.healthy:
             return None
-        # see the russian doc for this:
-        # http://gauss.gge.unb.ca/GLONASS.ICD.pdf
-
         eph = self.data
-        # TODO should handle leap seconds better
         toc_gps_time = utc_to_gpst(eph['toc'])
         tdiff = time - toc_gps_time
 

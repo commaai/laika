@@ -1,16 +1,12 @@
 # From dependencies
 from .helpers import get_constellation, get_closest, get_el_az, get_prns_from_constellation
 from .ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, parse_rinex_nav_msg_glonass
-from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
-from .downloader import download_cors_station
+from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb, download_cors_station
 from .trop import saast
 from .iono import parse_ionex
 from .dcb import parse_dcbs
 from .dgps import get_closest_station_names, parse_dgps
 from . import constants
-
-# Constants
-ASTRODOG_CACHE_DIR = '/tmp/gnss/'
 
 # AstroDog class
 class AstroDog(object):
@@ -25,7 +21,7 @@ class AstroDog(object):
 
     '''
     # Constructor
-    def __init__(self, auto_update=True, cache_dir=ASTRODOG_CACHE_DIR, pull_orbit=True, dgps=False, valid_const=['GPS', 'GLONASS']):
+    def __init__(self, cache_dir, auto_update=True, pull_orbit=True, dgps=False, valid_const=['GPS', 'GLONASS']):
         # Use constant max DGPS distance
         self.MAX_DGPS_DISTANCE = 100000  # m
         # Set auto-update mode
@@ -286,7 +282,9 @@ class AstroDog(object):
             else:
                 raise NotImplementedError('Dont know this GLONASS frequency: ', signal, prn)
 
+    # Get delay method
     def get_delay(self, prn, time, rcv_pos, no_dgps=False, signal='C1C', freq=None):
+        # Get satellite info
         sat_info = self.get_sat_info(prn, time)
         if sat_info is None:
             return None

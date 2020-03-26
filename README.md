@@ -27,12 +27,12 @@ This makes determining the receiver's position a basic 3-dimensional [trilaterat
 In practice observed distances to each satellite will be measured with some offset that is caused by the receiver's clock error.
 This offset also needs to be determined, making it a 4-dimensional trilateration problem.
 
+Since this problem is generally overdetermined (usually more than four satellites to solve a four-dimensional problem),
+there is a variety of methods to compute an optimized position estimate from the measurements.
+Laika provides a basic [weighted least squares](https://en.wikipedia.org/wiki/Weighted_least_squares) (WLS) optimizer/solver for experimental purposes.
+The given WLS optimizer is part of SciPy.
+However, it is necessary to rely of a filter such as a [Kalman filter](https://en.wikipedia.org/wiki/Kalman_filter) for improved estimations.
 
-Since this problem is generally overdetermined (more than 4 satellites to solve the 4d problem) there is a variety of methods to compute a position estimate from the measurements.
-Laika provides a basic [weighted least squares](https://en.wikipedia.org/wiki/Weighted_least_squares) solver for experimental purposes.
-This is far from optimal due to the dynamic nature of the system
-Hence, it is necessary to rely of a filter such as a [Kalman filter](https://en.wikipedia.org/wiki/Kalman_filter) for improved estimations.
-However, the above description is over-simplified.
 Getting accurate distance estimates to satellites and the satellite's position from the receiver observations is not trivial.
 This is what we call _processing of the GNSS observables_ and it is this procedure laika is designed for.
 For a concise explanation of most concepts, click [here](https://gssc.esa.int/navipedia/index.php/Main_Page).

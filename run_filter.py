@@ -5,8 +5,8 @@ from laika import AstroDog
 from laika.raw_gnss import assemble_GNSSMeasurement, process_measurements, correct_measurements, calc_pos_fix
 
 # Constants
-CACHE_DIRECTORY = '/tmp/gnss/'
-CACHE_DIRECTORY_SUB = '/tmp/gnss/cors_coord/'
+CACHE_DIRECTORY = "./cache/"
+CACHE_DIRECTORY_SUB = CACHE_DIRECTORY + "cors_coord/"
 
 # Load data
 with open('example_data/raw_gnss_ublox/t', 'rb') as f:
@@ -20,7 +20,7 @@ with open('example_data/live_gnss_ublox/value', 'rb') as f:
 
 # Initialize an AstroDog with DGPS correction
 print("AstroDog instantiated!")
-dog = AstroDog(dgps=True)
+dog = AstroDog(cache_dir=CACHE_DIRECTORY, dgps=True)
 
 # Group measurements by measurement epoch (to make Kalman filter faster)
 # Get unique timestamps from measurement data, return as sorted list
@@ -46,12 +46,17 @@ for t in grouped_t:
 wls_estimate = calc_pos_fix(grouped_meas_processed[0])
 est_pos = wls_estimate[0][:3]
 # Log
-print('\n', "Initially estimated position:", est_pos)
+print("\nInitially estimated position:", est_pos, '\n')
 
 # Correct all grouped measurements
 corrected_meas_arrays = []
+# Log counter
+cnt = 0
 # Use TQDM progress bar
 for proc in tqdm(grouped_meas_processed):
+    # Log
+    cnt = cnt + 1
+    print("Processed measurement", cnt, "of", len(grouped_meas_processed))
     # Return corrected measurement
     corrected = correct_measurements(proc, est_pos, dog)
     # Append corrected results as array to list

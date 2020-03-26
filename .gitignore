@@ -1,6 +1,9 @@
 # IDE
 .idea
 
+# Laika cache
+cache/
+
 # Documentation
 *.pdf
 

@@ -66,29 +66,39 @@ class GNSSMeasurement(object):
 
     # Correct method
     def correct(self, est_pos, dog):
+        # Iterate over observables
         for obs in self.observables:
+            # Check first letter of observable
             if obs[0] == 'C':  # or obs[0] == 'L':
+                # Get delay
                 delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
+                # Check if delay was successfully returned
                 if delay:
-                    self.observables_final[obs] = (self.observables[obs] +
-                                                   self.sat_clock_err*constants.SPEED_OF_LIGHT -
-                                                   delay)
+                    # Determine final observable
+                    self.observables_final[obs] = (self.observables[obs] + self.sat_clock_err * constants.SPEED_OF_LIGHT - delay)
+            # If first letter of observable is not 'C', return current observable as final
             else:
+                # Return current observable as final
                 self.observables_final[obs] = self.observables[obs]
         if 'C1C' in self.observables_final and 'C2P' in self.observables_final:
-            self.observables_final['IOF'] = (((constants.GPS_L1**2)*self.observables_final['C1C'] -
-                                              (constants.GPS_L2**2)*self.observables_final['C2P'])/
-                                             (constants.GPS_L1**2 - constants.GPS_L2**2))
-
+            self.observables_final['IOF'] = (
+                (
+                    (constants.GPS_L1 ** 2) * self.observables_final['C1C']
+                    - (constants.GPS_L2 ** 2) * self.observables_final['C2P']
+                ) / (constants.GPS_L1 ** 2 - constants.GPS_L2 ** 2)
+            )
         geometric_range = np.linalg.norm(self.sat_pos - est_pos)
-        theta_1 = constants.EARTH_ROTATION_RATE*(geometric_range)/constants.SPEED_OF_LIGHT
+        theta_1 = constants.EARTH_ROTATION_RATE * geometric_range / constants.SPEED_OF_LIGHT
+        # Finally determine satellite position
         self.sat_pos_final = [self.sat_pos[0]*np.cos(theta_1) + self.sat_pos[1]*np.sin(theta_1),
                               self.sat_pos[1]*np.cos(theta_1) - self.sat_pos[0]*np.sin(theta_1),
                               self.sat_pos[2]]
         if 'C1C' in self.observables_final and np.isfinite(self.observables_final['C1C']):
             self.corrected = True
+            # Return True on unsuccessful correction
             return True
         else:
+            # Return False on unsuccessful correction
             return False
 
     # As array method
@@ -163,11 +173,17 @@ def process_measurements(measurements, dog=None):
     return proc_measurements
 
 
+# Correct measurements function
 def correct_measurements(measurements, est_pos, dog=None):
+    # Init empty list
     corrected_measurements = []
+    # Iterate over all measurements
     for meas in measurements:
+        # Correct measurement using AstroDog object and estimated position
         if meas.correct(est_pos, dog):
+            # If sucessfully corrected, append measurement to list
             corrected_measurements.append(meas)
+    # Return list of corrected measurements
     return corrected_measurements
 
 
