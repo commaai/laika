@@ -35,10 +35,7 @@ Hence, it is necessary to rely of a filter such as a [Kalman filter](https://en.
 However, the above description is over-simplified.
 Getting accurate distance estimates to satellites and the satellite's position from the receiver observations is not trivial.
 This is what we call _processing of the GNSS observables_ and it is this procedure laika is designed for.
-
-### Further references
-- [Concise clear explanations of most concepts (ESA)](https://gssc.esa.int/navipedia/index.php/Main_Page)
-- [Comprehensive handbook of all things GNSS (Springer Book)](https://www.springer.com/us/book/9783319429267)
+For a concise explanation of most concepts, click [here](https://gssc.esa.int/navipedia/index.php/Main_Page).
 
 ## Astrodog
 Astrodog is the main component of the laika.
