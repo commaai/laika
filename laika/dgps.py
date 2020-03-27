@@ -1,8 +1,8 @@
+# Import dependencies
 import os
 import numpy as np
 from datetime import datetime
 from scipy.spatial import cKDTree
-
 from .gps_time import GPSTime
 from .constants import SECS_IN_YEAR
 from . import raw_gnss as raw
@@ -10,7 +10,7 @@ from .rinex_file import RINEXFile
 from .downloader import download_cors_coords
 from .helpers import get_constellation
 
-
+# Mean filter function
 def mean_filter(delay):
     d2 = delay.copy()
     max_step = 10
@@ -22,8 +22,9 @@ def mean_filter(delay):
     return d2
 
 
-def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
-    if True or not os.path.isfile(cors_station_positions_path):
+# Download and parse station positions (.txt files) function
+def download_and_parse_station_positions(cors_station_positions_path, cache_dir):
+    if not os.path.isfile(cors_station_positions_path):
         cors_stations = {}
         coord_file_paths = download_cors_coords(cache_dir=cache_dir)
         for coord_file_path in coord_file_paths:
@@ -53,12 +54,19 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
         cors_station_positions_file.close()
 
 
+# Get closest station names
 def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gnss/'):
+    # Define CORS position file path
     cors_station_positions_path = cache_dir + 'cors_coord/cors_station_positions'
-    download_and_parse_station_postions(cors_station_positions_path, cache_dir)
+    # Download CORS position file
+    download_and_parse_station_positions(cors_station_positions_path, cache_dir)
+    # Open CORS position file
     cors_station_positions_file = open(cors_station_positions_path, 'rb')
+    # Store inside dict
     cors_station_positions_dict = np.load(cors_station_positions_file, allow_pickle=True).item()
+    # Close file
     cors_station_positions_file.close()
+    # Get station IDs
     station_ids = list(cors_station_positions_dict.keys())
     station_positions = []
     for station_id in station_ids:
@@ -70,7 +78,7 @@ def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gns
 
 def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_datetime(datetime.utcnow())):
     cors_station_positions_path = cache_dir + 'cors_coord/cors_station_positions'
-    download_and_parse_station_postions(cors_station_positions_path, cache_dir)
+    download_and_parse_station_positions(cors_station_positions_path, cache_dir)
     cors_station_positions_file = open(cors_station_positions_path, 'rb')
     cors_station_positions_dict = np.load(cors_station_positions_file, allow_pickle=True).item()
     cors_station_positions_file.close()
@@ -78,19 +86,22 @@ def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_d
     return ((time - epoch)/SECS_IN_YEAR)*np.array(vel) + np.array(pos)
 
 
+# Parse DGPS function
 def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, required_constellations=['GPS']):
+    # Get station position
     station_pos = get_station_position(station_id, cache_dir=dog.cache_dir)
     obsdata = RINEXFile(station_obs_file_path)
     measurements = raw.read_rinex_obs(obsdata)
 
-    # if not all constellations in first 100 epochs bail
+    # If not all constellations in first 100 epochs, bail
     detected_constellations = set()
-    for m in sum(measurements[:100],[]):
+    for m in sum(measurements[:100], []):
         detected_constellations.add(get_constellation(m.prn))
     for constellation in required_constellations:
         if constellation not in detected_constellations:
             return None
 
+    # Process measurements
     proc_measurements = []
     for measurement in measurements:
         proc_measurements.append(raw.process_measurements(measurement, dog=dog))
@@ -107,7 +118,7 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
         station_delays[signal] = {}
         for i, proc_measurement in enumerate(proc_measurements):
             times.append(proc_measurement[0].recv_time)
-            Fx_pos = raw.pr_residual(proc_measurement, signal=signal)
+            Fx_pos = raw.solve_for_position(proc_measurement, signal=signal)
             residual = -np.array(Fx_pos(list(station_pos) + [0, 0]))
             for j, m in enumerate(proc_measurement):
                 prn = m.prn

@@ -23,7 +23,7 @@ def euler_rotate(roll, pitch, yaw):
   return matrix_yaw*matrix_pitch*matrix_roll
 
 def quat_rotate(q0, q1, q2, q3):
-  # make symbolic rotation matrix from quat
+    # make symbolic rotation matrix from quat
   return sp.Matrix([[q0**2 + q1**2 - q2**2 - q3**2, 2*(q1*q2 + q0*q3), 2*(q1*q3 - q0*q2)],
                     [2*(q1*q2 - q0*q3), q0**2 - q1**2 + q2**2 - q3**2, 2*(q2*q3 + q0*q1)],
                     [2*(q1*q3 + q0*q2), 2*(q2*q3 - q0*q1), q0**2 - q1**2 - q2**2 + q3**2]]).T

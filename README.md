@@ -20,6 +20,8 @@ Unfortunately, the original source code does not contain explaining code comment
 Furthermore, the usage of a filter to improve the estimated position as well as the validation on sample data is mandatory for a full localization service.
 Therefore, the Kalman filter example from the original project is restructured and improved.
 
+Additionally, the code was updated to the latest Python 3 version instead and bugs were fixed.
+
 ## The GNSS problem
 GNSS satellites orbit the earth broadcasting signals that allow the receiver to determine the distance to each satellite.
 These satellites have known orbits and so their positions are known.

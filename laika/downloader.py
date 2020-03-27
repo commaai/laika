@@ -208,8 +208,15 @@ def download_cors_coords(cache_dir):
     file_names = [file_string.split()[-1] for file_string in str(url_path.read()).split('\\r\\n') if len(file_string) > 5]
     file_names = [file_name for file_name in file_names if file_name[-9:] == 'coord.txt']
     filepaths = []
+    # Log counter
+    cnt = 0
     for file_name in file_names:
+        # Download file
         filepaths.append(download_file(url_base, '', cache_subdir, file_name))
+        # Log
+        cnt = cnt + 1
+        print("Downloader | CORS coordinates", cnt, "of", len(file_names))
+    # Return paths of downloaded files
     return filepaths
 
 
