@@ -1,10 +1,8 @@
 ## Laika GNSS processing library with Kalman filtering for localization
 
 
+![docker_shield](https://img.shields.io/badge/Docker-19.03.8-blue)
 ![python_shield](https://img.shields.io/badge/Python-3.8.2-yellow)
-
-
-:hammer: **UNDER DEVELOPMENT** :wrench:
 
 
 ---
@@ -91,12 +89,24 @@ Quaternions with one strictly positive dimension don't suffer from these issues,
 Quaternions need to be normalized otherwise they will grow unbounded, this is cannot be cleanly enforced in a kalman filter.
 Most importantly though a quaternion has 4 dimensions, but only represents 3 degrees of freedom, so there is one redundant dimension.
 
-Kalman filters are designed to minimize the error of the system's state. It is possible to have a kalman filter where state and the error of the state are represented in a different space. As long as there is an error function that can compute the error based on the true state and estimated state. It is problematic to have redundant dimensions in the error of the kalman filter, but not in the state. A good compromise then, is to use the quaternion to represent the system's attitude state and use euler angles to describe the error in attitude. This library supports and defining an arbitrary error that is in  a different space than the state. [Joan Solà](https://arxiv.org/abs/1711.02508) has written a comprehensive description of using ESKFs for robust 3D orientation estimation.
+Kalman filters are designed to minimize the error of the system's state.
+It is possible to have a kalman filter where state and the error of the state are represented in a different space.
+As long as there is an error function that can compute the error based on the true state and estimated state.
+It is problematic to have redundant dimensions in the error of the kalman filter, but not in the state.
+A good compromise then, is to use the quaternion to represent the system's attitude state and use euler angles to describe the error in attitude.
+This library supports and defining an arbitrary error that is in  a different space than the state.
+[Joan Solà](https://arxiv.org/abs/1711.02508) has written a comprehensive description of using ESKFs for robust 3D orientation estimation.
 
 #### Multi-State Constraint Kalman Filter
-How do you integrate feature-based visual odometry with a Kalman filter? The problem is that one cannot write an observation equation for 2D feature observations in image space for a localization kalman filter. One needs to give the feature observation a depth so it has a 3D position, then one can write an obvervation equation in the kalman filter. This is possible by tracking the feature across frames and then estimating the depth. However, the solution is not that simple, the depth estimated by tracking the feature across frames depends on the location of the camera at those frames, and thus the state of the kalman filter. This creates a positive feedback loop where the kalman filter wrongly gains confidence in it's position because the feature position updates reinforce it.
-
-The solution is to use an [MSCKF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.437.1085&rep=rep1&type=pdf), which this library fully supports.
+How do you integrate feature-based visual odometry with a Kalman filter?
+The problem is that one cannot write an observation equation for 2D feature observations in image space for a localization kalman filter.
+One needs to give the feature observation a depth so it has a 3D position, then one can write an obvervation equation in the kalman filter.
+This is possible by tracking the feature across frames and then estimating the depth.
+However, the solution is not that simple, the depth estimated by tracking the feature across frames depends on the location of the camera at those frames,
+and thus the state of the kalman filter.
+This creates a positive feedback loop where the kalman filter wrongly gains confidence in it's position because the feature position updates reinforce it.
+The solution is to use an [MSCKF](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.437.1085&rep=rep1&type=pdf),
+which this library fully supports.
 
 #### Rauch–Tung–Striebel smoothing
 When doing offline estimation with a kalman filter there can be an initialization period where states are badly estimated. 
