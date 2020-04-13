@@ -12,7 +12,6 @@ def ffi_wrap(name, c_code, c_header, tmpdir=TMPDIR, cflags="", libraries=[]):
         os.mkdir(tmpdir)
     except OSError:
         pass
-
     fd = os.open(tmpdir, 0)
     fcntl.flock(fd, fcntl.LOCK_EX)
     try:
@@ -38,4 +37,5 @@ def compile_code(name, c_code, c_header, directory, cflags="", libraries=[]):
 def wrap_compiled(name, directory):
     sys.path.append(directory)
     mod = __import__(name)
+    print(mod)
     return mod.ffi, mod.lib
