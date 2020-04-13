@@ -1,5 +1,7 @@
+Dockerfile
 *.egg*
 build
 dist
+cache
 example_data
 openpilot

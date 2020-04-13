@@ -18,6 +18,7 @@ RUN pip install -r requirements.txt \
 
 # Set volume
 VOLUME /workdir/example_data
+VOLUME /workdir/cache
 
 # Set entrypoint and initial command
 ENTRYPOINT ["python"]

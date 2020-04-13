@@ -1,4 +1,4 @@
-## Laika GNSS processing library with Kalman filtering for localization :dog: :whale:
+## Laika GNSS processing library with Kalman filtering for localization
 
 
 ![python_shield](https://img.shields.io/badge/Python-3.8.2-yellow)
@@ -40,7 +40,7 @@ Getting accurate distance estimates to satellites and the satellite's position f
 This is what we call _processing of the GNSS observables_ and it is this procedure laika is designed for.
 For a concise explanation of most concepts, click [here](https://gssc.esa.int/navipedia/index.php/Main_Page).
 
-### Astrodog
+### Astrodog :dog:
 Astrodog is the main component of the laika.
 It is a python object, and like the [soviet space dogs](https://en.wikipedia.org/wiki/Soviet_space_dogs) to which it owes its name,
 an Astrodog will do everything to make the life of its owner easier:
@@ -63,7 +63,7 @@ Astrodog caches all downloaded files locally to avoid re-downloading.
 These files are then parsed by Astrodog and kept in memory.
 Every one of these parsed objects (DCBs, ionospheric models, satellite orbit polynomials, etc.) has a valid location area and/or a valid time window. 
 
-## Installation
+## Deployment :dog:
 For all dependencies, see
 ```bash
 
