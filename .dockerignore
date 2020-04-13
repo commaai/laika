@@ -3,6 +3,6 @@ Dockerfile
 build
 dist
 cache
-example_data
+data
 openpilot
 *.html

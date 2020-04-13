@@ -6,19 +6,18 @@ RUN apt-get update \
     && apt-get dist-upgrade -y \
     && apt-get clean
 
-# Copy source code
-COPY . /workdir
-
 # Set working directory
 WORKDIR /workdir
 
-# Install Laika with Kalman filter
-RUN pip install -r requirements.txt \
-    && python setup.py install
+# Install dependencies
+COPY requirements.txt /workdir/requirements.txt
+RUN pip install -r requirements.txt
+
+# Copy source code
+COPY . /workdir
 
 # Set volume
-VOLUME /workdir/example_data
-VOLUME /workdir/cache
+VOLUME ["/workdir/example_data", "/workdir/cache", "/workdir/output"]
 
 # Set entrypoint and initial command
 ENTRYPOINT ["python"]

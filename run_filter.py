@@ -11,15 +11,16 @@ import gmplot, webbrowser, os
 # Constants
 CACHE_DIRECTORY = "./cache/"
 CACHE_DIRECTORY_SUB = CACHE_DIRECTORY + "cors_coord/"
+FILE_PATH = "output/laika_quality_check.html"
 
 # Load data
-with open('example_data/raw_gnss_ublox/t', 'rb') as f:
+with open('data/raw_gnss_ublox/t', 'rb') as f:
     raw_ublox_t = np.load(f)
-with open('example_data/raw_gnss_ublox/value', 'rb') as f:
+with open('data/raw_gnss_ublox/value', 'rb') as f:
     raw_ublox = np.load(f)
-with open('example_data/live_gnss_ublox/t', 'rb') as f:
+with open('data/live_gnss_ublox/t', 'rb') as f:
     fixes_ublox_t = np.load(f)
-with open('example_data/live_gnss_ublox/value', 'rb') as f:
+with open('data/live_gnss_ublox/value', 'rb') as f:
     fixes_ublox = np.load(f)
 
 # Convert improved raw data to geodetic format
@@ -99,6 +100,6 @@ gmap.plot([x[0] for x in laika_positions_geodetic], [x[1] for x in laika_positio
 gmap.plot([x[0] for x in ublox_positions_geodetic], [x[1] for x in ublox_positions_geodetic], 'red', edge_width=5)
 
 # Save plots in HTML file
-gmap.draw("laika_quality_check.html")
+gmap.draw(FILE_PATH)
 # Open HTML file with plots
-webbrowser.open('file://' + os.path.realpath("laika_quality_check.html"))
+# webbrowser.open('file://' + os.path.realpath(FILE_PATH))
