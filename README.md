@@ -5,9 +5,6 @@
 ![python_shield](https://img.shields.io/badge/Python-3.8.2-yellow)
 
 
----
-
-
 Laika is an open-source GNSS processing library.
 Laika is similar to projects like [RTKlib](https://github.com/tomojitakasu/RTKLIB) and [GPSTK](https://github.com/SGL-UT/GPSTk),
 but in Python and with a strong focus on readibility, usability and easy integration with other optimizers.
