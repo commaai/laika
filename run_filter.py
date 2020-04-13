@@ -4,7 +4,7 @@ from tqdm import tqdm
 from laika import AstroDog
 from laika.raw_gnss import assemble_GNSSMeasurement, process_measurements, correct_measurements, calc_pos_fix
 import laika.coordinates as coord
-from gnss_kf import GNSSKalman
+from kalman.models.gnss_kf import GNSSKalman
 from kalman.kalman_helpers import run_car_ekf_offline, ObservationKind
 import gmplot, webbrowser, os
 

@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import sympy as sp
 
-import common.transformations.orientation as orient
+import kalman.helpers.orientation as orient
 from kalman.helpers import (TEMPLATE_DIR, load_code, write_code)
 from kalman.helpers.sympy_helpers import (quat_rotate, sympy_into_c)
 

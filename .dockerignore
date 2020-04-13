@@ -5,3 +5,4 @@ dist
 cache
 example_data
 openpilot
+*.html

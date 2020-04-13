@@ -1,6 +1,9 @@
 # Other projects
 openpilot
 
+# Output
+*.html
+
 # IDE
 .idea
 
