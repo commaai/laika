@@ -1,0 +1,5 @@
+*.egg*
+build
+dist
+example_data
+openpilot
