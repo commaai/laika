@@ -21,7 +21,6 @@ def mean_filter(delay):
             d2[i] = np.nanmean(delay[i - step:i + step + 1])
     return d2
 
-
 # Download and parse station positions (.txt files) function
 def download_and_parse_station_positions(cors_station_positions_path, cache_dir):
     if not os.path.isfile(cors_station_positions_path):
@@ -52,9 +51,7 @@ def download_and_parse_station_positions(cors_station_positions_path, cache_dir)
         cors_station_positions_file = open(cors_station_positions_path, 'wb')
         np.save(cors_station_positions_file, cors_stations)
         cors_station_positions_file.close()
-
-
-# Get closest station names
+        
 def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gnss/'):
     # Define CORS position file path
     cors_station_positions_path = cache_dir + 'cors_coord/cors_station_positions'
