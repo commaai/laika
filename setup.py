@@ -1,16 +1,17 @@
-# Import dependencies
+#!/home/batman/one/laika/env
+#-*- coding: utf-8 -*-
+
 import os
 from setuptools import setup, find_packages
 
-# Store current path
 here = os.path.abspath(os.path.dirname(__file__))
 
-# Define setup procedure
 setup(
     name='laika',
     version='0.0.1',
-    url='https://github.com/rwschubert/kalman-laika',
-    author='comma.ai, rwschubert',
+    url='https://github.com/commaai/laika',
+    author='comma.ai',
+    author_email='harald@comma.ai',
     packages=find_packages(),
     platforms='any',
     license='MIT',
@@ -21,12 +22,12 @@ setup(
         'tqdm'
     ],
     ext_modules=[],
-    description="GNSS library for use with a Kalman filter",
-    long_description='See https://github.com/rwschubert/kalman-laika',
+    description="GNSS library for use with the comma.ai ecosystem",
+    long_description='See https://github.com/commaai/laika',
     classifiers=[
-        'Development Status :: 0.0.1',
+        'Development Status :: 2 - Beta',
         "Natural Language :: English",
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 2",
         "Topic :: System :: Hardware",
     ],
     tests_require=['pytest'],
