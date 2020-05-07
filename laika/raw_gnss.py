@@ -378,4 +378,14 @@ def get_HDOP(recv_pos, sat_positions):
 
 def get_VDOP(recv_pos, sat_positions):
   Q = get_Q(recv_pos, sat_positions)
+  return np.sqrt(Q[2,2])
+
+
+def get_TDOP(recv_pos, sat_positions):
+  Q = get_Q(recv_pos, sat_positions)
   return np.sqrt(Q[3,3])
+
+
+def get_PDOP(recv_pos, sat_positions):
+  Q = get_Q(recv_pos, sat_positions)
+  return np.sqrt(np.trace(Q[:3,:3]))
