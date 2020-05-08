@@ -1,17 +1,79 @@
 import numpy as np
 from .lib.coordinates import LocalCoord
 
-GPS_OFFSET = 0
-GLONASS_OFFSET = 64
-GALILEO_OFFSET = 96
-QZNSS_OFFSET = 192
-BEIDOU_OFFSET = 200
+# From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
+NMEA_ID_RANGES = [
+  {
+    'range': [1, 32],
+    'constellation': 'GPS'
+  },
+  {
+    'range': [33, 54],
+    'constellation': 'SBAS'
+  },
+  {
+    'range': [55, 64],
+    'constellation': 'SBAS'
+  },
+  {
+    'range': [65, 88],
+    'constellation': 'GLONASS'
+  },
+  {
+    'range': [89, 96],
+    'constellation': 'GLONASS'
+  },
+  {
+    'range': [120, 151],
+    'constellation': 'SBAS'
+  },
+  {
+    'range': [152, 158],
+    'constellation': 'SBAS'
+  },
+  {
+    'range': [173, 182],
+    'constellation': 'IMES'
+  },
+  {
+    'range': [193, 197],
+    'constellation': 'QZNSS'
+  },
+  {
+    'range': [198, 200],
+    'constellation': 'QZNSS'
+  },
+  {
+    'range': [201, 235],
+    'constellation': 'BEIDOU'
+  },
+  {
+    'range': [301, 336],
+    'constellation': 'GALILEO'
+  },
+  {
+    'range': [401, 437],
+    'constellation': 'BEIDOU'
+  }
+]
 
-GPS_SIZE = 32
-GLONASS_SIZE = 28
-GALILEO_SIZE = 36
-QZNSS_SIZE = 4
-BEIDOU_SIZE = 14
+# Source: RINEX 3.04
+RINEX_CONSTELLATION_IDENTIFIERS = {
+  'GPS': 'G',
+  'GLONASS': 'R',
+  'SBAS': 'S',
+  'GALILEO': 'E',
+  'BEIDOU': 'C',
+  'QZNSS': 'J',
+  'IRNSS': 'I'
+}
+# Make above dictionary bidirectional map:
+# Now you can ask for constellation using:
+# >>> RINEX_CONSTELLATION_IDENTIFIERS['R']
+#     "GLONASS"
+RINEX_CONSTELLATION_IDENTIFIERS.update(
+  dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()])
+)
 
 
 def get_el_az(pos, sat_pos):
@@ -47,66 +109,61 @@ def get_closest(time, candidates, recv_pos=None):
 
 
 def get_constellation(prn):
-  if prn[0] == 'G':
-    return 'GPS'
-  elif prn[0] == 'R':
-    return 'GLONASS'
-  elif prn[0] == 'E':
-    return 'GALILEO'
-  elif prn[0] == 'J':
-    return 'QZNSS'
-  elif prn[0] == 'C':
-    return 'BEIDOU'
+  identifier = prn[0]
+
+  if identifier in RINEX_CONSTELLATION_IDENTIFIERS:
+    return RINEX_CONSTELLATION_IDENTIFIERS[identifier]
   else:
-    raise NotImplementedError('The constellation of RINEX3 constellation identifier: %s not known' % prn[0])
+    raise NotImplementedError('The constellation of RINEX3 constellation '
+                              'identifier: %s not known' % identifier)
 
 
 def get_prn_from_nmea_id(nmea_id):
-  if nmea_id in np.arange(1,GPS_SIZE + 1) + GPS_OFFSET:
-    return 'G%02i' % (nmea_id - GPS_OFFSET)
-  elif nmea_id in (np.arange(1,GLONASS_SIZE + 1) + GLONASS_OFFSET):
-    return 'R%02i' % (nmea_id - GLONASS_OFFSET)
-  elif nmea_id in (np.arange(1,GALILEO_SIZE + 1) + GALILEO_OFFSET):
-    return 'E%02i' % (nmea_id - GALILEO_OFFSET)
-  elif nmea_id in (np.arange(1,QZNSS_SIZE + 1) + QZNSS_OFFSET):
-    return 'J%02i' % (nmea_id - QZNSS_OFFSET)
-  elif nmea_id in (np.arange(1,BEIDOU_SIZE + 1) + BEIDOU_OFFSET):
-    return 'C%02i' % (nmea_id - BEIDOU_OFFSET)
-  else:
-    raise NotImplementedError("RINEX PRN for nmea id %i not known" % nmea_id)
+  constellation_offsets = {}
+  for entry in NMEA_ID_RANGES:
+    start, end = entry['range']
+    constellation = entry['constellation']
+    if nmea_id < start:
+      raise NotImplementedError("RINEX PRN for nmea id %i not known" % nmea_id)
+
+    constellation_offset = constellation_offsets.get(constellation, 0)
+
+    if nmea_id <= end:
+      if constellation is None:
+        raise NotImplementedError("Constellation for nmea id "
+                                  "%i not known" % nmea_id)
+      identifier = RINEX_CONSTELLATION_IDENTIFIERS.get(constellation)
+      if identifier is None:
+        raise NotImplementedError("RINEX3 constellation identifier for "
+                                  "constellation %s is not known"
+                                  % constellation)
+      number = nmea_id - start + 1 + constellation_offset
+      return "%s%02d" % (identifier, number)
+    else:
+      range_width = end - start + 1
+      constellation_offsets[constellation] = constellation_offset + range_width
+
+  raise NotImplementedError("RINEX PRN for nmea id %i not known" % nmea_id)
 
 
 def get_nmea_id_from_prn(prn):
-  if prn[0] == 'G':
-    nmea_id = int(prn[1:]) + GPS_OFFSET
-  # glonass record
-  elif prn[0] == 'R':
-    nmea_id = int(prn[1:]) + GLONASS_OFFSET
-  # galileo record
-  elif prn[0] == 'E':
-    nmea_id = int(prn[1:]) + GALILEO_OFFSET
-  # QZNSS record
-  elif prn[0] == 'J':
-      nmea_id = int(prn[1:]) + QZNSS_OFFSET
-  # Beidou record
-  elif prn[0] == 'C':
-    nmea_id = int(prn[1:]) + BEIDOU_OFFSET
-  else:
-    raise NotImplementedError("RINEX constelletion identifier %s not supported by laika" % prn[0])
-  return nmea_id
-
-
-def get_prns_from_constellation(constellation):
-  if constellation == 'GPS':
-    return ['G' + str(n).zfill(2) for n in range(1, GPS_SIZE + 1)]
-  elif constellation == 'GLONASS':
-    return ['R' + str(n).zfill(2) for n in range(1, GLONASS_SIZE + 1)]
-  elif constellation == 'GALILEO':
-    return ['E' + str(n).zfill(2) for n in range(1, GALILEO_SIZE + 1)]
-  elif constellation == 'QZNSS':
-    return ['J' + str(n).zfill(2) for n in range(1, QZNSS_SIZE + 1)]
-  elif constellation == 'BEIDOU':
-    return ['C' + str(n).zfill(2) for n in range(1, BEIDOU_SIZE + 1)]
+  prn_constellation = get_constellation(prn)
+  satellite_id = int(prn[1:])
+  if satellite_id < 1:
+    raise ValueError("PRN must contains number greater then 0")
+  constellation_offset = 0
+  for entry in NMEA_ID_RANGES:
+    start, end = entry['range']
+    constellation = entry['constellation']
+    if constellation != prn_constellation:
+      continue
+    range_width = end - start + 1
+    index_in_range = satellite_id - constellation_offset - 1
+    if range_width > index_in_range:
+      return start + index_in_range
+    else:
+      constellation_offset += range_width
+  raise NotImplementedError("NMEA ID not found for PRN %s" % prn)
 
 
 def rinex3_obs_from_rinex2_obs(observable):

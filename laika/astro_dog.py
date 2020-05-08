@@ -1,4 +1,6 @@
-from .helpers import get_constellation, get_closest, get_el_az, get_prns_from_constellation
+from collections import defaultdict
+
+from .helpers import get_constellation, get_closest, get_el_az
 from .ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, parse_rinex_nav_msg_glonass
 from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
@@ -27,29 +29,22 @@ class AstroDog(object):
                pull_orbit=True, dgps=False,
                valid_const=['GPS', 'GLONASS']):
     self.auto_update = auto_update
-    self.orbits = {}
-    self.nav = {}
-    self.dcbs = {}
     self.cache_dir = cache_dir
     self.dgps = dgps
     self.dgps_delays = []
-    self.bad_sats = []
     self.ionex_maps = []
     self.pull_orbit = pull_orbit
-    self.cached_orbit = {}
-    self.cached_nav = {}
-    self.cached_dcb = {}
+    self.valid_const = valid_const
     self.cached_ionex = None
     self.cached_dgps = None
-    self.valid_const = valid_const
-    prns = sum([get_prns_from_constellation(const) for const in self.valid_const], [])
-    for prn in prns:
-      self.cached_nav[prn] = None
-      self.cached_orbit[prn] = None
-      self.cached_dcb[prn] = None
-      self.orbits[prn] = []
-      self.dcbs[prn] = []
-      self.nav[prn] = []
+
+    self.orbits = defaultdict(lambda: [])
+    self.nav = defaultdict(lambda: [])
+    self.dcbs = defaultdict(lambda: [])
+
+    self.cached_orbit = defaultdict(lambda: None)
+    self.cached_nav = defaultdict(lambda: None)
+    self.cached_dcb = defaultdict(lambda: None)
 
   def get_ionex(self, time):
     if self.cached_ionex is not None and self.cached_ionex.valid(time):
@@ -81,7 +76,6 @@ class AstroDog(object):
     if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
       return self.cached_nav[prn]
     else:
-      self.bad_sats.append(prn)
       return None
 
   def get_orbit(self, prn, time):
@@ -97,7 +91,6 @@ class AstroDog(object):
     if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
       return self.cached_orbit[prn]
     else:
-      self.bad_sats.append(prn)
       return None
 
   def get_dcb(self, prn, time):
@@ -113,7 +106,6 @@ class AstroDog(object):
     if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
       return self.cached_dcb[prn]
     else:
-      self.bad_sats.append(prn)
       return None
 
   def get_dgps_corrections(self, time, recv_pos):
@@ -154,12 +146,6 @@ class AstroDog(object):
          ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
     for ephem in (ephems_gps + ephems_glonass):
       self.add_ephem(ephem, self.nav)
-    detected_prns = set([e.prn for e in ephems_gps + ephems_glonass])
-    for constellation in self.valid_const:
-      for prn in get_prns_from_constellation(constellation):
-        if prn not in detected_prns and prn not in self.bad_sats:
-          print('No nav data found for prn : %s flagging as bad' % prn)
-          self.bad_sats.append(prn)
 
   def get_orbit_data(self, time):
     file_paths_sp3_ru = download_orbits_russia(time, cache_dir=self.cache_dir)
@@ -172,24 +158,12 @@ class AstroDog(object):
 
     for ephem in ephems_sp3:
       self.add_ephem(ephem, self.orbits)
-    for constellation in self.valid_const:
-      for prn in get_prns_from_constellation(constellation):
-        closest = get_closest(time, self.orbits[prn])
-        if ((closest is None) or ((closest is not None) and (not closest.valid(time)))) and (prn not in self.bad_sats):
-          print('No orbit data found for prn : %s flagging as bad' % prn)
-          self.bad_sats.append(prn)
 
   def get_dcb_data(self, time):
     file_path_dcb = download_dcb(time, cache_dir=self.cache_dir)
     dcbs = parse_dcbs(file_path_dcb, self.valid_const)
     for dcb in dcbs:
       self.dcbs[dcb.prn].append(dcb)
-    detected_prns = set([dcb.prn for dcb in dcbs])
-    for constellation in self.valid_const:
-      for prn in get_prns_from_constellation(constellation):
-        if prn not in detected_prns and prn not in self.bad_sats:
-          print('No dcb data found for prn : %s flagging as bad' % prn)
-          self.bad_sats.append(prn)
 
   def get_ionex_data(self, time):
     file_path_ionex = download_ionex(time, cache_dir=self.cache_dir)
@@ -209,10 +183,7 @@ class AstroDog(object):
           self.dgps_delays.append(dgps)
           break
 
-
   def get_tgd_from_nav(self, prn, time):
-    if prn in self.bad_sats:
-      return None
     if get_constellation(prn) not in self.valid_const:
       return None
 
@@ -224,8 +195,6 @@ class AstroDog(object):
       return None
 
   def get_sat_info(self, prn, time):
-    if prn in self.bad_sats:
-      return None
     if get_constellation(prn) not in self.valid_const:
       return None
 
