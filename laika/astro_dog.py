@@ -78,6 +78,29 @@ class AstroDog(object):
     else:
       return None
 
+  @staticmethod
+  def _select_valid_temporal_items(item_dict, time):
+    '''Returns only valid temporal item for specific time from currently fetched
+    data.'''
+    result = {}
+    for prn, temporal_objects in item_dict.items():
+      obj = get_closest(time, temporal_objects)
+      if obj is None or not obj.valid(time):
+        continue
+      result[prn] = obj
+    return result
+
+  def get_navs(self, time):
+    valid_navs = AstroDog._select_valid_temporal_items(self.nav, time)
+
+    # Check if navs is not empty then we have already fetched
+    # data from specific time
+    if len(valid_navs) == 0:
+      self.get_nav_data(time)
+      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time)
+
+    return valid_navs
+
   def get_orbit(self, prn, time):
     if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
       return self.cached_orbit[prn]
@@ -92,6 +115,17 @@ class AstroDog(object):
       return self.cached_orbit[prn]
     else:
       return None
+
+  def get_orbits(self, time):
+    valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time)
+
+    # Check if valid_orbits is not empty then we have already fetched
+    # data from specific time
+    if len(valid_orbits) == 0:
+      self.get_orbit_data(time)
+      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time)
+
+    return valid_orbits
 
   def get_dcb(self, prn, time):
     if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
@@ -129,9 +163,9 @@ class AstroDog(object):
   def add_ephem(self, new_ephem, ephems):
     prn = new_ephem.prn
     # TODO make this check work
-    #for eph in ephems[prn]:
-    #  if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
-    #    raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
+    # for eph in ephems[prn]:
+    #   if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
+    #     raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
     ephems[prn].append(new_ephem)
 
   def get_nav_data(self, time):
@@ -207,6 +241,14 @@ class AstroDog(object):
       return eph.get_sat_info(time)
     else:
       return None
+
+  def get_all_sat_info(self, time):
+    if self.pull_orbit:
+      ephs = self.get_orbits(time)
+    else:
+      ephs = self.get_navs(time)
+
+    return {prn: eph.get_sat_info(time) for prn, eph in ephs.items()}
 
   def get_glonass_channel(self, prn, time):
     nav = self.get_nav(prn, time)
