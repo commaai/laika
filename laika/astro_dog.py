@@ -79,25 +79,32 @@ class AstroDog(object):
       return None
 
   @staticmethod
-  def _select_valid_temporal_items(item_dict, time):
+  def _select_valid_temporal_items(item_dict, time, cache):
     '''Returns only valid temporal item for specific time from currently fetched
     data.'''
     result = {}
     for prn, temporal_objects in item_dict.items():
-      obj = get_closest(time, temporal_objects)
-      if obj is None or not obj.valid(time):
-        continue
+      cached = cache[prn]
+      if cached is not None and cached.valid(time):
+        obj = cached
+      else:
+        obj = get_closest(time, temporal_objects)
+        if obj is None or not obj.valid(time):
+          continue
+        cache[prn] = obj
       result[prn] = obj
     return result
 
   def get_navs(self, time):
-    valid_navs = AstroDog._select_valid_temporal_items(self.nav, time)
+    valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
+                                                       self.cached_nav)
 
     # Check if navs is not empty then we have already fetched
     # data from specific time
     if len(valid_navs) == 0:
       self.get_nav_data(time)
-      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time)
+      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
+                                                         self.cached_nav)
 
     return valid_navs
 
@@ -117,13 +124,15 @@ class AstroDog(object):
       return None
 
   def get_orbits(self, time):
-    valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time)
+    valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
+                                                         self.cached_orbit)
 
     # Check if valid_orbits is not empty then we have already fetched
     # data from specific time
     if len(valid_orbits) == 0:
       self.get_orbit_data(time)
-      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time)
+      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
+                                                           self.cached_orbit)
 
     return valid_orbits
 
