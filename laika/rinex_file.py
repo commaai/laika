@@ -39,6 +39,10 @@ def padline(l, n=16):
 TOTAL_SATS = 132  # Increased to support Galileo
 
 
+class DownloadError(Exception):
+  pass
+
+
 class RINEXFile:
   def __init__(self, filename):
     try:
@@ -47,10 +51,10 @@ class RINEXFile:
         self._read_data(f)
     except TypeError:
       print("TypeError, file likely not downloaded.")
-      raise SystemExit(-1)
+      raise DownloadError("file download failure")
     except FileNotFoundError:
       print("File not found in directory.")
-      raise SystemExit(-1)
+      raise DownloadError("file missing in download cache")
   def _read_header(self, f):
     version_line = padline(f.readline(), 80)
 
@@ -103,19 +107,23 @@ class RINEXFile:
             self.obs_types.append(line[10 + 6 * i:12 + 6 * i])
           n_obs -= 9
 
+  def _read_next_non_comment(self, f):
+    line = f.readline()
+    while line and line.find('COMMENT') != -1:
+      line = f.readline()
+    return line
+
   def _read_epoch_header(self, f):
-    epoch_hdr = f.readline()
+    epoch_hdr = self._read_next_non_comment(f)
     if epoch_hdr == '':
       return None
-    if epoch_hdr.find('0.0000000  4  5') != -1:
-      epoch_hdr = f.readline()
-    if epoch_hdr.find('MARKER NUMBER') != -1:
-      epoch_hdr = f.readline()
-    for i in range(5):
-      if epoch_hdr.find('COMMENT') != -1:
-        epoch_hdr = f.readline()
-    if epoch_hdr.find('          4  1') != -1:
-      epoch_hdr = f.readline()
+    # ignore any line with these three strings
+    skippable = ('0.0000000  4  5', 'MARKER NUMBER', '          4  1')
+    while any(skip in epoch_hdr for skip in skippable):
+      epoch_hdr = self._read_next_non_comment(f)
+
+    if epoch_hdr == '':
+      return None
 
     year = int(epoch_hdr[1:3])
     if year >= 80:
@@ -132,11 +140,17 @@ class RINEXFile:
     epoch = datetime.datetime(year, month, day, hour, minute, second, microsecond)
 
     flag = int(epoch_hdr[28])
-    if flag != 0:
-      raise ValueError("Don't know how to handle epoch flag %d in epoch header:\n%s",
+    allowed_flags = {0, 3, 4}
+    if flag not in allowed_flags:
+      raise ValueError("Don't know how to handle epoch flag %d in epoch header:\n%s" %
                        (flag, epoch_hdr))
 
     n_sats = int(epoch_hdr[29:32])
+    if flag > 1:  # event flag: nsats is number of records
+      for i in range(n_sats):
+        f.readline()
+      return None
+
     sats = []
     for i in range(0, n_sats):
       if ((i % 12) == 0) and (i > 0):
