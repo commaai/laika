@@ -182,6 +182,7 @@ def download_dcb(time, cache_dir):
     try:
       t = time.as_datetime()
       url_base = 'ftp://cddis.nasa.gov/gnss/products/bias/'
+      url_base = 'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/'
       folder_path = t.strftime('%Y/')
       filename = t.strftime("CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX")
       filepath = download_file(url_base, folder_path, cache_subdir, filename, compression='.gz')

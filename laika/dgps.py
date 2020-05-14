@@ -23,7 +23,7 @@ def mean_filter(delay):
 
 
 def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
-  if True or not os.path.isfile(cors_station_positions_path):
+  if not os.path.isfile(cors_station_positions_path):
     cors_stations = {}
     coord_file_paths = download_cors_coords(cache_dir=cache_dir)
     for coord_file_path in coord_file_paths:
