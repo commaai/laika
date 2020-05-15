@@ -101,7 +101,9 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
       except (ftplib.error_perm):
         raise IOError("Could not download file from: " + url_base + folder_path + filename_zipped)
       filepaths.append(decompress(filepath_zipped, filepath, compression=compression))
-
+    else:
+      filepaths.append(filepath)
+  return filepaths
 
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
@@ -111,6 +113,7 @@ def download_files(url_base, folder_path, cacheDir, filenames, compression='', o
       filepaths.append(download_file(
         url_base, folder_path, cacheDir, filename, compression=compression, overwrite=overwrite
       ))
+    return filepaths
   else:
     return ftp_download_files(
       url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
