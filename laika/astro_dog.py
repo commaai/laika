@@ -1,7 +1,8 @@
 from collections import defaultdict
 
-from .helpers import get_constellation, get_closest, get_el_az
-from .ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, parse_rinex_nav_msg_glonass
+from .helpers import get_constellation, get_closest, get_el_az, TimeRangeHolder
+from .ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, \
+                       parse_rinex_nav_msg_glonass
 from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
 from .trop import saast
@@ -38,6 +39,10 @@ class AstroDog(object):
     self.cached_ionex = None
     self.cached_dgps = None
 
+    self.orbit_fetched_times = TimeRangeHolder()
+    self.nav_fetched_times = TimeRangeHolder()
+    self.dcbs_fetched_times = TimeRangeHolder()
+
     self.orbits = defaultdict(lambda: [])
     self.nav = defaultdict(lambda: [])
     self.dcbs = defaultdict(lambda: [])
@@ -71,6 +76,10 @@ class AstroDog(object):
     if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
       return self.cached_nav[prn]
 
+    # Already fetched, but no data found
+    if time in self.nav_fetched_times:
+      return None
+
     self.get_nav_data(time)
     self.cached_nav[prn] = get_closest(time, self.nav[prn])
     if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
@@ -96,12 +105,10 @@ class AstroDog(object):
     return result
 
   def get_navs(self, time):
-    valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
-                                                       self.cached_nav)
-
-    # Check if navs is not empty then we have already fetched
-    # data from specific time
-    if len(valid_navs) == 0:
+    if time in self.nav_fetched_times:
+      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
+                                                         self.cached_nav)
+    else:
       self.get_nav_data(time)
       valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
                                                          self.cached_nav)
@@ -116,6 +123,10 @@ class AstroDog(object):
     if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
       return self.cached_orbit[prn]
 
+    # Already fetched, but no data found
+    if time in self.orbit_fetched_times:
+      return None
+
     self.get_orbit_data(time)
     self.cached_orbit[prn] = get_closest(time, self.orbits[prn])
     if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
@@ -124,12 +135,10 @@ class AstroDog(object):
       return None
 
   def get_orbits(self, time):
-    valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
-                                                         self.cached_orbit)
-
-    # Check if valid_orbits is not empty then we have already fetched
-    # data from specific time
-    if len(valid_orbits) == 0:
+    if time in self.orbit_fetched_times:
+      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
+                                                           self.cached_orbit)
+    else:
       self.get_orbit_data(time)
       valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
                                                            self.cached_orbit)
@@ -143,6 +152,10 @@ class AstroDog(object):
     self.cached_dcb[prn] = get_closest(time, self.dcbs[prn])
     if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
       return self.cached_dcb[prn]
+
+    # Already fetched, but no data found
+    if time in self.dcbs_fetched_times:
+      return None
 
     self.get_dcb_data(time)
     self.cached_dcb[prn] = get_closest(time, self.dcbs[prn])
@@ -187,8 +200,20 @@ class AstroDog(object):
       file_path_glonass = download_nav(time, cache_dir=self.cache_dir, constellation='GLONASS')
       if file_path_glonass:
          ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
-    for ephem in (ephems_gps + ephems_glonass):
+
+    fetched_ephems = (ephems_gps + ephems_glonass)
+
+    for ephem in fetched_ephems:
       self.add_ephem(ephem, self.nav)
+
+    if len(fetched_ephems) != 0:
+      min_ephem = min(fetched_ephems, key=lambda e: e.epoch)
+      max_ephem = max(fetched_ephems, key=lambda e: e.epoch)
+
+      min_epoch = min_ephem.epoch - min_ephem.max_time_diff
+      max_epoch = max_ephem.epoch + max_ephem.max_time_diff
+
+      self.nav_fetched_times.add(min_epoch, max_epoch)
 
   def get_orbit_data(self, time):
     file_paths_sp3_ru = download_orbits_russia(time, cache_dir=self.cache_dir)
@@ -202,11 +227,29 @@ class AstroDog(object):
     for ephem in ephems_sp3:
       self.add_ephem(ephem, self.orbits)
 
+    if len(ephems_sp3) != 0:
+      min_ephem = min(ephems_sp3, key=lambda e: e.epoch)
+      max_ephem = max(ephems_sp3, key=lambda e: e.epoch)
+
+      min_epoch = min_ephem.epoch - min_ephem.max_time_diff
+      max_epoch = max_ephem.epoch + max_ephem.max_time_diff
+
+      self.orbit_fetched_times.add(min_epoch, max_epoch)
+
   def get_dcb_data(self, time):
     file_path_dcb = download_dcb(time, cache_dir=self.cache_dir)
     dcbs = parse_dcbs(file_path_dcb, self.valid_const)
     for dcb in dcbs:
       self.dcbs[dcb.prn].append(dcb)
+
+    if len(dcbs) != 0:
+      min_dcb = min(dcbs, key=lambda e: e.epoch)
+      max_dcb = max(dcbs, key=lambda e: e.epoch)
+
+      min_epoch = min_dcb.epoch - min_dcb.max_time_diff
+      max_epoch = max_dcb.epoch + max_dcb.max_time_diff
+
+      self.dcbs_fetched_times.add(min_epoch, max_epoch)
 
   def get_ionex_data(self, time):
     file_path_ionex = download_ionex(time, cache_dir=self.cache_dir)

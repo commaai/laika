@@ -16,7 +16,7 @@ class TestFetchSatInfo(unittest.TestCase):
     isn't available and next from period when navigation data are available
     then you should get correct result'''
 
-    prn = "C01"
+    prn = "C03"
     constellations = ["GPS", "BEIDOU"]
     available_date = GPSTime.from_datetime(datetime(2020, 5, 1, 12, 0))
     not_available_date = GPSTime.from_datetime(datetime(2000, 1, 1))

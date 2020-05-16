@@ -1,61 +1,63 @@
+import warnings
+
 import numpy as np
 from .lib.coordinates import LocalCoord
 
 # From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
-NMEA_ID_RANGES = [
+NMEA_ID_RANGES = (
   {
-    'range': [1, 32],
+    'range': (1, 32),
     'constellation': 'GPS'
   },
   {
-    'range': [33, 54],
+    'range': (33, 54),
     'constellation': 'SBAS'
   },
   {
-    'range': [55, 64],
+    'range': (55, 64),
     'constellation': 'SBAS'
   },
   {
-    'range': [65, 88],
+    'range': (65, 88),
     'constellation': 'GLONASS'
   },
   {
-    'range': [89, 96],
+    'range': (89, 96),
     'constellation': 'GLONASS'
   },
   {
-    'range': [120, 151],
+    'range': (120, 151),
     'constellation': 'SBAS'
   },
   {
-    'range': [152, 158],
+    'range': (152, 158),
     'constellation': 'SBAS'
   },
   {
-    'range': [173, 182],
+    'range': (173, 182),
     'constellation': 'IMES'
   },
   {
-    'range': [193, 197],
+    'range': (193, 197),
     'constellation': 'QZNSS'
   },
   {
-    'range': [198, 200],
+    'range': (198, 200),
     'constellation': 'QZNSS'
   },
   {
-    'range': [201, 235],
+    'range': (201, 235),
     'constellation': 'BEIDOU'
   },
   {
-    'range': [301, 336],
+    'range': (301, 336),
     'constellation': 'GALILEO'
   },
   {
-    'range': [401, 437],
+    'range': (401, 437),
     'constellation': 'BEIDOU'
   }
-]
+)
 
 # Source: RINEX 3.04
 RINEX_CONSTELLATION_IDENTIFIERS = {
@@ -114,39 +116,61 @@ def get_constellation(prn):
   if identifier in RINEX_CONSTELLATION_IDENTIFIERS:
     return RINEX_CONSTELLATION_IDENTIFIERS[identifier]
   else:
-    raise NotImplementedError('The constellation of RINEX3 constellation '
-                              'identifier: %s not known' % identifier)
+    warnings.warn("Unknown constellation for PRN %s" % prn)
+    return None
+
+
+def get_unknown_prn_from_nmea_id(nmea_id):
+  return "?%d" % nmea_id
+
+
+def get_nmea_id_from_unknown_prn(prn):
+  return int(prn[1:])
+
+
+def is_unknown_prn(prn):
+  return prn[0] == '?'
 
 
 def get_prn_from_nmea_id(nmea_id):
   constellation_offsets = {}
+
   for entry in NMEA_ID_RANGES:
     start, end = entry['range']
     constellation = entry['constellation']
+
     if nmea_id < start:
-      raise NotImplementedError("RINEX PRN for nmea id %i not known" % nmea_id)
+      warnings.warn("RINEX PRN for nmea id %i not known" % nmea_id)
+      return get_unknown_prn_from_nmea_id(nmea_id)
 
     constellation_offset = constellation_offsets.get(constellation, 0)
 
     if nmea_id <= end:
       if constellation is None:
-        raise NotImplementedError("Constellation for nmea id "
-                                  "%i not known" % nmea_id)
+        warnings.warn("Constellation for nmea id "
+                      "%i not known" % nmea_id)
+        return get_unknown_prn_from_nmea_id(nmea_id)
+
       identifier = RINEX_CONSTELLATION_IDENTIFIERS.get(constellation)
       if identifier is None:
-        raise NotImplementedError("RINEX3 constellation identifier for "
-                                  "constellation %s is not known"
-                                  % constellation)
+        warnings.warn("RINEX3 constellation identifier for "
+                      "constellation %s is not known" % constellation)
+        return get_unknown_prn_from_nmea_id(nmea_id)
+
       number = nmea_id - start + 1 + constellation_offset
       return "%s%02d" % (identifier, number)
     else:
       range_width = end - start + 1
       constellation_offsets[constellation] = constellation_offset + range_width
 
-  raise NotImplementedError("RINEX PRN for nmea id %i not known" % nmea_id)
+  warnings.warn("RINEX PRN for nmea id %i not known" % nmea_id)
+  return get_unknown_prn_from_nmea_id(nmea_id)
 
 
 def get_nmea_id_from_prn(prn):
+  if is_unknown_prn(prn):
+    return get_nmea_id_from_unknown_prn(prn)
+
   prn_constellation = get_constellation(prn)
   satellite_id = int(prn[1:])
   if satellite_id < 1:
@@ -173,3 +197,81 @@ def rinex3_obs_from_rinex2_obs(observable):
     return observable + 'C'
   else:
       raise NotImplementedError("Don't know this: " + observable)
+
+
+class TimeRangeHolder:
+  '''Class to support test if date is in any of the mutliple, sparse ranges'''
+  def __init__(self):
+    # Sorted list
+    self._ranges = []
+
+  def _previous_and_contains_index(self, time):
+    prev = None
+    current = None
+
+    for idx, (start, end) in enumerate(self._ranges):
+      # Time may be in next range
+      if time > end:
+        continue
+
+      # Time isn't in any next range
+      if time < start:
+        prev = idx - 1
+        current = None
+      # Time is in current range
+      else:
+        prev = idx - 1
+        current = idx
+      break
+
+    # Break in last loop
+    if prev is None:
+      prev = len(self._ranges) - 1
+
+    return prev, current
+
+  def add(self, start_time, end_time):
+    prev_start, current_start = self._previous_and_contains_index(start_time)
+    _, current_end = self._previous_and_contains_index(end_time)
+
+    # Merge ranges
+    if current_start is not None and current_end is not None:
+      # If ranges are different then merge
+      if current_start != current_end:
+        new_start, _ = self._ranges[current_start]
+        _, new_end = self._ranges[current_end]
+        new_range = (new_start, new_end)
+        # Required reversed order to corrent remove
+        del self._ranges[current_end]
+        del self._ranges[current_start]
+        self._ranges.insert(current_start, new_range)
+    # Extend range - left
+    elif current_start is not None:
+      new_start, _ = self._ranges[current_start]
+      new_range = (new_start, end_time)
+      del self._ranges[current_start]
+      self._ranges.insert(current_start, new_range)
+    # Extend range - right
+    elif current_end is not None:
+      _, new_end = self._ranges[current_end]
+      new_range = (start_time, new_end)
+      del self._ranges[current_end]
+      self._ranges.insert(prev_start + 1, new_range)
+    # Create new range
+    else:
+      new_range = (start_time, end_time)
+      self._ranges.insert(prev_start + 1, new_range)
+
+  def __contains__(self, time):
+    for start, end in self._ranges:
+      # Time may be in next range
+      if time > end:
+        continue
+
+      # Time isn't in any next range
+      if time < start:
+        return False
+      # Time is in current range
+      else:
+        return True
+      return False
