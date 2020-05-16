@@ -35,11 +35,11 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
         for line_number in range(len(contents)):
           if 'L1 Phase Center' in contents[line_number]:
             phase_center = True
-          if not phase_center and 'IGS08 POSITION' in contents[line_number]:
+          if not phase_center and 'ITRF2014 POSITION' in contents[line_number]:
             velocity = [float(contents[line_number+8].split()[3]),
                         float(contents[line_number+9].split()[3]),
                         float(contents[line_number+10].split()[3])]
-          if phase_center and 'IGS08 POSITION' in contents[line_number]:
+          if phase_center and 'ITRF2014 POSITION' in contents[line_number]:
             epoch = GPSTime.from_datetime(datetime(2005,1,1))
             position = [float(contents[line_number+2].split()[3]),
                         float(contents[line_number+3].split()[3]),
