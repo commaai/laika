@@ -37,9 +37,7 @@ These files are then parsed by AstroDog and kept in memory. Every one of these p
 
 ## Design principles of laika
 - Should work without configuration or setup
-- Nothing is worth compromising accuracy for
-- It is preferable to return no solution than a degraded solution
-
+- Default configuration should not compromise accuracy for anything
 
 
 ## Laika's accuracy
