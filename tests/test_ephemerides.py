@@ -40,5 +40,6 @@ class TestAstroDog(unittest.TestCase):
         np.testing.assert_allclose(sat_info_nav[2], sat_info_orbit[2], rtol=0, atol=1e-7)
         np.testing.assert_allclose(sat_info_nav[3], sat_info_orbit[3], rtol=0, atol=1e-11)
 
+
 if __name__ == "__main__":
   unittest.main()

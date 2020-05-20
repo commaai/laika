@@ -282,6 +282,10 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
       # pos line
       elif line[0] == 'P':
         prn = line[1:4].replace(' ','0')
+        # In old SP3 files vehicle ID doesn't contain constellation
+        # identifier. We assume that constellation is GPS when missing.
+        if prn[0] == '0':
+          prn = 'G' + prn[1:]
         if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
           continue
         if prn not in data:
@@ -362,7 +366,11 @@ def parse_rinex_nav_msg_gps(file_name):
       epoch = GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S"))
     elif rinex_ver == 2:
       prn = int(line[0:2])
-      epoch = GPSTime.from_datetime(datetime.strptime(line[3:20], "%y %m %d %H %M %S"))
+      # 2000 year is in RINEX file as 0, but Python requires two digit year: 00
+      epoch_str = line[3:20]
+      if epoch_str[0] == ' ':
+        epoch_str = '0' + epoch_str[1:]
+      epoch = GPSTime.from_datetime(datetime.strptime(epoch_str, "%y %m %d %H %M %S"))
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format
