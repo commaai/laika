@@ -14,18 +14,14 @@ jobs:
         python-version: '3.8.2'
     - name: Install dependencies
       run: |
-        export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
         pip install -r requirements_examples.txt
     - name: Run static analysis
       run: |
-        export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
         pip install pre-commit==2.4.0 pylint==2.5.2
         pre-commit run --all
     - name: Run unittests
       run: |
-        export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
         python -m unittest discover .
     - name: Test install
       run: |
-        export PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
         python setup.py install
