@@ -176,4 +176,4 @@ class TimeSyncer(object):
     return gps_time - self.ref_gps_time + self.ref_mono_time
 
   def __str__(self):
-      return "Reference mono time: ", self.ref_mono_time, "\n  Reference gps time: ", self.ref_gps_time
+      return f"Reference mono time: {self.ref_mono_time} \n  Reference gps time: {self.ref_gps_time}"

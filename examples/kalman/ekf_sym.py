@@ -1,10 +1,10 @@
-import sys
+# pylint: skip-file
+
 import os
 from bisect import bisect_right
 import sympy as sp
 import numpy as np
-from numpy import dot
-from .ffi_wrapper import ffi_wrap, compile_code, wrap_compiled
+from .ffi_wrapper import compile_code, wrap_compiled
 from .sympy_helpers import sympy_into_c
 import scipy
 from scipy.stats import chi2
@@ -76,7 +76,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
   F_sym = f_err_sym.jacobian(x_err_sym)
   for sym in x_err_sym:
     F_sym = F_sym.subs(sym, 0)
-  for i in xrange(len(obs_eqs)):
+  for i in range(len(obs_eqs)):
     obs_eqs[i].append(obs_eqs[i][0].jacobian(x_sym))
     if msckf and obs_eqs[i][1] in feature_track_kinds:
       obs_eqs[i].append(obs_eqs[i][0].jacobian(obs_eqs[i][2]))
@@ -93,7 +93,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
   # H modifier for ESKF updates
   sympy_functions.append(('H_mod_fun', H_mod_sym, [x_sym]))
 
-  # state propagation function 
+  # state propagation function
   sympy_functions.append(('f_fun', f_sym, [x_sym, dt_sym]))
   sympy_functions.append(('F_fun', F_sym, [x_sym, dt_sym]))
 
@@ -104,7 +104,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     if msckf and kind in feature_track_kinds:
       sympy_functions.append(('He_%d' % kind, He_sym, [x_sym, ea_sym]))
 
-  # Generate and wrap all th c code 
+  # Generate and wrap all th c code
   header, code = sympy_into_c(sympy_functions)
   extra_header = "#define DIM %d\n" % dim_x
   extra_header += "#define EDIM %d\n" % dim_err
@@ -118,10 +118,10 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
   for h_sym, kind, ea_sym, H_sym, He_sym in obs_eqs:
     if msckf and kind in feature_track_kinds:
       He_str = 'He_%d' % kind
-      ea_dim = ea_sym.shape[0]
+      # ea_dim = ea_sym.shape[0]
     else:
       He_str = 'NULL'
-      ea_dim = 1 # not really dim of ea but makes c function work
+      # ea_dim = 1 # not really dim of ea but makes c function work
     maha_thresh = chi2.ppf(0.95, int(h_sym.shape[0])) # mahalanobis distance for outlier detection
     maha_test = kind in maha_test_kinds
     extra_post += """
@@ -383,7 +383,7 @@ class EKF_sym(object):
 
     # update batch
     y = []
-    for i in xrange(len(z)):
+    for i in range(len(z)):
       # these are from the user, so we canonicalize them
       z_i = np.array(z[i], dtype=np.float64, order='F')
       R_i = np.array(R[i], dtype=np.float64, order='F')
@@ -416,7 +416,7 @@ class EKF_sym(object):
 
     states_smoothed = [xk_n]
     covs_smoothed = [Pk_n]
-    for k in xrange(len(estimates) - 2, -1, -1):
+    for k in range(len(estimates) - 2, -1, -1):
       xk1_n = xk_n
       if norm_quats:
         xk1_n[3:7] /= np.linalg.norm(xk1_n[3:7])

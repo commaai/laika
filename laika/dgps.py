@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from datetime import datetime
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 
 from .gps_time import GPSTime
 from .constants import SECS_IN_YEAR

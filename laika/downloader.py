@@ -24,7 +24,7 @@ def retryable(f):
     if isinstance(url_bases, str):
       # only one url passed, don't do the retry thing
       return f(url_bases, *args, **kwargs)
-    
+
     # not a string, must be a list of url_bases
     for url_base in url_bases:
       try:
@@ -145,21 +145,21 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
       except IOError as e:
         print("cache download failed, pulling from", url, "to", filepath)
         # commai cache not accessible (not just 404 or perms issue): don't keep trying it
-        if str(e.reason) == "timed out":
+        if str(e.reason) == "timed out":  # pylint: disable=no-member
           print("disabling ftpcache.comma.life")
           USE_COMMA_CACHE = False
     if not downloaded:
       print("cache download failed, pulling from", url, "to", filepath)
       try:
         urlf = urllib.request.urlopen(url)
-      except IOError as e:
+      except IOError:
         raise IOError("Could not download file from: " + url)
 
     data_zipped = urlf.read()
     urlf.close()
     with open(filepath_zipped, 'wb') as wf:
       wf.write(data_zipped)
-    
+
     filepath = decompress(filepath_zipped, filepath, compression=compression)
   return filepath
 
