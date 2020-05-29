@@ -25,4 +25,3 @@ repos:
         types: [python]
         args:
         - --disable=R,C,W
-        - laika

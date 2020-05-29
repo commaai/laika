@@ -15,13 +15,13 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements_examples.txt
-    - name: Run static analysis
-      run: |
-        pip install pre-commit==2.4.0 pylint==2.5.2
-        pre-commit run --all
     - name: Run unittests
       run: |
         python -m unittest discover .
     - name: Test install
       run: |
         python setup.py install
+    - name: Run static analysis
+      run: |
+        pip install pre-commit==2.4.0 pylint==2.5.2
+        pre-commit run --all
