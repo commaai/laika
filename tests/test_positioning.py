@@ -42,7 +42,7 @@ class TestPositioning(unittest.TestCase):
     rinex_meas_grouped = raw.read_rinex_obs(obs_data)
     rinex_corr_grouped = []
     for meas in tqdm(rinex_meas_grouped):
-      proc = raw.process_measurements(meas, dog=dog)
+      # proc = raw.process_measurements(meas, dog=dog)
       corr = raw.correct_measurements(meas, sc01_exact_position, dog=dog)
       rinex_corr_grouped.append(corr)
 

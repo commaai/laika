@@ -60,7 +60,8 @@ class EphemerisType(object):
 
 class Ephemeris(object):
   def valid(self, time):
-    return abs(time - self.epoch) <= self.max_time_diff
+    # TODO: use proper abstact base class to define members
+    return abs(time - self.epoch) <= self.max_time_diff  # pylint: disable=no-member
 
 
 class GLONASSEphemeris(Ephemeris):

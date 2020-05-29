@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: skip-file
 import numpy as np
 
 from .kalman_helpers import ObservationKind

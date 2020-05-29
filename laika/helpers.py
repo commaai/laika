@@ -74,7 +74,7 @@ RINEX_CONSTELLATION_IDENTIFIERS = {
 # >>> RINEX_CONSTELLATION_IDENTIFIERS['R']
 #     "GLONASS"
 RINEX_CONSTELLATION_IDENTIFIERS.update(
-  dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()])
+  dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()]) # type: ignore
 )
 
 
@@ -83,8 +83,8 @@ def get_el_az(pos, sat_pos):
   sat_ned = converter.ecef2ned(sat_pos)
   sat_range = np.linalg.norm(sat_ned)
 
-  el = np.arcsin(-sat_ned[2]/sat_range)
-  az = np.arctan2(sat_ned[1], sat_ned[0])
+  el = np.arcsin(-sat_ned[2]/sat_range)  # pylint: disable=unsubscriptable-object
+  az = np.arctan2(sat_ned[1], sat_ned[0])  # pylint: disable=unsubscriptable-object
   return el, az
 
 

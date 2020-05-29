@@ -1,11 +1,8 @@
-import numpy as np
 import unittest
 import time
-from datetime import datetime
 
 from laika.gps_time import GPSTime
 from laika import AstroDog
-from laika.constants import SECS_IN_DAY
 
 gps_times_list = [[1950, 415621.0]]
 
