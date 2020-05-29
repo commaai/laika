@@ -16,19 +16,12 @@ repos:
     -   id: flake8
         args:
         - --select=F
--   repo: https://github.com/PyCQA/pylint
-    rev: master
+-   repo: local
     hooks:
     -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
         args:
         - --disable=R,C,W
-# -   repo: local
-#     hooks:
-#     -   id: pylint
-#         name: pylint
-#         entry: pylint
-#         language: system
-#         types: [python]
-#         args:
-#         - --disable=R,C,W
-#         - --init-hook="import sys; sys.path.insert(0, './modules'); print(123)"

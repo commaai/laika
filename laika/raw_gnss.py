@@ -355,9 +355,9 @@ def get_Q(recv_pos, sat_positions):
   local = LocalCoord.from_ecef(recv_pos)
   sat_positions_rel = local.ecef2ned(sat_positions)
   sat_distances = np.linalg.norm(sat_positions_rel, axis=1)
-  A = np.column_stack((sat_positions_rel[:,0]/sat_distances,
-                       sat_positions_rel[:,1]/sat_distances,
-                       sat_positions_rel[:,2]/sat_distances,
+  A = np.column_stack((sat_positions_rel[:,0]/sat_distances,  # pylint: disable=unsubscriptable-object
+                       sat_positions_rel[:,1]/sat_distances,  # pylint: disable=unsubscriptable-object
+                       sat_positions_rel[:,2]/sat_distances,  # pylint: disable=unsubscriptable-object
                        -np.ones(len(sat_distances))))
   if A.shape[0] < 4 or np.linalg.matrix_rank(A) < 4:
     return np.inf*np.ones((4,4))
