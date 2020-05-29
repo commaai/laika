@@ -10,13 +10,13 @@ repos:
     rev: master
     hooks:
     -   id: mypy
--   repo: https://gitlab.com/PyCQA/flake8
+-   repo: https://github.com/PyCQA/flake8
     rev: master
     hooks:
     -   id: flake8
         args:
         - --select=F
--   repo: https://gitlab.com/PyCQA/pylint
+-   repo: https://github.com/PyCQA/pylint
     rev: master
     hooks:
     -   id: pylint
