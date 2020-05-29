@@ -5,9 +5,9 @@ import urllib.request
 from datetime import datetime
 from urllib.parse import urlparse
 
-from laika.constants import SECS_IN_DAY, SECS_IN_WEEK
-from laika.gps_time import GPSTime
-from laika.unlzw import unlzw
+from .constants import SECS_IN_DAY, SECS_IN_WEEK
+from .gps_time import GPSTime
+from .unlzw import unlzw
 
 USE_COMMA_CACHE = True
 
