@@ -57,7 +57,7 @@ def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gns
   cors_station_positions_path = cache_dir + 'cors_coord/cors_station_positions'
   download_and_parse_station_postions(cors_station_positions_path, cache_dir)
   cors_station_positions_file = open(cors_station_positions_path, 'rb')
-  cors_station_positions_dict = np.load(cors_station_positions_file, allow_pickle=True).item()
+  cors_station_positions_dict = np.load(cors_station_positions_file, allow_pickle=True).item()  # pylint: disable=unexpected-keyword-arg
   cors_station_positions_file.close()
   station_ids = list(cors_station_positions_dict.keys())
   station_positions = []
@@ -72,7 +72,7 @@ def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_d
   cors_station_positions_path = cache_dir + 'cors_coord/cors_station_positions'
   download_and_parse_station_postions(cors_station_positions_path, cache_dir)
   cors_station_positions_file = open(cors_station_positions_path, 'rb')
-  cors_station_positions_dict = np.load(cors_station_positions_file, allow_pickle=True).item()
+  cors_station_positions_dict = np.load(cors_station_positions_file, allow_pickle=True).item()  # pylint: disable=unexpected-keyword-arg
   cors_station_positions_file.close()
   epoch, pos, vel = cors_station_positions_dict[station_id]
   return ((time - epoch)/SECS_IN_YEAR)*np.array(vel) + np.array(pos)
