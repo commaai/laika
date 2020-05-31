@@ -74,7 +74,7 @@ RINEX_CONSTELLATION_IDENTIFIERS = {
 # >>> RINEX_CONSTELLATION_IDENTIFIERS['R']
 #     "GLONASS"
 RINEX_CONSTELLATION_IDENTIFIERS.update(
-  dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()]) # type: ignore
+  dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()])  # type: ignore
 )
 
 

@@ -25,13 +25,13 @@ def parse_pr(m):
 
 
 class States(object):
-  ECEF_POS = slice(0,3) # x, y and z in ECEF in meters
+  ECEF_POS = slice(0,3)  # x, y and z in ECEF in meters
   ECEF_VELOCITY = slice(3,6)
-  CLOCK_BIAS = slice(6, 7) # clock bias in light-meters,
-  CLOCK_DRIFT = slice(7, 8) # clock drift in light-meters/s,
-  CLOCK_ACCELERATION = slice(8, 9) # clock acceleration in light-meters/s**2
-  GLONASS_BIAS = slice(9, 10) # clock drift in light-meters/s,
-  GLONASS_FREQ_SLOPE = slice(10, 11) # GLONASS bias in m expressed as bias + freq_num*freq_slope
+  CLOCK_BIAS = slice(6, 7)  # clock bias in light-meters,
+  CLOCK_DRIFT = slice(7, 8)  # clock drift in light-meters/s,
+  CLOCK_ACCELERATION = slice(8, 9)  # clock acceleration in light-meters/s**2
+  GLONASS_BIAS = slice(9, 10)  # clock drift in light-meters/s,
+  GLONASS_FREQ_SLOPE = slice(10, 11)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
 
 
 class GNSSKalman(object):
@@ -56,7 +56,7 @@ class GNSSKalman(object):
     self.dim_state = x_initial.shape[0]
 
     # mahalanobis outlier rejection
-    maha_test_kinds = []#ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
+    maha_test_kinds = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
     name = 'gnss'
     # init filter

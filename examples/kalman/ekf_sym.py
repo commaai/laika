@@ -122,7 +122,7 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     else:
       He_str = 'NULL'
       # ea_dim = 1 # not really dim of ea but makes c function work
-    maha_thresh = chi2.ppf(0.95, int(h_sym.shape[0])) # mahalanobis distance for outlier detection
+    maha_thresh = chi2.ppf(0.95, int(h_sym.shape[0]))  # mahalanobis distance for outlier detection
     maha_test = kind in maha_test_kinds
     extra_post += """
       void update_%d(double *in_x, double *in_P, double *in_z, double *in_R, double *in_ea) {
