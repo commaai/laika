@@ -49,7 +49,6 @@ class GNSSMeasurement(object):
   SAT_POS = slice(8, 11)
   SAT_VEL = slice(11, 14)
 
-
   def __init__(self, prn, recv_time_week, recv_time_sec,
                observables, observables_std, glonass_freq=np.nan):
 

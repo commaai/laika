@@ -116,7 +116,6 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
         station_delays[signal][prn][i] = residual[j]
   assert len(times) == n
 
-
   # TODO crude way to get dgps station's clock errors,
   # could this be biased? Only use GPS for convenience.
   model_delays = {}
@@ -128,7 +127,6 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
   station_clock_errs = np.zeros(n)
   for i in range(n):
     station_clock_errs[i] = np.nanmean([(station_delays['C1C'][prn][i] - model_delays[prn][i]) for prn in model_delays])
-
 
   # remove clock errors and smooth out signal
   for prn in station_delays['C1C']:

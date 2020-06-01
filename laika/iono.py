@@ -91,7 +91,6 @@ class IonexMap:
           self.grid_TEC1 = np.append(self.grid_TEC1, row)
     self.lons = np.linspace(lon1, lon2, int(row_length))
 
-
     self.lats = np.array([])
     for j, line in enumerate(data2[1:]):
       if "LAT" in line:
@@ -114,8 +113,6 @@ class IonexMap:
         else:
           self.grid_TEC2 = np.append(self.grid_TEC2, row)
     self.lons = np.linspace(lon1, lon2, int(row_length))
-
-
 
   def valid(self, time):
     return abs(time - self.epoch) <= self.max_time_diff
@@ -151,8 +148,6 @@ class IonexMap:
 
     return (1 - (time - self.t1)/SECS_IN_HR)*TEC_1 + ((time - self.t1)/SECS_IN_HR)*TEC_2
 
-
-
   def get_delay(self, rcv_pos, az, el, sat_pos, time, freq):
     # To get a delay from a TEC map, we need to calculate
     # the ionospheric pierce point, geometry described here
@@ -170,7 +165,6 @@ class IonexMap:
     slant_delay = vertical_delay * ((1 - ((EARTH_RADIUS * np.sin(beta)) /
                                           (EARTH_RADIUS + 3.5e5))**2)**(-0.5))
     return slant_delay
-
 
   @staticmethod
   def round_to_grid(number, base):
@@ -215,7 +209,6 @@ def parse_ionex(ionex_file):
     if iono_map and iono_map_prev:
       maps += [IonexMap(exponent, iono_map_prev, iono_map)]
   return maps
-
 
 
 def klobuchar(pos, az, el, time, iono_coeffs):

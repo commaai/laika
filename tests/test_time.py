@@ -75,7 +75,6 @@ class TestTime(unittest.TestCase):
     delta = syncer.gps2mono(syncer.mono2gps(ref_mono_time + secs)) - ref_mono_time
     np.testing.assert_allclose(secs, delta, rtol=0, atol=1e-3)
 
-
     # real world test check accurate to 1ms
     delta = GPSTime(1989, 425939.390) - syncer.mono2gps(509056.61195720872)
     np.testing.assert_allclose(0, delta, rtol=0, atol=1e-3)

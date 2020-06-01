@@ -54,7 +54,6 @@ class DCB(object):
       return 0
 
 
-
 def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
   with open(file_name, 'r+') as DCB_file:
     contents = DCB_file.readlines()

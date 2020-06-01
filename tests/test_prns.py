@@ -176,7 +176,6 @@ class TestConstellationPRN(unittest.TestCase):
         # None
         self.assertRaises(TypeError, get_nmea_id_from_prn, None)
 
-
     def test_nmea_ranges_are_valid(self):
         last_end = 0
         for entry in NMEA_ID_RANGES:

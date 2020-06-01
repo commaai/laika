@@ -181,7 +181,6 @@ class AstroDog(object):
     else:
       return None
 
-
   def add_ephem(self, new_ephem, ephems):
     prn = new_ephem.prn
     # TODO make this check work

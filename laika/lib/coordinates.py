@@ -5,7 +5,6 @@ with each row as a position.
 """
 
 
-
 a = 6378137
 b = 6356752.3142
 esq = 6.69437999014 * 0.001
@@ -88,7 +87,6 @@ class LocalCoord(object):
   def from_ecef(cls, init_ecef):
     init_geodetic = ecef2geodetic(init_ecef)
     return LocalCoord(init_geodetic, init_ecef)
-
 
   def ecef2ned(self, ecef):
     ecef = np.array(ecef)

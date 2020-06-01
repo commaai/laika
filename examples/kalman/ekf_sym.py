@@ -257,7 +257,6 @@ class EKF_sym(object):
     self._update = _update_blas
     #self._update = self._update_python
 
-
   def init_state(self, state, covs, filter_time):
     self.x = np.array(state.reshape((-1, 1))).astype(np.float64)
     self.P = np.array(covs).astype(np.float64)
@@ -400,7 +399,6 @@ class EKF_sym(object):
     self.checkpoint((t, kind, z, R, extra_args))
 
     return xk_km1, xk_k, Pk_km1, Pk_k, t, kind, y, z, extra_args
-
 
   def rts_smooth(self, estimates, norm_quats=False):
     '''
