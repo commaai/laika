@@ -16,6 +16,7 @@ repos:
     -   id: flake8
         args:
         - --ignore=E111,E114,E501
+        #:- --per-file-ignores='examples/kalman/sympy_helpers.py:E241'
         - --statistics
 -   repo: local
     hooks:

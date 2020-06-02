@@ -227,18 +227,3 @@ class RINEXFile:
     for sat in list(self.data.keys()):
       if np.all(np.isnan(self.data[sat]['C1'])):
         del self.data[sat]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

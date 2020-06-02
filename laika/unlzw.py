@@ -28,45 +28,45 @@ def unlzw(data):
     Mark Adler
     madler@alumni.caltech.edu
     """
-    
+
     # Convert input data stream to byte array, and get length of that array
     try:
         ba_in = bytearray(data)
     except ValueError:
         raise TypeError("Unable to convert inputted data to bytearray")
-        
+
     inlen = len(ba_in)
     prefix = [None] * 65536         # index to LZW prefix string
     suffix = [None] * 65536         # one-character LZW suffix
-    
+
     # Process header
     if inlen < 3:
         raise ValueError("Invalid Input: Length of input too short for processing")
-    
+
     if (ba_in[0] != 0x1f) or (ba_in[1] != 0x9d):
         raise ValueError("Invalid Header Flags Byte: Incorrect magic bytes")
-    
+
     flags = ba_in[2]
     if flags & 0x60:
         raise ValueError("Invalid Header Flags Byte: Flag byte contains invalid data")
-        
+
     max_ = flags & 0x1f
     if (max_ < 9) or (max_ > 16):
         raise ValueError("Invalid Header Flags Byte: Max code size bits out of range")
-        
-    if (max_ == 9): max_ = 10       # 9 doesn't really mean 9 
+
+    if (max_ == 9): max_ = 10       # 9 doesn't really mean 9
     flags &= 0x80                   # true if block compressed
-    
+
     # Clear table, start at nine bits per symbol
     bits = 9
     mask = 0x1ff
     end = 256 if flags else 255
-    
+
     # Ensure stream is initially valid
     if inlen == 3: return 0         # zero-length input is permitted
     if inlen == 4:                  # a partial code is not okay
         raise ValueError("Invalid Data: Stream ended in the middle of a code")
-    
+
     # Set up: get the first 9-bit code, which is the first decompressed byte,
     # but don't create a table entry until the next code
     buf = ba_in[3]
@@ -74,12 +74,12 @@ def unlzw(data):
     final = prev = buf & mask       # code
     buf >>= bits
     left = 16 - bits
-    if prev > 255: 
+    if prev > 255:
         raise ValueError("Invalid Data: First code must be a literal")
-    
+
     # We have output - allocate and set up an output buffer with first byte
     put = [final]
-    
+
     # Decode codes
     mark = 3                        # start of compressed data
     nxt = 5                         # consumed five bytes so far
@@ -91,29 +91,29 @@ def unlzw(data):
             # derived from an implementation that made use of a special VAX
             # machine instruction!)
             rem = (nxt - mark) % bits
-            
+
             if (rem):
                 rem = bits - rem
-                if rem >= inlen - nxt: 
+                if rem >= inlen - nxt:
                     break
                 nxt += rem
-            
+
             buf = 0
             left = 0
-            
+
             # mark this new location for computing the next flush
             mark = nxt
-            
+
             # increment the number of bits per symbol
             bits += 1
             mask <<= 1
             mask += 1
-        
+
         # Get a code of bits bits
         buf += ba_in[nxt] << left
         nxt += 1
         left += 8
-        if left < bits: 
+        if left < bits:
             if nxt == inlen:
                 raise ValueError("Invalid Data: Stream ended in the middle of a code")
             buf += ba_in[nxt] << left
@@ -122,7 +122,7 @@ def unlzw(data):
         code = buf & mask
         buf >>= bits
         left -= bits
-        
+
         # process clear code (256)
         if (code == 256) and flags:
             # Flush unused input bits and bytes to next 8*bits bit boundary
@@ -134,20 +134,20 @@ def unlzw(data):
                 nxt += rem
             buf = 0
             left = 0
-            
+
             # Mark this location for computing the next flush
             mark = nxt
-            
+
             # Go back to nine bits per symbol
             bits = 9                    # initialize bits and mask
             mask = 0x1ff
             end = 255                   # empty table
             continue                    # get next code
-        
+
         # Process LZW code
         temp = code                     # save the current code
         stack = []                      # buffer for reversed match - empty stack
-        
+
         # Special code to reuse last match
         if code > end:
             # Be picky on the allowed code here, and make sure that the
@@ -165,16 +165,16 @@ def unlzw(data):
 
         stack.append(code)
         final = code
-        
+
         # Link new table entry
         if end < mask:
             end += 1
             prefix[end] = prev
             suffix[end] = final
-        
+
         # Set previous code for next iteration
         prev = temp
-        
+
         # Write stack to output in forward order
         put += stack[::-1]
 
