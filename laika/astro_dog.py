@@ -305,6 +305,8 @@ class AstroDog(object):
     nav = self.get_nav(prn, time)
     if nav:
       return nav.channel
+    else:
+      return None
 
   def get_frequency(self, prn, time, signal='C1C'):
     if get_constellation(prn) == 'GPS':
@@ -324,6 +326,8 @@ class AstroDog(object):
         raise NotImplementedError('Dont know this GPS frequency: ', signal, prn)
     elif get_constellation(prn) == 'GLONASS':
       n = self.get_glonass_channel(prn, time)
+      if n is None:
+        return None
       if signal[1] == '1':
         return constants.GLONASS_L1 + n * constants.GLONASS_L1_DELTA
       if signal[1] == '2':
@@ -360,7 +364,7 @@ class AstroDog(object):
         freq = self.get_frequency(prn, time, signal)
       ionex = self.get_ionex(time)
       dcb = self.get_dcb(prn, time)
-      if ionex is None or dcb is None:
+      if ionex is None or dcb is None or freq is None:
         return None
       iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq)
       trop_delay = saast(rcv_pos, el)
