@@ -65,7 +65,7 @@ class IonexMap:
     assert self.t2 - self.t1 == SECS_IN_HR
     assert len(data1) == len(data2)
 
-    self.max_time_diff = SECS_IN_MIN*30
+    self.max_time_diff = SECS_IN_MIN * 30
     self.epoch = self.t1 + self.max_time_diff
 
     self.lats = np.array([])
@@ -146,7 +146,7 @@ class IonexMap:
     (E00, E10), (E01, E11) = self.grid_TEC2[lat_idxs[0]:lat_idxs[1] + 1, lon_idxs[0]:lon_idxs[1] + 1]
     TEC_2 = ((1 - p) * (1 - q) * E00 + p * (1 - q) * E01 + (1 - p) * q * E10 + p * q * E11)
 
-    return (1 - (time - self.t1)/SECS_IN_HR)*TEC_1 + ((time - self.t1)/SECS_IN_HR)*TEC_2
+    return (1 - (time - self.t1) / SECS_IN_HR) * TEC_1 + ((time - self.t1) / SECS_IN_HR) * TEC_2
 
   def get_delay(self, rcv_pos, az, el, sat_pos, time, freq):
     # To get a delay from a TEC map, we need to calculate
@@ -154,11 +154,11 @@ class IonexMap:
     # https://en.wikipedia.org/wiki/Ionospheric_pierce_point
     conv = LocalCoord.from_ecef(rcv_pos)
     geocentric_alt = np.linalg.norm(rcv_pos)
-    alpha = np.pi/2 + el
-    beta = np.arcsin(geocentric_alt*np.sin(alpha)/IPP_ALT)
+    alpha = np.pi / 2 + el
+    beta = np.arcsin(geocentric_alt * np.sin(alpha) / IPP_ALT)
     gamma = np.pi - alpha - beta
-    ipp_dist = geocentric_alt*np.sin(gamma)/np.sin(beta)
-    ipp_ned = conv.ecef2ned(sat_pos)*(ipp_dist)/np.linalg.norm(sat_pos)
+    ipp_dist = geocentric_alt * np.sin(gamma) / np.sin(beta)
+    ipp_ned = conv.ecef2ned(sat_pos) * (ipp_dist) / np.linalg.norm(sat_pos)
     ipp_geo = conv.ned2geodetic(ipp_ned)
     factor = 40.30E16 / (freq**2) * 10**(self.exp)
     vertical_delay = self.get_TEC(ipp_geo, time) * factor

@@ -13,7 +13,7 @@ USE_COMMA_CACHE = True
 
 def ftpcache_path(url):
   p = urlparse(url)
-  return 'http://ftpcache.comma.life/'+p.netloc.replace(".", "-")+p.path
+  return 'http://ftpcache.comma.life/' + p.netloc.replace(".", "-") + p.path
 
 def retryable(f):
   """
@@ -170,17 +170,17 @@ def download_nav(time, cache_dir, constellation='GPS'):
     if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
       url_base = 'ftp://cddis.gsfc.nasa.gov/gnss/data/daily/'
       cache_subdir = cache_dir + 'daily_nav/'
-      if constellation =='GPS':
+      if constellation == 'GPS':
         filename = t.strftime("brdc%j0.%yn")
         folder_path = t.strftime('%Y/%j/%yn/')
-      elif constellation =='GLONASS':
+      elif constellation == 'GLONASS':
         filename = t.strftime("brdc%j0.%yg")
         folder_path = t.strftime('%Y/%j/%yg/')
       return download_file(url_base, folder_path, cache_subdir, filename, compression='.Z')
     else:
       url_base = 'ftp://cddis.gsfc.nasa.gov/gnss/data/hourly/'
       cache_subdir = cache_dir + 'hourly_nav/'
-      if constellation =='GPS':
+      if constellation == 'GPS':
         filename = t.strftime("hour%j0.%yn")
         folder_path = t.strftime('%Y/%j/')
         return download_file(url_base, folder_path, cache_subdir, filename, compression='.Z', overwrite=True)
@@ -197,7 +197,7 @@ def download_orbits(time, cache_dir):
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
     folder_path = "%i/" % (time.week)
-    if GPSTime.from_datetime(datetime.utcnow()) - time > 3*SECS_IN_WEEK:
+    if GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
       try:
         filename = "igs%i%i.sp3" % (time.week, time.day)
         downloaded_files.append(download_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
@@ -243,7 +243,7 @@ def download_orbits_russia(time, cache_dir):
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
     t = time.as_datetime()
-    if GPSTime.from_datetime(datetime.utcnow()) - time > 2*SECS_IN_WEEK:
+    if GPSTime.from_datetime(datetime.utcnow()) - time > 2 * SECS_IN_WEEK:
       try:
         folder_path = t.strftime('%y%j/final/')
         filename = "Sta%i%i.sp3" % (time.week, time.day)
@@ -286,7 +286,7 @@ def download_ionex(time, cache_dir):
 def download_dcb(time, cache_dir):
   cache_subdir = cache_dir + 'dcb/'
   # seem to be a lot of data missing, so try many days
-  for time in [time - i*SECS_IN_DAY for i in range(14)]:
+  for time in [time - i * SECS_IN_DAY for i in range(14)]:
     try:
       t = time.as_datetime()
       url_bases = (

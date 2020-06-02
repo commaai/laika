@@ -100,7 +100,7 @@ class GPSTime(object):
 
   def __sub__(self, other):
     if isinstance(other, type(self)):
-      return (self.week - other.week)*self.seconds_in_week + self.tow - other.tow
+      return (self.week - other.week) * self.seconds_in_week + self.tow - other.tow
     elif isinstance(other, float) or isinstance(other, int):
       new_week = self.week
       new_tow = self.tow - other
@@ -144,7 +144,7 @@ class GPSTime(object):
 
   @property
   def day(self):
-    return int(self.tow/(24*3600))
+    return int(self.tow / (24 * 3600))
 
   def __str__(self):
     return "week: " + str(self.week) + "  tow: " + str(self.tow)

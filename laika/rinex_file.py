@@ -212,7 +212,7 @@ class RINEXFile:
       if obss.shape[0] == 0:
         break
 
-      for i, sv in enumerate(['%02d' % d for d in range(1, TOTAL_SATS+1)]):
+      for i, sv in enumerate(['%02d' % d for d in range(1, TOTAL_SATS + 1)]):
         if sv not in self.data:
           self.data[sv] = {}
         for j, obs_type in enumerate(self.obs_types):

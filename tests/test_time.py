@@ -47,8 +47,8 @@ class TestTime(unittest.TestCase):
 
   def test_gps_time_week_rollover(self):
     for gps_time in gps_times:
-      gps_time_plus_week = gps_time + 3600*24*7
-      gps_time_minus_week = gps_time - 3600*24*7
+      gps_time_plus_week = gps_time + 3600 * 24 * 7
+      gps_time_minus_week = gps_time - 3600 * 24 * 7
       np.testing.assert_allclose(gps_time_plus_week.tow, gps_time.tow, rtol=0, atol=1e-10)
       np.testing.assert_allclose(gps_time_plus_week.week - 1, gps_time.week, rtol=0, atol=1e-10)
       np.testing.assert_allclose(gps_time_minus_week.tow, gps_time.tow, rtol=0, atol=1e-10)

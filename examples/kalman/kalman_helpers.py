@@ -90,12 +90,12 @@ def run_car_ekf_offline(kf, observations_by_kind):
       continue
     if kind not in observations_dict:
       observations_dict[kind] = {}
-      observations_dict[kind]['t'] = np.array(len(z)*[t])
+      observations_dict[kind]['t'] = np.array(len(z) * [t])
       observations_dict[kind]['z'] = np.array(z)
       observations_dict[kind]['ea'] = np.array(ea)
       observations_dict[kind]['residual'] = np.array(res)
     else:
-      observations_dict[kind]['t'] = np.append(observations_dict[kind]['t'], np.array(len(z)*[t]))
+      observations_dict[kind]['t'] = np.append(observations_dict[kind]['t'], np.array(len(z) * [t]))
       observations_dict[kind]['z'] = np.vstack((observations_dict[kind]['z'], np.array(z)))
       observations_dict[kind]['ea'] = np.vstack((observations_dict[kind]['ea'], np.array(ea)))
       observations_dict[kind]['residual'] = np.vstack((observations_dict[kind]['residual'], np.array(res)))

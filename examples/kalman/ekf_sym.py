@@ -15,14 +15,14 @@ EXTERNAL_PATH = os.path.dirname(os.path.abspath(__file__))
 def solve(a, b):
   if a.shape[0] == 1 and a.shape[1] == 1:
     #assert np.allclose(b/a[0][0], np.linalg.solve(a, b))
-    return b/a[0][0]
+    return b / a[0][0]
   else:
     return np.linalg.solve(a, b)
 
 def null(H, eps=1e-12):
   from scipy import linalg
   u, s, vh = linalg.svd(H)
-  padding = max(0,np.shape(H)[1]-np.shape(s)[0])
+  padding = max(0,np.shape(H)[1] - np.shape(s)[0])
   null_mask = np.concatenate(((s <= eps), np.ones((padding,),dtype=bool)),axis=0)
   null_space = scipy.compress(null_mask, vh, axis=0)
   return scipy.transpose(null_space)
@@ -62,8 +62,8 @@ def gen_code(name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=No
     dim_augment_err = msckf_params[3]
     N = msckf_params[4]
     feature_track_kinds = msckf_params[5]
-    assert dim_main + dim_augment*N == dim_x
-    assert dim_main_err + dim_augment_err*N == dim_err
+    assert dim_main + dim_augment * N == dim_x
+    assert dim_main_err + dim_augment_err * N == dim_err
   else:
     msckf = False
     dim_main = dim_x
@@ -160,8 +160,8 @@ class EKF_sym(object):
     x_initial = x_initial.reshape((-1, 1))
     self.dim_x = x_initial.shape[0]
     self.dim_err = P_initial.shape[0]
-    assert dim_main + dim_augment*N == self.dim_x
-    assert dim_main_err + dim_augment_err*N == self.dim_err
+    assert dim_main + dim_augment * N == self.dim_x
+    assert dim_main_err + dim_augment_err * N == self.dim_err
 
     # kinds that should get mahalanobis distance
     # tested for outlier rejection
@@ -261,7 +261,7 @@ class EKF_sym(object):
     self.x = np.array(state.reshape((-1, 1))).astype(np.float64)
     self.P = np.array(covs).astype(np.float64)
     self.filter_time = filter_time
-    self.augment_times = [0]*self.N
+    self.augment_times = [0] * self.N
     self.rewind_obscache = []
     self.rewind_t = []
     self.rewind_states = []
@@ -277,15 +277,15 @@ class EKF_sym(object):
     d3 = self.dim_augment
     d4 = self.dim_augment_err
     # push through augmented states
-    self.x[d1:-d3] = self.x[d1+d3:]
+    self.x[d1:-d3] = self.x[d1 + d3:]
     self.x[-d3:] = self.x[:d3]
     assert self.x.shape == (self.dim_x, 1)
     # push through augmented covs
     assert self.P.shape == (self.dim_err, self.dim_err)
     P_reduced = self.P
-    P_reduced = np.delete(P_reduced, np.s_[d2:d2+d4], axis=1)
-    P_reduced = np.delete(P_reduced, np.s_[d2:d2+d4], axis=0)
-    assert P_reduced.shape == (self.dim_err -d4, self.dim_err -d4)
+    P_reduced = np.delete(P_reduced, np.s_[d2:d2 + d4], axis=1)
+    P_reduced = np.delete(P_reduced, np.s_[d2:d2 + d4], axis=0)
+    assert P_reduced.shape == (self.dim_err - d4, self.dim_err - d4)
     to_mult = np.zeros((self.dim_err, self.dim_err - d4))
     to_mult[:-d4,:] = np.eye(self.dim_err - d4)
     to_mult[-d4:,:d4] = np.eye(d4)
@@ -303,13 +303,13 @@ class EKF_sym(object):
   def rewind(self, t):
     # find where we are rewinding to
     idx = bisect_right(self.rewind_t, t)
-    assert self.rewind_t[idx-1] <= t
+    assert self.rewind_t[idx - 1] <= t
     assert self.rewind_t[idx] > t    # must be true, or rewind wouldn't be called
 
     # set the state to the time right before that
-    self.filter_time = self.rewind_t[idx-1]
-    self.x[:] = self.rewind_states[idx-1][0]
-    self.P[:] = self.rewind_states[idx-1][1]
+    self.filter_time = self.rewind_t[idx - 1]
+    self.x[:] = self.rewind_states[idx - 1][0]
+    self.P[:] = self.rewind_states[idx - 1][1]
 
     # return the observations we rewound over for fast forwarding
     ret = self.rewind_obscache[idx:]
@@ -339,7 +339,7 @@ class EKF_sym(object):
 
     # rewind
     if t < self.filter_time:
-      if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] -1.0:
+      if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] - 1.0:
         print("observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time))
         return None
       rewound = self.rewind(t)

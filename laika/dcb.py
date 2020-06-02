@@ -8,7 +8,7 @@ import warnings
 
 class DCB(object):
   def __init__(self, prn, data):
-    self.max_time_diff = 2*SECS_IN_WEEK
+    self.max_time_diff = 2 * SECS_IN_WEEK
     self.prn = prn
     self.epoch = data['epoch']
     self.healthy = True
@@ -30,12 +30,12 @@ class DCB(object):
 
   def get_delay(self, signal):
     if signal == 'C1C':
-      return (- SPEED_OF_LIGHT*1e-9*self.C1W_C2W*GPS_L2**2/(GPS_L1**2 - GPS_L2**2)
-              + SPEED_OF_LIGHT*1e-9*self.C1C_C1W)
+      return (- SPEED_OF_LIGHT * 1e-9 * self.C1W_C2W * GPS_L2**2 / (GPS_L1**2 - GPS_L2**2)
+              + SPEED_OF_LIGHT * 1e-9 * self.C1C_C1W)
     if signal == 'C2P':
-      return (- SPEED_OF_LIGHT*1e-9*self.C1W_C2W*GPS_L1**2/(GPS_L1**2 - GPS_L2**2))
+      return (- SPEED_OF_LIGHT * 1e-9 * self.C1W_C2W * GPS_L1**2 / (GPS_L1**2 - GPS_L2**2))
     if signal == 'C1P':
-      return (SPEED_OF_LIGHT*1e-9*self.C1C_C1W)
+      return (SPEED_OF_LIGHT * 1e-9 * self.C1C_C1W)
     ## Todo: update dcb database and get delay to include additional signals
     if signal == 'C2C':
       warnings.warn("Differential code bias not implemented for signal C2C", UserWarning)
@@ -72,7 +72,7 @@ def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
     if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
       continue
     dcb_type = line_components[3] + '_' + line_components[4]
-    epoch = GPSTime.from_datetime(datetime.strptime(line_components[5], '%Y:%j:%f')) + 12*SECS_IN_HR
+    epoch = GPSTime.from_datetime(datetime.strptime(line_components[5], '%Y:%j:%f')) + 12 * SECS_IN_HR
     if prn not in dcbs_dict:
       dcbs_dict[prn] = {}
     dcbs_dict[prn][dcb_type] = float(line_components[8])

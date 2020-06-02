@@ -70,7 +70,7 @@ class GLONASSEphemeris(Ephemeris):
     self.epoch = epoch
     self.healthy = healthy
     self.data = data
-    self.max_time_diff = 25*SECS_IN_MIN
+    self.max_time_diff = 25 * SECS_IN_MIN
     self.type = EphemerisType.NAV
     self.channel = data['freq_num']
 
@@ -98,14 +98,14 @@ class GLONASSEphemeris(Ephemeris):
       ders = np.zeros(6)
       if r**2 < 0:
         return ders
-      a = 1.5 * J2 * mu * (ae**2)/ (r**5)
+      a = 1.5 * J2 * mu * (ae**2) / (r**5)
       b = 5 * (state[2]**2) / (r**2)
-      c = -mu/(r**3) - a*(1-b)
+      c = -mu / (r**3) - a * (1 - b)
 
       ders[0:3] = state[3:6]
-      ders[3] = (c + omega**2)*state[0] + 2*omega*state[4] + acc[0]
-      ders[4] = (c + omega**2)*state[1] - 2*omega*state[3] + acc[1]
-      ders[5] = (c - 2*a)*state[2] + acc[2]
+      ders[3] = (c + omega**2) * state[0] + 2 * omega * state[4] + acc[0]
+      ders[4] = (c + omega**2) * state[1] - 2 * omega * state[3] + acc[1]
+      ders[5] = (c - 2 * a) * state[2] + acc[2]
       return ders
 
     init_state = np.empty(6)
@@ -115,8 +115,8 @@ class GLONASSEphemeris(Ephemeris):
     init_state[3] = eph['x_vel']
     init_state[4] = eph['y_vel']
     init_state[5] = eph['z_vel']
-    init_state = 1000*init_state
-    acc = 1000*np.array([eph['x_acc'], eph['y_acc'], eph['z_acc']])
+    init_state = 1000 * init_state
+    acc = 1000 * np.array([eph['x_acc'], eph['y_acc'], eph['z_acc']])
     state = init_state
     tstep = 90
     if tdiff < 0:
@@ -127,10 +127,10 @@ class GLONASSEphemeris(Ephemeris):
       if abs(tdiff) < tstep:
         tt = tdiff
       k1 = glonass_diff_eq(state, acc)
-      k2 = glonass_diff_eq(state + k1*tt/2, -acc)
-      k3 = glonass_diff_eq(state + k2*tt/2, -acc)
-      k4 = glonass_diff_eq(state + k3*tt, -acc)
-      state += (k1 + 2*k2 + 2*k3 + k4)*tt/6.0
+      k2 = glonass_diff_eq(state + k1 * tt / 2, -acc)
+      k3 = glonass_diff_eq(state + k2 * tt / 2, -acc)
+      k4 = glonass_diff_eq(state + k3 * tt, -acc)
+      state += (k1 + 2 * k2 + 2 * k3 + k4) * tt / 6.0
       tdiff -= tt
 
     pos = state[0:3]
@@ -154,15 +154,15 @@ class PolyEphemeris(Ephemeris):
     dt = time - self.data['t0']
     deg = self.data['deg']
     deg_t = self.data['deg_t']
-    sat_pos = np.array([sum([(dt**p)*self.data['x'][deg-p] for p in range(deg+1)]),
-                        sum([(dt**p)*self.data['y'][deg-p] for p in range(deg+1)]),
-                        sum([(dt**p)*self.data['z'][deg-p] for p in range(deg+1)])])
-    sat_vel = np.array([sum([p*(dt**(p-1))*self.data['x'][deg-p] for p in range(1,deg+1)]),
-                        sum([p*(dt**(p-1))*self.data['y'][deg-p] for p in range(1,deg+1)]),
-                        sum([p*(dt**(p-1))*self.data['z'][deg-p] for p in range(1,deg+1)])])
-    time_err = sum([(dt**p)*self.data['clock'][deg_t-p] for p in range(deg_t+1)])
-    time_err_rate = sum([p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in range(1,deg_t+1)])
-    time_err_with_rel = time_err - 2*np.inner(sat_pos, sat_vel)/SPEED_OF_LIGHT**2
+    sat_pos = np.array([sum([(dt**p) * self.data['x'][deg - p] for p in range(deg + 1)]),
+                        sum([(dt**p) * self.data['y'][deg - p] for p in range(deg + 1)]),
+                        sum([(dt**p) * self.data['z'][deg - p] for p in range(deg + 1)])])
+    sat_vel = np.array([sum([p * (dt**(p - 1)) * self.data['x'][deg - p] for p in range(1,deg + 1)]),
+                        sum([p * (dt**(p - 1)) * self.data['y'][deg - p] for p in range(1,deg + 1)]),
+                        sum([p * (dt**(p - 1)) * self.data['z'][deg - p] for p in range(1,deg + 1)])])
+    time_err = sum([(dt**p) * self.data['clock'][deg_t - p] for p in range(deg_t + 1)])
+    time_err_rate = sum([p * (dt**(p - 1)) * self.data['clock'][deg_t - p] for p in range(1,deg_t + 1)])
+    time_err_with_rel = time_err - 2 * np.inner(sat_pos, sat_vel) / SPEED_OF_LIGHT**2
     return sat_pos, sat_vel, time_err_with_rel, time_err_rate
 
 
@@ -172,7 +172,7 @@ class GPSEphemeris(Ephemeris):
     self.epoch = epoch
     self.healthy = healthy
     self.data = data
-    self.max_time_diff = 2*SECS_IN_HR
+    self.max_time_diff = 2 * SECS_IN_HR
     self.max_time_diff_tgd = SECS_IN_DAY
     self.type = EphemerisType.NAV
 
@@ -294,10 +294,10 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
         #TODO this is a crappy way to deal with overlapping ultra rapid
         if len(data[prn]) < 1 or epoch - data[prn][-1][0] > 0:
           parsed = [epoch,
-                    1e3*float(line[4:18]),
-                    1e3*float(line[18:32]),
-                    1e3*float(line[32:46]),
-                    1e-6*float(line[46:60])]
+                    1e3 * float(line[4:18]),
+                    1e3 * float(line[18:32]),
+                    1e3 * float(line[32:46]),
+                    1e-6 * float(line[46:60])]
           if (np.array(parsed[1:]) != 0).all():
             data[prn].append(parsed)
     f.close()
@@ -310,7 +310,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
       continue
     for i in range(len(data[prn]) - deg):
       times, x, y, z, clock = [],[],[],[],[]
-      epoch = data[prn][i + deg//2][0]
+      epoch = data[prn][i + deg // 2][0]
       for j in range(deg + 1):
         times.append(data[prn][i + j][0] - epoch)
         x.append(data[prn][i + j][1])
@@ -324,7 +324,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
       poly_data['x'] = np.polyfit(times, x, deg)
       poly_data['y'] = np.polyfit(times, y, deg)
       poly_data['z'] = np.polyfit(times, z, deg)
-      poly_data['clock'] = [(data[prn][i + deg//2 + 1][4] - data[prn][i + deg//2 - 1][4])/1800, data[prn][i + deg//2][4]]
+      poly_data['clock'] = [(data[prn][i + deg // 2 + 1][4] - data[prn][i + deg // 2 - 1][4]) / 1800, data[prn][i + deg // 2][4]]
       poly_data['deg'] = deg
       poly_data['deg_t'] = deg_t
       ephems.append(PolyEphemeris(prn, poly_data, epoch, healthy=True, eph_type=EphemerisType.RAPID_ORBIT))

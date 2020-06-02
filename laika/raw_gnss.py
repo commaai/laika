@@ -76,7 +76,7 @@ class GNSSMeasurement(object):
     self.observables_final = {}
 
   def process(self, dog):
-    sat_time = self.recv_time - self.observables['C1C']/constants.SPEED_OF_LIGHT
+    sat_time = self.recv_time - self.observables['C1C'] / constants.SPEED_OF_LIGHT
     sat_info = dog.get_sat_info(self.prn, sat_time)
     if sat_info is None:
       return False
@@ -93,19 +93,19 @@ class GNSSMeasurement(object):
         delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
         if delay:
           self.observables_final[obs] = (self.observables[obs] +
-                                         self.sat_clock_err*constants.SPEED_OF_LIGHT -
+                                         self.sat_clock_err * constants.SPEED_OF_LIGHT -
                                          delay)
       else:
         self.observables_final[obs] = self.observables[obs]
     if 'C1C' in self.observables_final and 'C2P' in self.observables_final:
-      self.observables_final['IOF'] = (((constants.GPS_L1**2)*self.observables_final['C1C'] -
-                                        (constants.GPS_L2**2)*self.observables_final['C2P'])/
+      self.observables_final['IOF'] = (((constants.GPS_L1**2) * self.observables_final['C1C'] -
+                                        (constants.GPS_L2**2) * self.observables_final['C2P']) /
                                        (constants.GPS_L1**2 - constants.GPS_L2**2))
 
     geometric_range = np.linalg.norm(self.sat_pos - est_pos)
-    theta_1 = constants.EARTH_ROTATION_RATE*(geometric_range)/constants.SPEED_OF_LIGHT
-    self.sat_pos_final = [self.sat_pos[0]*np.cos(theta_1) + self.sat_pos[1]*np.sin(theta_1),
-                          self.sat_pos[1]*np.cos(theta_1) - self.sat_pos[0]*np.sin(theta_1),
+    theta_1 = constants.EARTH_ROTATION_RATE * (geometric_range) / constants.SPEED_OF_LIGHT
+    self.sat_pos_final = [self.sat_pos[0] * np.cos(theta_1) + self.sat_pos[1] * np.sin(theta_1),
+                          self.sat_pos[1] * np.cos(theta_1) - self.sat_pos[0] * np.sin(theta_1),
                           self.sat_pos[2]]
     if 'C1C' in self.observables_final and np.isfinite(self.observables_final['C1C']):
       self.corrected = True
@@ -169,7 +169,7 @@ def read_raw_qcom(report):
         i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction) / 1000
       sat_time = GPSTime(recv_week, sat_tow)
       observables, observables_std = {}, {}
-      observables['C1C'] = (recv_time - sat_time)*constants.SPEED_OF_LIGHT
+      observables['C1C'] = (recv_time - sat_time) * constants.SPEED_OF_LIGHT
       observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT
       observables['D1C'] = i.unfilteredSpeed
       observables_std['D1C'] = i.unfilteredSpeedUncertainty
@@ -190,7 +190,7 @@ def read_raw_ublox(report):
   measurements = []
   for i in report.measurements:
     # only add gps and glonass fixes
-    if (i.gnssId == 0 or i.gnssId==6):
+    if (i.gnssId == 0 or i.gnssId == 6):
       if i.svId > 32 or i.pseudorange > 2**32:
         continue
       if i.gnssId == 0:
@@ -199,15 +199,15 @@ def read_raw_ublox(report):
         prn = 'R%02i' % i.svId
       observables = {}
       observables_std = {}
-      if i.trackingStatus.pseudorangeValid and i.sigId==0:
+      if i.trackingStatus.pseudorangeValid and i.sigId == 0:
         observables['C1C'] = i.pseudorange
         # Empirically it seems obvious ublox's std is
         # actually a variation
-        observables_std['C1C'] = np.sqrt(i.pseudorangeStdev)*10
-        if i.gnssId==6:
+        observables_std['C1C'] = np.sqrt(i.pseudorangeStdev) * 10
+        if i.gnssId == 6:
           glonass_freq = i.glonassFrequencyIndex - 7
-          observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq*constants.GLONASS_L1_DELTA)) * (i.doppler)
-        elif i.gnssId==0:
+          observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq * constants.GLONASS_L1_DELTA)) * (i.doppler)
+        elif i.gnssId == 0:
           glonass_freq = np.nan
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * (i.doppler)
         observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev * 1
@@ -354,12 +354,12 @@ def get_Q(recv_pos, sat_positions):
   local = LocalCoord.from_ecef(recv_pos)
   sat_positions_rel = local.ecef2ned(sat_positions)
   sat_distances = np.linalg.norm(sat_positions_rel, axis=1)
-  A = np.column_stack((sat_positions_rel[:,0]/sat_distances,  # pylint: disable=unsubscriptable-object
-                       sat_positions_rel[:,1]/sat_distances,  # pylint: disable=unsubscriptable-object
-                       sat_positions_rel[:,2]/sat_distances,  # pylint: disable=unsubscriptable-object
+  A = np.column_stack((sat_positions_rel[:,0] / sat_distances,  # pylint: disable=unsubscriptable-object
+                       sat_positions_rel[:,1] / sat_distances,  # pylint: disable=unsubscriptable-object
+                       sat_positions_rel[:,2] / sat_distances,  # pylint: disable=unsubscriptable-object
                        -np.ones(len(sat_distances))))
   if A.shape[0] < 4 or np.linalg.matrix_rank(A) < 4:
-    return np.inf*np.ones((4,4))
+    return np.inf * np.ones((4,4))
   else:
     Q = np.linalg.inv(A.T.dot(A))
     return Q

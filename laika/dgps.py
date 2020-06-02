@@ -36,14 +36,14 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
           if 'L1 Phase Center' in contents[line_number]:
             phase_center = True
           if not phase_center and 'ITRF2014 POSITION' in contents[line_number]:
-            velocity = [float(contents[line_number+8].split()[3]),
-                        float(contents[line_number+9].split()[3]),
-                        float(contents[line_number+10].split()[3])]
+            velocity = [float(contents[line_number + 8].split()[3]),
+                        float(contents[line_number + 9].split()[3]),
+                        float(contents[line_number + 10].split()[3])]
           if phase_center and 'ITRF2014 POSITION' in contents[line_number]:
             epoch = GPSTime.from_datetime(datetime(2005,1,1))
-            position = [float(contents[line_number+2].split()[3]),
-                        float(contents[line_number+3].split()[3]),
-                        float(contents[line_number+4].split()[3])]
+            position = [float(contents[line_number + 2].split()[3]),
+                        float(contents[line_number + 3].split()[3]),
+                        float(contents[line_number + 4].split()[3])]
             cors_stations[station_id] = [epoch, position, velocity]
             break
       except ValueError:
@@ -75,7 +75,7 @@ def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_d
   cors_station_positions_dict = np.load(cors_station_positions_file, allow_pickle=True).item()  # pylint: disable=unexpected-keyword-arg
   cors_station_positions_file.close()
   epoch, pos, vel = cors_station_positions_dict[station_id]
-  return ((time - epoch)/SECS_IN_YEAR)*np.array(vel) + np.array(pos)
+  return ((time - epoch) / SECS_IN_YEAR) * np.array(vel) + np.array(pos)
 
 
 def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, required_constellations=['GPS']):
@@ -96,7 +96,7 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
     proc_measurements.append(raw.process_measurements(measurement, dog=dog))
   # sample at 30s
   if len(proc_measurements) > 2880:
-    proc_measurements = proc_measurements[::int(len(proc_measurements)/2880)]
+    proc_measurements = proc_measurements[::int(len(proc_measurements) / 2880)]
   if len(proc_measurements) != 2880:
     return None
 
@@ -112,7 +112,7 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
       for j, m in enumerate(proc_measurement):
         prn = m.prn
         if prn not in station_delays[signal]:
-          station_delays[signal][prn] = np.nan*np.ones(n)
+          station_delays[signal][prn] = np.nan * np.ones(n)
         station_delays[signal][prn][i] = residual[j]
   assert len(times) == n
 
@@ -121,7 +121,7 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
   model_delays = {}
   for prn in station_delays['C1C']:
     if get_constellation(prn) == 'GPS':
-      model_delays[prn] = np.nan*np.zeros(n)
+      model_delays[prn] = np.nan * np.zeros(n)
       for i in range(n):
         model_delays[prn][i] = dog.get_delay(prn, times[i], station_pos, no_dgps=True)
   station_clock_errs = np.zeros(n)
@@ -148,7 +148,7 @@ class DGPSDelay(object):
     self.max_distance = max_distance
 
   def get_delay(self, prn, time, signal='C1C'):
-    time_index = int((time - self.delays_t[0])/30)
+    time_index = int((time - self.delays_t[0]) / 30)
     assert abs(self.delays_t[time_index] - time) < 30
     if prn in self.delays[signal] and np.isfinite(self.delays[signal][prn][time_index]):
       return self.delays[signal][prn][time_index]
