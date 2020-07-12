@@ -44,7 +44,8 @@ class DownloadError(Exception):
 
 
 class RINEXFile:
-  def __init__(self, filename):
+  def __init__(self, filename, rate=None):
+    self.rate = rate
     try:
       with open(filename, 'r') as f:
         self._read_header(f)
@@ -176,6 +177,11 @@ class RINEXFile:
 
     return obs, lli, signal_strength
 
+  def _skip_obs(self, f, n_sat):
+    for i in range(n_sat):
+      for _ in range((len(self.obs_types) + 4) // 5):
+        f.readline()
+
   def _read_data_chunk(self, f, CHUNK_SIZE=10000):
     obss = np.empty(
       (CHUNK_SIZE, TOTAL_SATS, len(self.obs_types)), dtype=np.float64) * np.NaN
@@ -190,6 +196,10 @@ class RINEXFile:
       hdr = self._read_epoch_header(f)
       if hdr is None:
         break
+      # data faster than desired rate: ignore it
+      if self.rate and (hdr[0].microsecond or hdr[0].second % self.rate != 0):
+        self._skip_obs(f, len(hdr[2]))
+        continue
       epoch, flags[i], sats = hdr
       epochs[i] = np.datetime64(epoch)
       sat_map = np.ones(len(sats)) * -1
