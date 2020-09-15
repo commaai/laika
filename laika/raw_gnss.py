@@ -53,7 +53,7 @@ class GNSSMeasurement(object):
                observables, observables_std, glonass_freq=np.nan):
 
     # Metadata
-    self.prn = prn  # sattelite ID in rinex convention
+    self.prn = prn  # satellite ID in rinex convention
     self.recv_time_week = recv_time_week
     self.recv_time_sec = recv_time_sec
     self.recv_time = GPSTime(recv_time_week, recv_time_sec)
@@ -72,7 +72,7 @@ class GNSSMeasurement(object):
     self.sat_vel = np.nan * np.ones(3)
     self.sat_clock_err = np.nan
 
-    self.sat_pos_final = np.nan * np.ones(3)  # sat_pos in receiver time's ECEF frame instead of sattelite time's ECEF frame
+    self.sat_pos_final = np.nan * np.ones(3)  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
     self.observables_final = {}
 
   def process(self, dog):
