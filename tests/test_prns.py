@@ -70,7 +70,7 @@ class TestConstellationPRN(unittest.TestCase):
 
     def test_prn_from_nmea_id_for_SBAS(self):
         '''Probably numbering SBAS as single constellation doesn't make
-        a sense, but programatically it works the same as for others
+        sense, but programmatically it works the same as for others
         constellations.'''
         data = [
             ['S01', 33],
@@ -136,7 +136,7 @@ class TestConstellationPRN(unittest.TestCase):
 
     def test_nmea_id_from_prn_for_SBAS(self):
         '''Probably numbering SBAS as single constellation doesn't make
-        a sense, but programatically it works the same as for others
+        sense, but programmatically it works the same as for others
         constellations.'''
         data = [
             ['S01', 33],
@@ -159,12 +159,12 @@ class TestConstellationPRN(unittest.TestCase):
             self.assertEqual(nmea_id, expected_nmea_id)
 
     def test_nmea_id_from_invalid_prn(self):
-        # Special nknown constellation - valid number
+        # Special unknown constellation - valid number
         self.assertEqual(1, get_nmea_id_from_prn('?01'))
         self.assertEqual(-1, get_nmea_id_from_prn('?-1'))
-        # Special nknwon constellation - invalid number
+        # Special unknown constellation - invalid number
         self.assertRaises(ValueError, get_nmea_id_from_prn, '???')
-        # Constellation with unknwon identifier
+        # Constellation with unknwown identifier
         self.assertRaises(NotImplementedError, get_nmea_id_from_prn, 'X01')
         # Valid constellation - invalid number
         self.assertRaises(ValueError, get_nmea_id_from_prn, 'G00')

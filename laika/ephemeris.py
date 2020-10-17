@@ -60,7 +60,7 @@ class EphemerisType(object):
 
 class Ephemeris(object):
   def valid(self, time):
-    # TODO: use proper abstact base class to define members
+    # TODO: use proper abstract base class to define members
     return abs(time - self.epoch) <= self.max_time_diff  # pylint: disable=no-member
 
 
@@ -243,7 +243,7 @@ class GPSEphemeris(Ephemeris):
     om_dot = eph['omegadot'] - EARTH_ROTATION_RATE
     om = eph['omega0'] + tdiff * om_dot - EARTH_ROTATION_RATE * eph['toe'].tow
 
-    # Compute the satellite's position in Earth-Centered Earth-Fixed coordiates
+    # Compute the satellite's position in Earth-Centered Earth-Fixed coordinates
     pos = np.empty(3)
     pos[0] = x * cos(om) - y * cos(inc) * sin(om)
     pos[1] = x * sin(om) + y * cos(inc) * cos(om)
@@ -251,7 +251,7 @@ class GPSEphemeris(Ephemeris):
 
     tempd3 = y_dot * cos(inc) - y * sin(inc) * inc_dot
 
-    # Compute the satellite's velocity in Earth-Centered Earth-Fixed coordiates
+    # Compute the satellite's velocity in Earth-Centered Earth-Fixed coordinates
     vel = np.empty(3)
     vel[0] = -om_dot * pos[1] + x_dot * cos(om) - tempd3 * sin(om)
     vel[1] = om_dot * pos[0] + x_dot * sin(om) + tempd3 * cos(om)
