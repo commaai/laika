@@ -277,7 +277,7 @@ def ecef2car(car_ecef, psi, theta, points_ecef, ned_converter):
   points_ned = np.vstack(points_ned).T
 
   # n, e, d -> x, y, z
-  # Calculate relative postions and rotate wrt to heading and pitch of car
+  # Calculate relative positions and rotate wrt to heading and pitch of car
   invert_R = array([[1., 0., 0.], [0., -1., 0.], [0., 0., -1.]])
 
   c, s = np.cos(psi), np.sin(psi)

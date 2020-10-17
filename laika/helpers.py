@@ -200,7 +200,7 @@ def rinex3_obs_from_rinex2_obs(observable):
 
 
 class TimeRangeHolder:
-  '''Class to support test if date is in any of the mutliple, sparse ranges'''
+  '''Class to support test if date is in any of the multiple, sparse ranges'''
   def __init__(self):
     # Sorted list
     self._ranges = []
@@ -241,7 +241,7 @@ class TimeRangeHolder:
         new_start, _ = self._ranges[current_start]
         _, new_end = self._ranges[current_end]
         new_range = (new_start, new_end)
-        # Required reversed order to corrent remove
+        # Required reversed order to correct remove
         del self._ranges[current_end]
         del self._ranges[current_start]
         self._ranges.insert(current_start, new_range)
