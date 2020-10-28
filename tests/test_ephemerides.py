@@ -4,9 +4,9 @@ import unittest
 from laika.gps_time import GPSTime
 from laika import AstroDog
 
-gps_times_list = [[1950, 415621.0],
-    [1895, 455457.0],
-    [1885, 443787.0]]
+gps_times_list = [[1999, 415621.0],
+    [2045, 455457.0],
+    [1985, 443787.0]]
 
 svIds = ['G01', 'G31', 'R08']
 gps_times = [GPSTime(*gps_time_list) for gps_time_list in gps_times_list]
