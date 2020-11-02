@@ -32,7 +32,9 @@ class TestAstroDog(unittest.TestCase):
     for gps_time in gps_times:
       for svId in svIds:
         sat_info_nav = dog_nav.get_sat_info(svId, gps_time)
+        assert sat_info_nav is not None
         sat_info_orbit = dog_orbit.get_sat_info(svId, gps_time)
+        assert sat_info_orbit is not None
         np.testing.assert_allclose(sat_info_nav[0], sat_info_orbit[0], rtol=0, atol=5)
         np.testing.assert_allclose(sat_info_nav[1], sat_info_orbit[1], rtol=0, atol=.1)
         np.testing.assert_allclose(sat_info_nav[2], sat_info_orbit[2], rtol=0, atol=1e-7)
