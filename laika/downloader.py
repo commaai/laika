@@ -168,17 +168,17 @@ def download_nav(time, cache_dir, constellation='GPS'):
   t = time.as_datetime()
   try:
     if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
-      url_base = 'ftp://cddis.gsfc.nasa.gov/gnss/data/daily/'
+      url_base = 'ftp://igs.ign.fr/pub/igs/data/'
       cache_subdir = cache_dir + 'daily_nav/'
       if constellation =='GPS':
         filename = t.strftime("brdc%j0.%yn")
-        folder_path = t.strftime('%Y/%j/%yn/')
+        folder_path = t.strftime('%Y/%j/')
       elif constellation =='GLONASS':
         filename = t.strftime("brdc%j0.%yg")
-        folder_path = t.strftime('%Y/%j/%yg/')
+        folder_path = t.strftime('%Y/%j/')
       return download_file(url_base, folder_path, cache_subdir, filename, compression='.Z')
     else:
-      url_base = 'ftp://cddis.gsfc.nasa.gov/gnss/data/hourly/'
+      url_base = 'ftp://igs.ign.fr/pub/igs/data/hourly'
       cache_subdir = cache_dir + 'hourly_nav/'
       if constellation =='GPS':
         filename = t.strftime("hour%j0.%yn")
@@ -191,8 +191,7 @@ def download_nav(time, cache_dir, constellation='GPS'):
 def download_orbits(time, cache_dir):
   cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
-    'ftp://cddis.gsfc.nasa.gov/gnss/products/',
-    'ftp://igs.ign.fr/pub/igs/products/'
+    'ftp://igs.ign.fr/pub/igs/products/',
   )
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
@@ -270,8 +269,7 @@ def download_ionex(time, cache_dir):
   cache_subdir = cache_dir + 'ionex/'
   t = time.as_datetime()
   url_bases = (
-    'ftp://cddis.gsfc.nasa.gov/gnss/products/ionex/',
-    'ftp://igs.ign.fr/pub/igs/products/ionosphere'
+    'ftp://igs.ign.fr/pub/igs/products/ionosphere',
   )
   folder_path = t.strftime('%Y/%j/')
   for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]:
@@ -290,8 +288,7 @@ def download_dcb(time, cache_dir):
     try:
       t = time.as_datetime()
       url_bases = (
-        'ftp://cddis.nasa.gov/gnss/products/bias/',
-        'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/'
+        'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/',
       )
       folder_path = t.strftime('%Y/')
       filename = t.strftime("CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX")
