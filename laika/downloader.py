@@ -269,7 +269,7 @@ def download_ionex(time, cache_dir):
   cache_subdir = cache_dir + 'ionex/'
   t = time.as_datetime()
   url_bases = (
-    'ftp://igs.ign.fr/pub/igs/products/ionosphere',
+    'ftp://igs.ign.fr/pub/igs/products/ionosphere/',
   )
   folder_path = t.strftime('%Y/%j/')
   for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]:
