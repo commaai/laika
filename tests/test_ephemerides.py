@@ -35,7 +35,7 @@ class TestAstroDog(unittest.TestCase):
         assert sat_info_nav is not None
         sat_info_orbit = dog_orbit.get_sat_info(svId, gps_time)
         assert sat_info_orbit is not None
-        sat_delay = dog_orbit.get_delay(svId, gps_time, np.array([-2703115.2660, -4291768.3500, 3854247.9590]))
+        dog_orbit.get_delay(svId, gps_time, np.array([-2703115.2660, -4291768.3500, 3854247.9590]))
         np.testing.assert_allclose(sat_info_nav[0], sat_info_orbit[0], rtol=0, atol=5)
         np.testing.assert_allclose(sat_info_nav[1], sat_info_orbit[1], rtol=0, atol=.1)
         np.testing.assert_allclose(sat_info_nav[2], sat_info_orbit[2], rtol=0, atol=1e-7)
