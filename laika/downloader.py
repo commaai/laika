@@ -271,13 +271,13 @@ def download_ionex(time, cache_dir):
   url_bases = (
     'ftp://igs.ign.fr/pub/igs/products/ionosphere/',
   )
-  folder_path = t.strftime('%Y/%j/')
-  for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]:
-    try:
-      filepath = download_file(url_bases, folder_path, cache_subdir, filename, compression='.Z')
-      return filepath
-    except IOError as e:
-      last_err = e
+  for folder_path in [t.strftime('%Y/%j/'), t.strftime('%Y/%j/topex/')]:
+    for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi"), t.strftime('gpsg%j0.%yi')]:
+      try:
+        filepath = download_file(url_bases, folder_path, cache_subdir, filename, compression='.Z')
+        return filepath
+      except IOError as e:
+        last_err = e
   raise last_err
 
 
