@@ -14,17 +14,23 @@ import numpy as np
 
 
 def floatornan(x):
-  if x == '' or x[-1] == ' ':
-    return np.NaN
-  else:
-    return float(x)
+    """function: converts empty character and integer to NaN and floating points numbers respectively.
+    :param x: number, string or special character
+    :returns: floating point number if it int else NaN"""
+    if x == '' or x[-1] == ' ':
+        return np.NaN
+    else:
+        return float(x)
 
 
 def digitorzero(x):
-  if x == ' ' or x == '':
-    return 0
-  else:
-    return int(x)
+    """function: converts empty character and integer to 0 and integer respectively.
+    :param x: number, string or special character
+    :returns: floating point number if it int else NaN"""
+    if x == ' ' or x == '':
+        return 0
+    else:
+        return int(x)
 
 
 def padline(l, n=16):
