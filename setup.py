@@ -19,6 +19,7 @@ setup(
   install_requires=[
     'requests',
     'scipy',
+    'pycurl',
     'tqdm'
   ],
   ext_modules=[],
