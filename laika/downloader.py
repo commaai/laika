@@ -111,8 +111,7 @@ def https_download_file(url):
   crl.setopt(crl.FOLLOWLOCATION, True)
   crl.setopt(crl.NETRC_FILE, dir_path + '/.netrc')
   crl.setopt(crl.NETRC, 2)
-  #crl.setopt(pycurl.USERNAME, 'laika_CI1')
-  #crl.setopt(pycurl.USERPWD, 'laika_CI1')
+  crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
   crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
 
   buf = BytesIO()
