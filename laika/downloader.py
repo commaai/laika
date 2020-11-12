@@ -2,18 +2,17 @@ import ftplib
 import gzip
 import os
 import urllib.request
+import pycurl
 from datetime import datetime
 from urllib.parse import urlparse
+from io import BytesIO
 
 from .constants import SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
 from .unlzw import unlzw
 
-USE_COMMA_CACHE = True
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
-def ftpcache_path(url):
-  p = urlparse(url)
-  return 'http://ftpcache.comma.life/'+p.netloc.replace(".", "-")+p.path
 
 def retryable(f):
   """
@@ -105,19 +104,40 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
       filepaths.append(filepath)
   return filepaths
 
+
+def https_download_file(url):
+  crl = pycurl.Curl()
+  crl.setopt(crl.URL, url)
+  crl.setopt(crl.FOLLOWLOCATION, True)
+  crl.setopt(crl.NETRC_FILE, dir_path + '/.netrc')
+  crl.setopt(crl.NETRC, 2)
+  #crl.setopt(pycurl.USERNAME, 'laika_CI1')
+  #crl.setopt(pycurl.USERPWD, 'laika_CI1')
+  crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
+
+  buf = BytesIO()
+  crl.setopt(crl.WRITEDATA, buf)
+  crl.perform()
+  response = crl.getinfo(pycurl.RESPONSE_CODE)
+  crl.close()
+  if response == 200:
+    return buf.getvalue()
+  else:
+    raise IOError('HTTPS error ' + str(response))
+
+
+def ftp_download_file(url):
+  urlf = urllib.request.urlopen(url)
+  data_zipped = urlf.read()
+  urlf.close()
+  return data_zipped
+
+
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
-  if USE_COMMA_CACHE:
-    filepaths = []
-    for filename in filenames:
-      filepaths.append(download_file(
-        url_base, folder_path, cacheDir, filename, compression=compression, overwrite=overwrite
-      ))
-    return filepaths
-  else:
-    return ftp_download_files(
-      url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
-    )
+  return ftp_download_files(
+    url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
+  )
 
 @retryable
 def download_file(url_base, folder_path, cacheDir, filename, compression='', overwrite=False):
@@ -128,35 +148,23 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
   filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
 
   url = url_base + folder_path + filename_zipped
-  url_cache = ftpcache_path(url)
 
   if not os.path.isfile(filepath) or overwrite:
     if not os.path.exists(folder_path_abs):
       os.makedirs(folder_path_abs)
 
-    downloaded = False
-    # try to download
-    global USE_COMMA_CACHE
-    if USE_COMMA_CACHE:
-      try:
-        print("pulling from", url_cache, "to", filepath)
-        urlf = urllib.request.urlopen(url_cache, timeout=5)
-        downloaded = True
-      except IOError as e:
-        print("cache download failed, pulling from", url, "to", filepath)
-        # commai cache not accessible (not just 404 or perms issue): don't keep trying it
-        if str(e.reason) == "timed out":  # pylint: disable=no-member
-          print("disabling ftpcache.comma.life")
-          USE_COMMA_CACHE = False
-    if not downloaded:
-      print("cache download failed, pulling from", url, "to", filepath)
-      try:
-        urlf = urllib.request.urlopen(url)
-      except IOError:
-        raise IOError("Could not download file from: " + url)
+    try:
+      print('Downloading ' + url)
+      if 'https' in url:
+        data_zipped = https_download_file(url)
+      elif 'ftp':
+        data_zipped = ftp_download_file(url)
+      else:
+        raise NotImplementedError('Did find ftp or https preamble')
+    except IOError:
+      raise IOError("Could not download file from: " + url)
 
-    data_zipped = urlf.read()
-    urlf.close()
+
     with open(filepath_zipped, 'wb') as wf:
       wf.write(data_zipped)
 
@@ -168,17 +176,17 @@ def download_nav(time, cache_dir, constellation='GPS'):
   t = time.as_datetime()
   try:
     if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
-      url_base = 'ftp://igs.ign.fr/pub/igs/data/'
+      url_base = 'https://cddis.nasa.gov/archive/gnss/data/daily/'
       cache_subdir = cache_dir + 'daily_nav/'
       if constellation =='GPS':
         filename = t.strftime("brdc%j0.%yn")
-        folder_path = t.strftime('%Y/%j/')
+        folder_path = t.strftime('%Y/%j/%yn/')
       elif constellation =='GLONASS':
         filename = t.strftime("brdc%j0.%yg")
-        folder_path = t.strftime('%Y/%j/')
+        folder_path = t.strftime('%Y/%j/%yg/')
       return download_file(url_base, folder_path, cache_subdir, filename, compression='.Z')
     else:
-      url_base = 'ftp://igs.ign.fr/pub/igs/data/hourly'
+      url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
       cache_subdir = cache_dir + 'hourly_nav/'
       if constellation =='GPS':
         filename = t.strftime("hour%j0.%yn")
@@ -191,6 +199,7 @@ def download_nav(time, cache_dir, constellation='GPS'):
 def download_orbits(time, cache_dir):
   cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
+    'https://cddis.nasa.gov/archive/gnss/products/',
     'ftp://igs.ign.fr/pub/igs/products/',
   )
   downloaded_files = []
@@ -269,10 +278,11 @@ def download_ionex(time, cache_dir):
   cache_subdir = cache_dir + 'ionex/'
   t = time.as_datetime()
   url_bases = (
+    'https://cddis.nasa.gov/archive/gnss/products/ionex/',
     'ftp://igs.ign.fr/pub/igs/products/ionosphere/',
   )
-  for folder_path in [t.strftime('%Y/%j/'), t.strftime('%Y/%j/topex/')]:
-    for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi"), t.strftime('gpsg%j0.%yi')]:
+  for folder_path in [t.strftime('%Y/%j/')]:
+    for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]:
       try:
         filepath = download_file(url_bases, folder_path, cache_subdir, filename, compression='.Z')
         return filepath
@@ -288,6 +298,7 @@ def download_dcb(time, cache_dir):
     try:
       t = time.as_datetime()
       url_bases = (
+        'https://cddis.nasa.gov/archive/gnss/products/bias/',
         'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/',
       )
       folder_path = t.strftime('%Y/')
