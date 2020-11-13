@@ -79,7 +79,7 @@ def decompress(filepath_zipped, filepath, compression=''):
 def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
   """
   Like download file, but more of them. Keeps a persistent FTP connection open
-  to be more efficient. Not "ftpcache.comma.life" aware
+  to be more efficient.
   """
   folder_path_abs = os.path.join(cacheDir, folder_path)
 
