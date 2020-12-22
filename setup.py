@@ -20,6 +20,7 @@ setup(
     'requests',
     'scipy',
     'pycurl',
+    'certifi',
     'tqdm'
   ],
   ext_modules=[],
