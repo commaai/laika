@@ -160,7 +160,7 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
         data_zipped = ftp_download_file(url)
       else:
         raise NotImplementedError('Did find ftp or https preamble')
-    except IOError:
+    except (IOError, pycurl.error):
       raise IOError("Could not download file from: " + url)
 
 
