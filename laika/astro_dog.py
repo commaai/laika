@@ -8,6 +8,7 @@ from .downloader import download_cors_station
 from .trop import saast
 from .iono import parse_ionex
 from .dcb import parse_dcbs
+from .gps_time import GPSTime
 from .dgps import get_closest_station_names, parse_dgps
 from . import constants
 
@@ -208,11 +209,13 @@ class AstroDog(object):
     if len(fetched_ephems) != 0:
       min_ephem = min(fetched_ephems, key=lambda e: e.epoch)
       max_ephem = max(fetched_ephems, key=lambda e: e.epoch)
-
       min_epoch = min_ephem.epoch - min_ephem.max_time_diff
       max_epoch = max_ephem.epoch + max_ephem.max_time_diff
-
       self.nav_fetched_times.add(min_epoch, max_epoch)
+    else:
+      begin_day = GPSTime(time.week, constants.SECS_IN_DAY * (time.tow // (constants.SECS_IN_DAY)))
+      end_day = GPSTime(time.week, constants.SECS_IN_DAY * (1 + (time.tow // (constants.SECS_IN_DAY))))
+      self.nav_fetched_times.add(begin_day, end_day)
 
   def get_orbit_data(self, time):
     file_paths_sp3_ru = download_orbits_russia(time, cache_dir=self.cache_dir)

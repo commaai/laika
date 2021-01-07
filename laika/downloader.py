@@ -113,6 +113,8 @@ def https_download_file(url):
   crl.setopt(crl.NETRC, 2)
   crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
   crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
+  crl.setopt(pycurl.CONNECTTIMEOUT, 10)
+
 
   buf = BytesIO()
   crl.setopt(crl.WRITEDATA, buf)
