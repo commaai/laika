@@ -1,8 +1,10 @@
+import certifi
 import ftplib
 import gzip
 import os
 import urllib.request
 import pycurl
+
 from datetime import datetime
 from urllib.parse import urlparse
 from io import BytesIO
@@ -107,6 +109,7 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
 
 def https_download_file(url):
   crl = pycurl.Curl()
+  crl.setopt(crl.CAINFO, certifi.where())
   crl.setopt(crl.URL, url)
   crl.setopt(crl.FOLLOWLOCATION, True)
   crl.setopt(crl.NETRC_FILE, dir_path + '/.netrc')

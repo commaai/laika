@@ -17,6 +17,7 @@ setup(
   license='MIT',
   setup_requires=['numpy', 'pytest-runner'],
   install_requires=[
+    'certifi',
     'requests',
     'scipy',
     'pycurl',
