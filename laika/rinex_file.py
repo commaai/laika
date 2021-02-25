@@ -47,9 +47,15 @@ class RINEXFile:
   def __init__(self, filename, rate=None):
     self.rate = rate
     try:
-      with open(filename, 'r') as f:
-        self._read_header(f)
-        self._read_data(f)
+      if filename[-3:]=='.gz':
+        import gzip
+        with gzip.open(filename,'rt') as f:
+          self._read_header(f)
+          self._read_data(f)
+      else:
+        with open(filename, 'r') as f:
+          self._read_header(f)
+          self._read_data(f)
     except TypeError:
       print("TypeError, file likely not downloaded.")
       raise DownloadError("file download failure")

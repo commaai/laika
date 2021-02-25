@@ -144,7 +144,7 @@ def download_files(url_base, folder_path, cacheDir, filenames, compression='', o
   )
 
 @retryable
-def download_file(url_base, folder_path, cacheDir, filename, compression='', overwrite=False):
+def download_file(url_base, folder_path, cacheDir, filename, compression='', overwrite=False, leave_compressed=False):
   folder_path_abs = os.path.join(cacheDir, folder_path)
   filename_zipped = filename + compression
 
@@ -153,7 +153,7 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
 
   url = url_base + folder_path + filename_zipped
 
-  if not os.path.isfile(filepath) or overwrite:
+  if (not leave_compressed and not os.path.isfile(filepath)) or (leave_compressed and not os.path.isfile(filepath_zipped)) or overwrite:
     if not os.path.exists(folder_path_abs):
       os.makedirs(folder_path_abs)
 
@@ -172,8 +172,13 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
     with open(filepath_zipped, 'wb') as wf:
       wf.write(data_zipped)
 
-    filepath = decompress(filepath_zipped, filepath, compression=compression)
-  return filepath
+    if not leave_compressed:
+      filepath = decompress(filepath_zipped, filepath, compression=compression)
+
+  if leave_compressed:
+    return filepath_zipped
+  else:
+    return filepath
 
 
 def download_nav(time, cache_dir, constellation='GPS'):
@@ -326,7 +331,7 @@ def download_cors_coords(cache_dir):
   return filepaths
 
 
-def download_cors_station(time, station_name, cache_dir):
+def download_cors_station(time, station_name, cache_dir, leave_compressed=False):
   cache_subdir = cache_dir + 'cors_obs/'
   t = time.as_datetime()
   folder_path = t.strftime('%Y/%j/') + station_name + '/'
@@ -336,7 +341,7 @@ def download_cors_station(time, station_name, cache_dir):
     'ftp://alt.ngs.noaa.gov/cors/rinex/'
   )
   try:
-    filepath = download_file(url_bases, folder_path, cache_subdir, filename, compression='.gz')
+    filepath = download_file(url_bases, folder_path, cache_subdir, filename, compression='.gz', leave_compressed=leave_compressed)
     return filepath
   except IOError:
     print("File not downloaded, check availability on server.")
