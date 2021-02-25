@@ -4,12 +4,14 @@ import gzip
 import os
 import urllib.request
 import pycurl
+import time
+import tempfile
 
 from datetime import datetime
 from urllib.parse import urlparse
 from io import BytesIO
 
-from .constants import SECS_IN_DAY, SECS_IN_WEEK
+from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
 from .unlzw import unlzw
 
@@ -149,9 +151,17 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
   filename_zipped = filename + compression
 
   filepath = os.path.join(folder_path_abs, filename)
+  filepath_attempt = filepath + '.attempt_time'
   filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
-
   url = url_base + folder_path + filename_zipped
+
+  if os.path.exists(filepath_attempt):
+    with open(filepath_attempt, 'r') as rf:
+      last_attempt_time = float(rf.read())
+    if time.time() - last_attempt_time > SECS_IN_HR:
+      print('More than 1hr time for new attempt')
+    else:
+      raise IOError("Too soon to try again from : " + url)
 
   if not os.path.isfile(filepath) or overwrite:
     if not os.path.exists(folder_path_abs):
@@ -166,6 +176,10 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
       else:
         raise NotImplementedError('Did find ftp or https preamble')
     except (IOError, pycurl.error):
+      unix_time = time.time()
+      with tempfile.NamedTemporaryFile(delete=False) as fout:
+        fout.write(str(unix_time))
+      os.replace(fout.name, filepath + '.attempt_time')
       raise IOError("Could not download file from: " + url)
 
 
