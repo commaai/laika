@@ -156,7 +156,7 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
   url = url_base + folder_path + filename_zipped
 
   if os.path.exists(filepath_attempt):
-    with open(filepath_attempt, 'r') as rf:
+    with open(filepath_attempt, 'rb') as rf:
       last_attempt_time = float(rf.read().decode())
     if time.time() - last_attempt_time > SECS_IN_HR:
       print('More than 1hr time for new attempt')
