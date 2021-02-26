@@ -157,7 +157,7 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
 
   if os.path.exists(filepath_attempt):
     with open(filepath_attempt, 'r') as rf:
-      last_attempt_time = float(rf.read())
+      last_attempt_time = float(rf.read().decode())
     if time.time() - last_attempt_time > SECS_IN_HR:
       print('More than 1hr time for new attempt')
     else:
@@ -178,7 +178,7 @@ def download_file(url_base, folder_path, cacheDir, filename, compression='', ove
     except (IOError, pycurl.error):
       unix_time = time.time()
       with tempfile.NamedTemporaryFile(delete=False) as fout:
-        fout.write(str(unix_time))
+        fout.write(str.encode(str(unix_time)))
       os.replace(fout.name, filepath + '.attempt_time')
       raise IOError("Could not download file from: " + url)
 
