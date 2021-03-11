@@ -16,6 +16,8 @@ jobs:
         pip install -r requirements_examples.txt
     - name: Run unittests
       run: |
+        export NASA_USERNAME=${{ secrets.NASA_USERNAME }}
+        export NASA_PASSWORD=${{ secrets.NASA_PASSWORD }}
         python -m unittest discover .
     - name: Test install
       run: |
