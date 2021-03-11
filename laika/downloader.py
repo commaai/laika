@@ -113,14 +113,15 @@ def https_download_file(url):
 
   if os.path.isfile(dir_path + '/.netrc'):
     netrc_path = dir_path + '/.netrc'
+    f = None
   else:
     try:
       username = os.environ['NASA_USERNAME']
       password = os.environ['NASA_PASSWORD']
-      with tempfile.NamedTemporaryFile() as f:
-        netrc = f"machine urs.earthdata.nasa.gov login {username} password {password}"
-        f.write(netrc.encode())
-        f.flush()
+      f = tempfile.NamedTemporaryFile()
+      netrc = f"machine urs.earthdata.nasa.gov login {username} password {password}"
+      f.write(netrc.encode())
+      f.flush()
       netrc_path = f.name
     except KeyError:
       raise IOError('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in enviroment for urs.earthdata.nasa.gov authentication')
@@ -140,6 +141,8 @@ def https_download_file(url):
   crl.perform()
   response = crl.getinfo(pycurl.RESPONSE_CODE)
   crl.close()
+  if f is not None:
+    f.close()
 
   if response != 200:
     raise IOError('HTTPS error ' + str(response))
