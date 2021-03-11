@@ -112,7 +112,9 @@ def https_download_file(url):
   username = os.environ['NASA_USERNAME']
   password = os.environ['NASA_PASSWORD']
   with tempfile.NamedTemporaryFile() as f:
-    f.write(f"machine urs.earthdata.nasa.gov login {username} password {password}")
+    netrc = f"machine urs.earthdata.nasa.gov login {username} password {password}"
+    f.write(netrc.encode())
+    f.flush()
 
     crl = pycurl.Curl()
     crl.setopt(crl.CAINFO, certifi.where())
@@ -124,16 +126,15 @@ def https_download_file(url):
     crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
     crl.setopt(pycurl.CONNECTTIMEOUT, 10)
 
-
     buf = BytesIO()
     crl.setopt(crl.WRITEDATA, buf)
     crl.perform()
     response = crl.getinfo(pycurl.RESPONSE_CODE)
     crl.close()
-  if response == 200:
-    return buf.getvalue()
-  else:
+
+  if response != 200:
     raise IOError('HTTPS error ' + str(response))
+  return buf.getvalue()
 
 
 def ftp_download_file(url):
