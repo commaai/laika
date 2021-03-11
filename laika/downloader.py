@@ -15,6 +15,8 @@ from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
 from .unlzw import unlzw
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 
 def retryable(f):
   """
@@ -109,28 +111,35 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
 
 def https_download_file(url):
 
-  username = os.environ['NASA_USERNAME']
-  password = os.environ['NASA_PASSWORD']
-  with tempfile.NamedTemporaryFile() as f:
-    netrc = f"machine urs.earthdata.nasa.gov login {username} password {password}"
-    f.write(netrc.encode())
-    f.flush()
+  if os.path.isfile(dir_path + '/.netrc'):
+    netrc_path = dir_path + '/.netrc'
+  else:
+    try:
+      username = os.environ['NASA_USERNAME']
+      password = os.environ['NASA_PASSWORD']
+      with tempfile.NamedTemporaryFile() as f:
+        netrc = f"machine urs.earthdata.nasa.gov login {username} password {password}"
+        f.write(netrc.encode())
+        f.flush()
+      netrc_path = f.name
+    except KeyError:
+      raise IOError('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in enviroment for urs.earthdata.nasa.gov authentication')
 
-    crl = pycurl.Curl()
-    crl.setopt(crl.CAINFO, certifi.where())
-    crl.setopt(crl.URL, url)
-    crl.setopt(crl.FOLLOWLOCATION, True)
-    crl.setopt(crl.NETRC_FILE, f.name)
-    crl.setopt(crl.NETRC, 2)
-    crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
-    crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
-    crl.setopt(pycurl.CONNECTTIMEOUT, 10)
+  crl = pycurl.Curl()
+  crl.setopt(crl.CAINFO, certifi.where())
+  crl.setopt(crl.URL, url)
+  crl.setopt(crl.FOLLOWLOCATION, True)
+  crl.setopt(crl.NETRC_FILE, netrc_path)
+  crl.setopt(crl.NETRC, 2)
+  crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
+  crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
+  crl.setopt(pycurl.CONNECTTIMEOUT, 10)
 
-    buf = BytesIO()
-    crl.setopt(crl.WRITEDATA, buf)
-    crl.perform()
-    response = crl.getinfo(pycurl.RESPONSE_CODE)
-    crl.close()
+  buf = BytesIO()
+  crl.setopt(crl.WRITEDATA, buf)
+  crl.perform()
+  response = crl.getinfo(pycurl.RESPONSE_CODE)
+  crl.close()
 
   if response != 200:
     raise IOError('HTTPS error ' + str(response))
