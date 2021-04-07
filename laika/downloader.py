@@ -225,14 +225,16 @@ def download_nav(time, cache_dir, constellation='GPS'):
       elif constellation =='GLONASS':
         filename = t.strftime("brdc%j0.%yg")
         folder_path = t.strftime('%Y/%j/%yg/')
-      return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression='.Z')
+      compression = '.gz' if folder_path >= '2020/335/' else '.Z'
+      return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression=compression)
     else:
       url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
       cache_subdir = cache_dir + 'hourly_nav/'
       if constellation =='GPS':
         filename = t.strftime("hour%j0.%yn")
         folder_path = t.strftime('%Y/%j/')
-        return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression='.Z', overwrite=True)
+        compression = '.gz' if folder_path >= '2020/336/' else '.Z'
+        return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression=compression, overwrite=True)
   except IOError:
     pass
 
