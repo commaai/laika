@@ -12,7 +12,7 @@ jobs:
         python-version: '3.8.2'
     - name: Install dependencies
       run: |
-        sudo apt-get install libcurl4-gnutls-dev
+        sudo apt install libcurl4-openssl-dev libssl-dev
         pip install -r requirements_examples.txt
     - name: Run unittests
       run: |
