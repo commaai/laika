@@ -349,7 +349,7 @@ def download_cors_station(time, station_name, cache_dir):
   cache_subdir = cache_dir + 'cors_obs/'
   t = time.as_datetime()
   folder_path = t.strftime('%Y/%j/') + station_name + '/'
-  filename = station_name + t.strftime("%j0.%yo")
+  filename = station_name + t.strftime("%j0.%yd")
   url_bases = (
     'ftp://geodesy.noaa.gov/cors/rinex/',
     'ftp://alt.ngs.noaa.gov/cors/rinex/'
