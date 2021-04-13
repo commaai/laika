@@ -1,6 +1,6 @@
 import certifi
 import ftplib
-import gzip
+import hatanaka
 import os
 import urllib.request
 import pycurl
@@ -13,7 +13,6 @@ from io import BytesIO
 
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
-from .unlzw import unlzw
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -61,25 +60,6 @@ def list_dir(url):
   except ftplib.error_perm:
     raise IOError("Permission failure listing folder: " + url)
 
-def decompress(filepath_zipped, filepath, compression=''):
-    if compression == '':
-      return filepath_zipped
-    elif compression == '.gz':
-      f = gzip.open(filepath_zipped, 'rb')
-      uncompressed_data = f.read()
-      f.close()
-    elif compression == '.Z':
-      f = open(filepath_zipped, 'rb')
-      compressed_data = f.read()
-      uncompressed_data = unlzw(compressed_data)
-      f.close()
-    else:
-      raise NotImplementedError('unknown compression: ', compression)
-    f = open(filepath, 'wb')
-    f.write(uncompressed_data)
-    f.close()
-    return filepath
-
 def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
   """
   Like download file, but more of them. Keeps a persistent FTP connection open
@@ -92,7 +72,7 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
   filepaths = []
   for filename in filenames:
     filename_zipped = filename + compression
-    filepath = os.path.join(folder_path_abs, filename)
+    filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
     filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
     print("pulling from", url_base, "to", filepath)
 
@@ -103,7 +83,7 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
         ftp.retrbinary('RETR ' + filename_zipped, open(filepath_zipped, 'wb').write)
       except (ftplib.error_perm):
         raise IOError("Could not download file from: " + url_base + folder_path + filename_zipped)
-      filepaths.append(decompress(filepath_zipped, filepath, compression=compression))
+      filepaths.append(str(hatanaka.decompress_on_disk(filepath_zipped)))
     else:
       filepaths.append(filepath)
   return filepaths
@@ -180,7 +160,7 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
   folder_path_abs = os.path.join(cacheDir, folder_path)
   filename_zipped = filename + compression
 
-  filepath = os.path.join(folder_path_abs, filename)
+  filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
   filepath_attempt = filepath + '.attempt_time'
   filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
 
@@ -209,7 +189,7 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
     with open(filepath_zipped, 'wb') as wf:
       wf.write(data_zipped)
 
-    filepath = decompress(filepath_zipped, filepath, compression=compression)
+    filepath = str(hatanaka.decompress_on_disk(filepath_zipped))
   return filepath
 
 
