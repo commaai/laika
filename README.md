@@ -51,7 +51,7 @@ To confirm the quality of Laika's GNSS processing, we ran laika's processing and
 - [Using laika with a Kalman filter to get more accurate position fixes from a GPS module](https://github.com/commaai/laika/blob/master/examples/Kalman.ipynb)
 
 ## Installation
-Laika runs in Python 2.x, and has only been tested on Ubuntu 16.04. Running in a virtual environment is recommended.
+Laika runs in Python 3.8.2, and has only been tested on Ubuntu 20.04. Running in a virtual environment is recommended.
 
 #### laika
 If you do not yet have numpy and scipy installed. Install them with pip. Having accelerated numpy will make laika much faster.
@@ -64,6 +64,14 @@ python setup.py install
 ```
 The tests should now pass.
 
+#### Eathdata account
+
+It is no longer possible to download GNSS data from NASA servers without an account.
+You can make an account [here](https://urs.earthdata.nasa.gov/). Then create a .netrc file in the laika folder with content:
+```
+machine urs.earthdata.nasa.gov login your_username password your_password
+```
+
 #### notebook examples
 The notebook examples require some visualisation packages. To install them first you need
 ```
@@ -74,6 +82,7 @@ and then with pip
 pip install -r requirements_examples.txt --user
 ```
 Then you should be able to run the notebooks. The notebooks can be opened by running `jupyter notebook` and then navigating to the desired .ipynb file.
+
 
 ## Useful GNSS references
 - [Comprehensive handbook of all things GNSS](https://www.springer.com/us/book/9783319429267)
