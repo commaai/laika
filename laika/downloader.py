@@ -302,7 +302,9 @@ def download_ionex(time, cache_dir):
   t = time.as_datetime()
   url_bases = (
     'https://cddis.nasa.gov/archive/gnss/products/ionex/',
+    'ftp://igs.ensg.ign.fr/pub/igs/products/ionosphere/',
     'ftp://gssc.esa.int/gnss/products/ionex/',
+
   )
   for folder_path in [t.strftime('%Y/%j/')]:
     for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]:
