@@ -197,7 +197,10 @@ def download_nav(time, cache_dir, constellation='GPS'):
   t = time.as_datetime()
   try:
     if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
-      url_base = 'https://cddis.nasa.gov/archive/gnss/data/daily/'
+      url_bases = (
+        'https://github.com/commaai/gnss-data/tree/master/gnss/data/daily/',
+        'https://cddis.nasa.gov/archive/gnss/data/daily/',
+      )
       cache_subdir = cache_dir + 'daily_nav/'
       if constellation =='GPS':
         filename = t.strftime("brdc%j0.%yn")
@@ -206,7 +209,7 @@ def download_nav(time, cache_dir, constellation='GPS'):
         filename = t.strftime("brdc%j0.%yg")
         folder_path = t.strftime('%Y/%j/%yg/')
       compression = '.gz' if folder_path >= '2020/335/' else '.Z'
-      return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression=compression)
+      return download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression=compression)
     else:
       url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
       cache_subdir = cache_dir + 'hourly_nav/'
@@ -222,6 +225,7 @@ def download_nav(time, cache_dir, constellation='GPS'):
 def download_orbits(time, cache_dir):
   cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
+    'https://github.com/commaai/gnss-data/tree/master/gnss/products/',
     'https://cddis.nasa.gov/archive/gnss/products/',
     'ftp://igs.ign.fr/pub/igs/products/',
   )
@@ -270,7 +274,10 @@ def download_orbits(time, cache_dir):
 
 def download_orbits_russia(time, cache_dir):
   cache_subdir = cache_dir + 'russian_products/'
-  url_base = 'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/'
+  url_bases = (
+    'https://github.com/commaai/gnss-data-alt/tree/master/MCC/PRODUCTS/',
+    'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/',
+  )
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
     t = time.as_datetime()
@@ -278,20 +285,20 @@ def download_orbits_russia(time, cache_dir):
       try:
         folder_path = t.strftime('%y%j/final/')
         filename = "Sta%i%i.sp3" % (time.week, time.day)
-        downloaded_files.append(download_and_cache_file(url_base, folder_path, cache_subdir, filename))
+        downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
         continue
       except IOError:
         pass
     try:
       folder_path = t.strftime('%y%j/rapid/')
       filename = "Sta%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_base, folder_path, cache_subdir, filename))
+      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
     except IOError:
       pass
     try:
       folder_path = t.strftime('%y%j/ultra/')
       filename = "Sta%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_base, folder_path, cache_subdir, filename))
+      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
     except IOError:
       pass
   return downloaded_files
@@ -301,10 +308,10 @@ def download_ionex(time, cache_dir):
   cache_subdir = cache_dir + 'ionex/'
   t = time.as_datetime()
   url_bases = (
+    'https://github.com/commaai/gnss-data/tree/master/gnss/products/ionex/',
     'https://cddis.nasa.gov/archive/gnss/products/ionex/',
     'ftp://igs.ensg.ign.fr/pub/igs/products/ionosphere/',
     'ftp://gssc.esa.int/gnss/products/ionex/',
-
   )
   for folder_path in [t.strftime('%Y/%j/')]:
     for filename in [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]:
@@ -323,6 +330,7 @@ def download_dcb(time, cache_dir):
     try:
       t = time.as_datetime()
       url_bases = (
+        'https://github.com/commaai/gnss-data/tree/master/gnss/products/bias/',
         'https://cddis.nasa.gov/archive/gnss/products/bias/',
         'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/',
       )
