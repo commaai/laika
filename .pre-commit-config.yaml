@@ -10,6 +10,8 @@ repos:
     rev: master
     hooks:
     -   id: mypy
+        args:
+        - --ignore-missing-imports
 -   repo: https://github.com/PyCQA/flake8
     rev: master
     hooks:
