@@ -1,9 +1,9 @@
-import certifi
+import certifi # type: ignore
 import ftplib
 import hatanaka
 import os
 import urllib.request
-import pycurl
+import pycurl # type: ignore
 import time
 import tempfile
 
