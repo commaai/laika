@@ -6,6 +6,7 @@ import urllib.request
 import pycurl # type: ignore
 import time
 import tempfile
+import socket
 
 from datetime import datetime
 from urllib.parse import urlparse
@@ -42,7 +43,7 @@ def ftp_connect(url):
   assert parsed.scheme == 'ftp'
   try:
     domain = parsed.netloc
-    ftp = ftplib.FTP(domain)
+    ftp = ftplib.FTP(domain, timeout=10)
     ftp.login()
   except (OSError, ftplib.error_perm):
     raise IOError("Could not connect/auth to: " + domain)
@@ -83,6 +84,8 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
         ftp.retrbinary('RETR ' + filename_zipped, open(filepath_zipped, 'wb').write)
       except (ftplib.error_perm):
         raise IOError("Could not download file from: " + url_base + folder_path + filename_zipped)
+      except (socket.timeout):
+        raise IOError("Read timed out from: " + url_base + folder_path + filename_zipped)
       filepaths.append(str(hatanaka.decompress_on_disk(filepath_zipped)))
     else:
       filepaths.append(filepath)
@@ -130,7 +133,7 @@ def https_download_file(url):
 
 
 def ftp_download_file(url):
-  urlf = urllib.request.urlopen(url)
+  urlf = urllib.request.urlopen(url, timeout=10)
   data_zipped = urlf.read()
   urlf.close()
   return data_zipped
