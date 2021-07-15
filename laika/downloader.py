@@ -179,7 +179,7 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
 
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
-    except (IOError, pycurl.error):
+    except (IOError, pycurl.error, socket.timeout):
       unix_time = time.time()
       if not os.path.exists(cacheDir + 'tmp/'):
         os.makedirs(cacheDir + '/tmp')
