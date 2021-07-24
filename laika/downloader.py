@@ -93,8 +93,10 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
 
 
 def https_download_file(url):
-
-  if os.path.isfile(dir_path + '/.netrc'):
+  if 'nasa.gov/' not in url:
+    netrc_path = None
+    f = None
+  elif os.path.isfile(dir_path + '/.netrc'):
     netrc_path = dir_path + '/.netrc'
     f = None
   else:
@@ -113,11 +115,12 @@ def https_download_file(url):
   crl.setopt(crl.CAINFO, certifi.where())
   crl.setopt(crl.URL, url)
   crl.setopt(crl.FOLLOWLOCATION, True)
-  crl.setopt(crl.NETRC_FILE, netrc_path)
-  crl.setopt(crl.NETRC, 2)
   crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
   crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
   crl.setopt(pycurl.CONNECTTIMEOUT, 10)
+  if netrc_path is not None:
+    crl.setopt(crl.NETRC_FILE, netrc_path)
+    crl.setopt(crl.NETRC, 2)
 
   buf = BytesIO()
   crl.setopt(crl.WRITEDATA, buf)
