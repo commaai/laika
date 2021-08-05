@@ -12,7 +12,7 @@ from .gps_time import GPSTime
 from .dgps import get_closest_station_names, parse_dgps
 from . import constants
 
-MAX_DGPS_DISTANCE = 100000  # in meters, because we're not barbarians
+MAX_DGPS_DISTANCE = 100_000  # in meters, because we're not barbarians
 
 
 class AstroDog(object):
