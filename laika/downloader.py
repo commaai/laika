@@ -159,7 +159,6 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
 
   requests_processing = len(filepaths)
   while requests_processing:
-    print(requests_processing)
     ret = fetcher.select(30.0)  # give this 30 seconds max
     if ret < 0:
       print("erroring?")
@@ -168,8 +167,6 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
       ret, requests_processing = fetcher.perform()
       if ret != pycurl.E_CALL_MULTI_PERFORM:
         _, success, failed = fetcher.info_read()
-        print(len(success), len(failed))
-        print(failed)
         break
 
   return filepaths
