@@ -120,9 +120,8 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
   """
   folder_path_abs = os.path.join(cacheDir, folder_path)
 
-  def write_function(disk_path):
+  def write_function(disk_path, handle):
     def do_write(data):
-      print("writing to", disk_path)
       open(disk_path, "wb").write(data)
       if compression:
         hatanaka.decompress_on_disk(disk_path)
@@ -130,7 +129,8 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
 
   fetcher = pycurl.CurlMulti()
   fetcher.setopt(pycurl.M_PIPELINING, 3)
-  fetcher.setopt(pycurl.M_MAX_HOST_CONNECTIONS, 80)
+  fetcher.setopt(pycurl.M_MAX_HOST_CONNECTIONS, 64)
+  fetcher.setopt(pycurl.M_MAX_TOTAL_CONNECTIONS, 64)
   filepaths = []
   for filename in filenames:
     # os.path.join will be dumb if filename has a leading /
@@ -144,30 +144,41 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
     if compression:  # compression only non-empty for rinex files
       filepath = str(hatanaka.get_decompressed_path(filepath))
     filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
-    print("pulling from", url_base, "to", filepath)
 
     if not os.path.isfile(filepath) or overwrite:
+      print("pulling from", url_base, "to", filepath)
       if not os.path.exists(folder_path_abs):
         os.makedirs(folder_path_abs)
 
       url_path = url_base + folder_path + filename_zipped
       handle = pycurl.Curl()
       handle.setopt(pycurl.URL, url_path)
-      handle.setopt(pycurl.WRITEFUNCTION, write_function(filepath_zipped))
+      handle.setopt(pycurl.CONNECTTIMEOUT, 10)
+      handle.setopt(pycurl.WRITEFUNCTION, write_function(filepath_zipped, handle))
       fetcher.add_handle(handle)
       filepaths.append(filepath)
 
   requests_processing = len(filepaths)
-  while requests_processing:
-    ret = fetcher.select(30.0)  # give this 30 seconds max
-    if ret < 0:
-      print("erroring?")
-      continue
+  timeout = 10.0  # after 10 seconds of nothing happening, restart
+  deadline = time.time() + timeout
+  while requests_processing and time.time() < deadline:
     while True:
-      ret, requests_processing = fetcher.perform()
+      ret, cur_requests_processing = fetcher.perform()
       if ret != pycurl.E_CALL_MULTI_PERFORM:
         _, success, failed = fetcher.info_read()
         break
+    if requests_processing > cur_requests_processing:
+      deadline = time.time() + timeout
+      requests_processing = cur_requests_processing
+
+    if fetcher.select(1) < 0:
+      continue
+
+  # if there are downloads left to be done, repeat, and don't overwrite
+  _, requests_processing = fetcher.perform()
+  if requests_processing > 0:
+    print("some requests stalled, retrying them")
+    return http_download_files(url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=False)
 
   return filepaths
 
