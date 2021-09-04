@@ -311,32 +311,32 @@ class AstroDog(object):
     else:
       return None
 
-def get_frequency(self, prn, time, signal='C1C'):
-  if get_constellation(prn) == 'GPS':
-    switch = {'1': constants.GPS_L1,
-              '2': constants.GPS_L2,
-              '5': constants.GPS_L3,
-              '6': constants.GALILEO_E6,
-              '7': constants.GALILEO_E5B,
-              '8': constants.GALILEO_E5AB}
-    if signal[1] in switch:
-      return switch[signal[1]]
-    else:
-      raise NotImplementedError("Dont know this GPS frequency: ", signal, prn)
-  elif get_constellation(prn) == 'GLONASS':
-    n = self.get_glonass_channel(prn, time)
-    if n is None:
-      return None
-    switch = {'1': constants.GLONASS_L1 + n * constants.GLONASS_L1_DELTA,
-              '2': constants.GLONASS_L2 + n * constants.GLONASS_L2_DELTA,
-              '5': constants.GLONASS_L5 + n * constants.GLONASS_L5_DELTA,
-              '6': constants.GALILEO_E6,
-              '7': constants.GALILEO_E5B,
-              '8': constants.GALILEO_E5AB}
-    if signal[1] in switch:
-      return switch[signal[1]]
-    else:
-      raise NotImplementedError("Dont know this GLONASS frequency: ", signal, prn)
+  def get_frequency(self, prn, time, signal='C1C'):
+    if get_constellation(prn) == 'GPS':
+      switch = {'1': constants.GPS_L1,
+                '2': constants.GPS_L2,
+                '5': constants.GPS_L3,
+                '6': constants.GALILEO_E6,
+                '7': constants.GALILEO_E5B,
+                '8': constants.GALILEO_E5AB}
+      if signal[1] in switch:
+        return switch[signal[1]]
+      else:
+        raise NotImplementedError("Dont know this GPS frequency: ", signal, prn)
+    elif get_constellation(prn) == 'GLONASS':
+      n = self.get_glonass_channel(prn, time)
+      if n is None:
+        return None
+      switch = {'1': constants.GLONASS_L1 + n * constants.GLONASS_L1_DELTA,
+                '2': constants.GLONASS_L2 + n * constants.GLONASS_L2_DELTA,
+                '5': constants.GLONASS_L5 + n * constants.GLONASS_L5_DELTA,
+                '6': constants.GALILEO_E6,
+                '7': constants.GALILEO_E5B,
+                '8': constants.GALILEO_E5AB}
+      if signal[1] in switch:
+        return switch[signal[1]]
+      else:
+        raise NotImplementedError("Dont know this GLONASS frequency: ", signal, prn)
 
   def get_delay(self, prn, time, rcv_pos, no_dgps=False, signal='C1C', freq=None):
     sat_info = self.get_sat_info(prn, time)
