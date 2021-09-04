@@ -315,7 +315,7 @@ class AstroDog(object):
     if get_constellation(prn) == 'GPS':
       switch = {'1': constants.GPS_L1,
                 '2': constants.GPS_L2,
-                '5': constants.GPS_L3,
+                '5': constants.GPS_L5,
                 '6': constants.GALILEO_E6,
                 '7': constants.GALILEO_E5B,
                 '8': constants.GALILEO_E5AB}
