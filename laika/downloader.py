@@ -4,6 +4,7 @@ import hatanaka
 import os
 import urllib.request
 import pycurl # type: ignore
+import re
 import time
 import tempfile
 import socket
@@ -55,11 +56,19 @@ def ftp_connect(url):
 
 @retryable
 def list_dir(url):
-  try:
-    ftp = ftp_connect(url)
-    return ftp.nlst()
-  except ftplib.error_perm:
-    raise IOError("Permission failure listing folder: " + url)
+  parsed = urlparse(url)
+  if parsed.scheme == 'ftp':
+    try:
+      ftp = ftp_connect(url)
+      return ftp.nlst()
+    except ftplib.error_perm:
+      raise IOError("Permission failure listing folder: " + url)
+  else:
+    # just connect and do simple url parsing
+    listing = https_download_file(url)
+    urls = re.findall(b"<a href=\"([^\"]+)\">", listing)
+    # decode the urls to normal strings. If they are complicated paths, ignore them
+    return [name.decode("latin1") for name in urls if name and b"/" not in name[1:]]
 
 def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
   """
@@ -72,8 +81,17 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
 
   filepaths = []
   for filename in filenames:
+    # os.path.join will be dumb if filename has a leading /
+    # if there is a / in the filename, then it's using a different folder
+    filename = filename.lstrip("/")
+    if "/" in filename:
+      continue
     filename_zipped = filename + compression
-    filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
+
+    filepath = os.path.join(folder_path_abs, filename)
+    if compression:  # compression only non-empty for rinex files
+      filepath = str(hatanaka.get_decompressed_path(filepath))
+
     filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
     print("pulling from", url_base, "to", filepath)
 
@@ -86,10 +104,84 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
         raise IOError("Could not download file from: " + url_base + folder_path + filename_zipped)
       except (socket.timeout):
         raise IOError("Read timed out from: " + url_base + folder_path + filename_zipped)
-      filepaths.append(str(hatanaka.decompress_on_disk(filepath_zipped)))
+      if compression:  # compression only non-empty for rinex files
+        filepaths.append(str(hatanaka.decompress_on_disk(filepath_zipped)))
+      else:
+        filepaths.append(filepath_zipped)
     else:
       filepaths.append(filepath)
   return filepaths
+
+def http_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
+  """
+  Similar to ftp_download_files, attempt to download multiple files faster than
+  just downloading them one-by-one.
+  Returns a list of filepaths instead of the raw data
+  """
+  folder_path_abs = os.path.join(cacheDir, folder_path)
+
+  def write_function(disk_path, handle):
+    def do_write(data):
+      open(disk_path, "wb").write(data)
+      if compression:
+        hatanaka.decompress_on_disk(disk_path)
+    return do_write
+
+  fetcher = pycurl.CurlMulti()
+  fetcher.setopt(pycurl.M_PIPELINING, 3)
+  fetcher.setopt(pycurl.M_MAX_HOST_CONNECTIONS, 64)
+  fetcher.setopt(pycurl.M_MAX_TOTAL_CONNECTIONS, 64)
+  filepaths = []
+  for filename in filenames:
+    # os.path.join will be dumb if filename has a leading /
+    # if there is a / in the filename, then it's using a different folder
+    filename = filename.lstrip("/")
+    if "/" in filename:
+      continue
+    filename_zipped = filename + compression
+
+    filepath = os.path.join(folder_path_abs, filename)
+    if compression:  # compression only non-empty for rinex files
+      filepath = str(hatanaka.get_decompressed_path(filepath))
+    filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
+
+    if not os.path.isfile(filepath) or overwrite:
+      print("pulling from", url_base, "to", filepath)
+      if not os.path.exists(folder_path_abs):
+        os.makedirs(folder_path_abs)
+
+      url_path = url_base + folder_path + filename_zipped
+      handle = pycurl.Curl()
+      handle.setopt(pycurl.URL, url_path)
+      handle.setopt(pycurl.CONNECTTIMEOUT, 10)
+      handle.setopt(pycurl.WRITEFUNCTION, write_function(filepath_zipped, handle))
+      fetcher.add_handle(handle)
+      filepaths.append(filepath)
+
+  requests_processing = len(filepaths)
+  timeout = 10.0  # after 10 seconds of nothing happening, restart
+  deadline = time.time() + timeout
+  while requests_processing and time.time() < deadline:
+    while True:
+      ret, cur_requests_processing = fetcher.perform()
+      if ret != pycurl.E_CALL_MULTI_PERFORM:
+        _, success, failed = fetcher.info_read()
+        break
+    if requests_processing > cur_requests_processing:
+      deadline = time.time() + timeout
+      requests_processing = cur_requests_processing
+
+    if fetcher.select(1) < 0:
+      continue
+
+  # if there are downloads left to be done, repeat, and don't overwrite
+  _, requests_processing = fetcher.perform()
+  if requests_processing > 0:
+    print("some requests stalled, retrying them")
+    return http_download_files(url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=False)
+
+  return filepaths
+
 
 
 def https_download_file(url):
@@ -144,9 +236,15 @@ def ftp_download_file(url):
 
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
-  return ftp_download_files(
-    url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
-  )
+  parsed = urlparse(url_base)
+  if parsed.scheme == 'ftp':
+    return ftp_download_files(
+      url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
+    )
+  else:
+    return http_download_files(
+      url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
+    )
 
 
 @retryable
@@ -352,8 +450,8 @@ def download_dcb(time, cache_dir):
 def download_cors_coords(cache_dir):
   cache_subdir = cache_dir + 'cors_coord/'
   url_bases = (
-    'ftp://geodesy.noaa.gov/cors/coord/coord_14/',
-    'ftp://alt.ngs.noaa.gov/cors/coord/coord_14/'
+    'https://geodesy.noaa.gov/corsdata/coord/coord_14/',
+    'https://alt.ngs.noaa.gov/corsdata/coord/coord_14/',
   )
   file_names = list_dir(url_bases)
   file_names = [file_name for file_name in file_names if file_name.endswith('coord.txt')]
@@ -367,8 +465,8 @@ def download_cors_station(time, station_name, cache_dir):
   folder_path = t.strftime('%Y/%j/') + station_name + '/'
   filename = station_name + t.strftime("%j0.%yd")
   url_bases = (
-    'ftp://geodesy.noaa.gov/cors/rinex/',
-    'ftp://alt.ngs.noaa.gov/cors/rinex/'
+    'https://geodesy.noaa.gov/corsdata/rinex/',
+    'https://alt.ngs.noaa.gov/corsdata/rinex/',
   )
   try:
     filepath = download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.gz')
