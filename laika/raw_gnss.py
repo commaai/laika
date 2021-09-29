@@ -310,16 +310,15 @@ def pr_residual(measurements, signal='C1C', no_weight=False, no_nans=False):
       else:
         weight = (1 / meas.observables_std[signal])
 
+      val = np.sqrt(
+          (sat_pos[0] * np.cos(theta) + sat_pos[1] * np.sin(theta) - x) ** 2 +
+          (sat_pos[1] * np.cos(theta) - sat_pos[0] * np.sin(theta) - y) ** 2 +
+          (sat_pos[2] - z) ** 2
+      )
       if get_constellation(meas.prn) == 'GLONASS':
-        rows.append(weight * (np.sqrt(
-          (sat_pos[0] * np.cos(theta) + sat_pos[1] * np.sin(theta) - x)**2 +
-          (sat_pos[1] * np.cos(theta) - sat_pos[0] * np.sin(theta) - y)**2 +
-          (sat_pos[2] - z)**2) - (pr - bc - bg)))
+        rows.append(weight * (val - (pr - bc - bg)))
       elif get_constellation(meas.prn) == 'GPS':
-        rows.append(weight * (np.sqrt(
-          (sat_pos[0] * np.cos(theta) + sat_pos[1] * np.sin(theta) - x)**2 +
-          (sat_pos[1] * np.cos(theta) - sat_pos[0] * np.sin(theta) - y)**2 +
-          (sat_pos[2] - z)**2) - (pr - bc)))
+        rows.append(weight * (val - (pr - bc)))
     return rows
   return Fx_pos
 
