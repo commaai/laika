@@ -30,8 +30,9 @@ setup(
   classifiers=[
     'Development Status :: 2 - Beta',
     "Natural Language :: English",
-    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 3",
     "Topic :: System :: Hardware",
   ],
+  python_requires='>= 3.6',
   tests_require=['pytest'],
 )
