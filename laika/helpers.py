@@ -95,7 +95,7 @@ def get_closest(time, candidates, recv_pos=None):
     return min(candidates, key=lambda candidate: abs(time - candidate.epoch), default=None)
 
   return min(
-    [candidate for candidate in candidates if candidate.valid(time, recv_pos)],
+    (candidate for candidate in candidates if candidate.valid(time, recv_pos)),
     key=lambda candidate: np.linalg.norm(recv_pos - candidate.pos),
     default=None,
   )

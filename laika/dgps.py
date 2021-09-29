@@ -137,7 +137,7 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
                    times, max_distance)
 
 
-class DGPSDelay(object):
+class DGPSDelay:
   def __init__(self, station_id, station_pos,
                station_delays, station_delays_t, max_distance):
     self.id = station_id

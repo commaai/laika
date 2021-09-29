@@ -45,7 +45,7 @@ class RINEXFile:
   def __init__(self, filename, rate=None):
     self.rate = rate
     try:
-      with open(filename, 'r') as f:
+      with open(filename) as f:
         self._read_header(f)
         self._read_data(f)
     except TypeError:

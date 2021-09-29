@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 
 # Observation kind class
-class ObservationKind(object):
+class ObservationKind:
     UNKNOWN = 0
     NO_OBSERVATION = 1
     GPS_NED = 2

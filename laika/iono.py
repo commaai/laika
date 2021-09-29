@@ -1,4 +1,3 @@
-#! encoding: utf8
 import datetime as dt
 import numpy as np
 import re
@@ -16,7 +15,7 @@ def closest_in_list(lst, val, num=2):
     Returns two (`num` in general) closest values of `val` in list `lst`
     """
   idxs = sorted(lst, key=lambda x: abs(x - val))[:num]
-  return sorted([list(lst).index(x) for x in idxs])
+  return sorted(list(lst).index(x) for x in idxs)
 
 
 def get_header_line(headr, proprty):
@@ -59,7 +58,7 @@ def compute_grid_lats_lons(data):
   lats = np.array([])
   for j, line in enumerate(data[1:]):
     if "LAT" in line:
-      lat, lon1, lon2, dlon, h = [float(line[x:x + 6]) for x in range(2, 32, 6)]
+      lat, lon1, lon2, dlon, h = (float(line[x:x + 6]) for x in range(2, 32, 6))
       lats = np.append(lats, lat)
       row_length = (lon2 - lon1) / dlon + 1  # total number of values of longitudes
       next_lines_with_numbers = int(np.ceil(row_length / 16))

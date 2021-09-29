@@ -6,7 +6,7 @@ from .helpers import get_constellation
 import warnings
 
 
-class DCB(object):
+class DCB:
   def __init__(self, prn, data):
     self.max_time_diff = 2*SECS_IN_WEEK
     self.prn = prn
