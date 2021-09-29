@@ -106,7 +106,7 @@ def get_constellation(prn):
 
   if identifier in RINEX_CONSTELLATION_IDENTIFIERS:
     return RINEX_CONSTELLATION_IDENTIFIERS[identifier]
-  warnings.warn("Unknown constellation for PRN %s" % prn)
+  warnings.warn(f"Unknown constellation for PRN {prn}")
   return None
 
 
@@ -177,7 +177,7 @@ def get_nmea_id_from_prn(prn):
       return start + index_in_range
     else:
       constellation_offset += range_width
-  raise NotImplementedError("NMEA ID not found for PRN %s" % prn)
+  raise NotImplementedError(f"NMEA ID not found for PRN {prn}")
 
 
 def rinex3_obs_from_rinex2_obs(observable):

@@ -198,7 +198,7 @@ class EKF_sym():
 
     # wrap all the sympy functions
     def wrap_1lists(name):
-      func = eval("lib.%s" % name, {"lib": lib})
+      func = eval(f"lib.{name}", {"lib": lib})
 
       def ret(lst1, out):
         func(ffi.cast("double *", lst1.ctypes.data),
@@ -206,7 +206,7 @@ class EKF_sym():
       return ret
 
     def wrap_2lists(name):
-      func = eval("lib.%s" % name, {"lib": lib})
+      func = eval(f"lib.{name}", {"lib": lib})
 
       def ret(lst1, lst2, out):
         func(ffi.cast("double *", lst1.ctypes.data),
@@ -215,7 +215,7 @@ class EKF_sym():
       return ret
 
     def wrap_1list_1float(name):
-      func = eval("lib.%s" % name, {"lib": lib})
+      func = eval(f"lib.{name}", {"lib": lib})
 
       def ret(lst1, fl, out):
         func(ffi.cast("double *", lst1.ctypes.data),
@@ -252,7 +252,7 @@ class EKF_sym():
 
     # wrap the C++ update function
     def fun_wrapper(f, kind):
-      f = eval("lib.%s" % f, {"lib": lib})
+      f = eval(f"lib.{f}", {"lib": lib})
 
       def _update_inner_blas(x, P, z, R, extra_args):
         f(ffi.cast("double *", x.ctypes.data),
