@@ -70,7 +70,7 @@ def list_dir(url):
     # decode the urls to normal strings. If they are complicated paths, ignore them
     return [name.decode("latin1") for name in urls if name and b"/" not in name[1:]]
 
-def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
+def ftp_download_files(url_base, folder_path, cacheDir, filenames):
   """
   Like download file, but more of them. Keeps a persistent FTP connection open
   to be more efficient.
@@ -86,32 +86,23 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
     filename = filename.lstrip("/")
     if "/" in filename:
       continue
-    filename_zipped = filename + compression
-
     filepath = os.path.join(folder_path_abs, filename)
-    if compression:  # compression only non-empty for rinex files
-      filepath = str(hatanaka.get_decompressed_path(filepath))
-
-    filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
     print("pulling from", url_base, "to", filepath)
 
-    if not os.path.isfile(filepath) or overwrite:
+    if not os.path.isfile(filepath):
       os.makedirs(folder_path_abs, exist_ok=True)
       try:
-        ftp.retrbinary('RETR ' + filename_zipped, open(filepath_zipped, 'wb').write)
+        ftp.retrbinary('RETR ' + filename, open(filepath, 'wb').write)
       except (ftplib.error_perm):
-        raise IOError("Could not download file from: " + url_base + folder_path + filename_zipped)
+        raise IOError("Could not download file from: " + url_base + folder_path + filename)
       except (socket.timeout):
-        raise IOError("Read timed out from: " + url_base + folder_path + filename_zipped)
-      if compression:  # compression only non-empty for rinex files
-        filepaths.append(str(hatanaka.decompress_on_disk(filepath_zipped)))
-      else:
-        filepaths.append(filepath_zipped)
+        raise IOError("Read timed out from: " + url_base + folder_path + filename)
+      filepaths.append(filepath)
     else:
       filepaths.append(filepath)
   return filepaths
 
-def http_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
+def http_download_files(url_base, folder_path, cacheDir, filenames):
   """
   Similar to ftp_download_files, attempt to download multiple files faster than
   just downloading them one-by-one.
@@ -122,8 +113,6 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
   def write_function(disk_path, handle):
     def do_write(data):
       open(disk_path, "wb").write(data)
-      if compression:
-        hatanaka.decompress_on_disk(disk_path)
     return do_write
 
   fetcher = pycurl.CurlMulti()
@@ -137,22 +126,15 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
     filename = filename.lstrip("/")
     if "/" in filename:
       continue
-    filename_zipped = filename + compression
-
     filepath = os.path.join(folder_path_abs, filename)
-    if compression:  # compression only non-empty for rinex files
-      filepath = str(hatanaka.get_decompressed_path(filepath))
-    filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
-
-    if not os.path.isfile(filepath) or overwrite:
+    if not os.path.isfile(filepath):
       print("pulling from", url_base, "to", filepath)
       os.makedirs(folder_path_abs, exist_ok=True)
-
-      url_path = url_base + folder_path + filename_zipped
+      url_path = url_base + folder_path + filename
       handle = pycurl.Curl()
       handle.setopt(pycurl.URL, url_path)
       handle.setopt(pycurl.CONNECTTIMEOUT, 10)
-      handle.setopt(pycurl.WRITEFUNCTION, write_function(filepath_zipped, handle))
+      handle.setopt(pycurl.WRITEFUNCTION, write_function(filepath, handle))
       fetcher.add_handle(handle)
       filepaths.append(filepath)
 
@@ -176,7 +158,7 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
   _, requests_processing = fetcher.perform()
   if requests_processing > 0:
     print("some requests stalled, retrying them")
-    return http_download_files(url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=False)
+    return http_download_files(url_base, folder_path, cacheDir, filenames)
 
   return filepaths
 
@@ -233,16 +215,12 @@ def ftp_download_file(url):
 
 
 @retryable
-def download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
+def download_files(url_base, folder_path, cacheDir, filenames):
   parsed = urlparse(url_base)
   if parsed.scheme == 'ftp':
-    return ftp_download_files(
-      url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
-    )
+    return ftp_download_files(url_base, folder_path, cacheDir, filenames)
   else:
-    return http_download_files(
-      url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
-    )
+    return http_download_files(url_base, folder_path, cacheDir, filenames)
 
 
 @retryable
