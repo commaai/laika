@@ -249,13 +249,11 @@ def download_files(url_base, folder_path, cacheDir, filenames, compression='', o
 def download_file(url_base, folder_path, filename_zipped):
   url = url_base + folder_path + filename_zipped
   print('Downloading ' + url)
-  if 'https' in url:
-    data_zipped = https_download_file(url)
-  elif 'ftp':
-    data_zipped = ftp_download_file(url)
-  else:
-    raise NotImplementedError('Did find ftp or https preamble')
-  return data_zipped
+  if url.startswith('https'):
+    return https_download_file(url)
+  if url.startswith('ftp'):
+    return ftp_download_file(url)
+  raise NotImplementedError('Did find ftp or https preamble')
 
 
 def download_and_cache_file(url_base, folder_path, cacheDir, filename, compression='', overwrite=False):
