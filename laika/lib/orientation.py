@@ -19,14 +19,16 @@ def euler2quat(eulers):
   eulers = np.atleast_2d(eulers)
   gamma, theta, psi = eulers[:,0],  eulers[:,1],  eulers[:,2]
 
-  q0 = np.cos(gamma / 2) * np.cos(theta / 2) * np.cos(psi / 2) + \
-       np.sin(gamma / 2) * np.sin(theta / 2) * np.sin(psi / 2)
-  q1 = np.sin(gamma / 2) * np.cos(theta / 2) * np.cos(psi / 2) - \
-       np.cos(gamma / 2) * np.sin(theta / 2) * np.sin(psi / 2)
-  q2 = np.cos(gamma / 2) * np.sin(theta / 2) * np.cos(psi / 2) + \
-       np.sin(gamma / 2) * np.cos(theta / 2) * np.sin(psi / 2)
-  q3 = np.cos(gamma / 2) * np.cos(theta / 2) * np.sin(psi / 2) - \
-       np.sin(gamma / 2) * np.sin(theta / 2) * np.cos(psi / 2)
+  cos_half_gamma = np.cos(gamma / 2)
+  cos_half_theta = np.cos(theta / 2)
+  cos_half_psi = np.cos(psi / 2)
+  sin_half_gamma = np.sin(gamma / 2)
+  sin_half_theta = np.sin(theta / 2)
+  sin_half_psi = np.sin(psi / 2)
+  q0 = cos_half_gamma * cos_half_theta * cos_half_psi + sin_half_gamma * sin_half_theta * sin_half_psi
+  q1 = sin_half_gamma * cos_half_theta * cos_half_psi - cos_half_gamma * sin_half_theta * sin_half_psi
+  q2 = cos_half_gamma * sin_half_theta * cos_half_psi + sin_half_gamma * cos_half_theta * sin_half_psi
+  q3 = cos_half_gamma * cos_half_theta * sin_half_psi - sin_half_gamma * sin_half_theta * cos_half_psi
 
   quats = array([q0, q1, q2, q3]).T
   for i in range(len(quats)):
