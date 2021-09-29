@@ -96,8 +96,7 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
     print("pulling from", url_base, "to", filepath)
 
     if not os.path.isfile(filepath) or overwrite:
-      if not os.path.exists(folder_path_abs):
-        os.makedirs(folder_path_abs)
+      os.makedirs(folder_path_abs, exist_ok=True)
       try:
         ftp.retrbinary('RETR ' + filename_zipped, open(filepath_zipped, 'wb').write)
       except (ftplib.error_perm):
@@ -147,8 +146,7 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
 
     if not os.path.isfile(filepath) or overwrite:
       print("pulling from", url_base, "to", filepath)
-      if not os.path.exists(folder_path_abs):
-        os.makedirs(folder_path_abs)
+      os.makedirs(folder_path_abs, exist_ok=True)
 
       url_path = url_base + folder_path + filename_zipped
       handle = pycurl.Curl()
@@ -275,16 +273,15 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
       raise IOError(f"Too soon to try  {folder_path + filename_zipped} from {url_base} ")
 
   if not os.path.isfile(filepath) or overwrite:
-    if not os.path.exists(folder_path_abs):
-      os.makedirs(folder_path_abs)
+    os.makedirs(folder_path_abs, exist_ok=True)
 
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
     except (IOError, pycurl.error, socket.timeout):
       unix_time = time.time()
-      if not os.path.exists(cacheDir + 'tmp/'):
-        os.makedirs(cacheDir + '/tmp')
-      with tempfile.NamedTemporaryFile(delete=False, dir=cacheDir+'tmp/') as fout:
+      tmp_dir = cacheDir + '/tmp'
+      os.makedirs(tmp_dir, exist_ok=True)
+      with tempfile.NamedTemporaryFile(delete=False, dir=tmp_dir) as fout:
         fout.write(str.encode(str(unix_time)))
       os.replace(fout.name, filepath + '.attempt_time')
       raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")

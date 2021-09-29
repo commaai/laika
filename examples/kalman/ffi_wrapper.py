@@ -8,11 +8,7 @@ TMPDIR = "/tmp/ccache"
 
 def ffi_wrap(name, c_code, c_header, tmpdir=TMPDIR, cflags="", libraries=[]):
   cache = name + "_" + hashlib.sha1(c_code).hexdigest()
-  try:
-    os.mkdir(tmpdir)
-  except OSError:
-    pass
-
+  os.makedirs(tmpdir, exist_ok=True)
   fd = os.open(tmpdir, 0)
   fcntl.flock(fd, fcntl.LOCK_EX)
   try:
