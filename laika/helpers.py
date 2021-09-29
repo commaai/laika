@@ -92,22 +92,13 @@ def get_closest(time, candidates, recv_pos=None):
   if recv_pos is None:
     # Takes a list of object that have an epoch(GPSTime) value
     # and return the one that is closest the given time (GPSTime)
-    tdiff = np.inf
-    closest = None
-    for candidate in candidates:
-      if abs(time - candidate.epoch) < tdiff:
-        closest = candidate
-        tdiff = abs(time - candidate.epoch)
-    return closest
-  else:
-    pdiff = np.inf
-    closest = None
-    for candidate in candidates:
-      cand_diff = np.linalg.norm(recv_pos - candidate.pos)
-      if cand_diff < pdiff and candidate.valid(time, recv_pos):
-        pdiff = cand_diff
-        closest = candidate
-    return closest
+    return min(candidates, key=lambda candidate: abs(time - candidate.epoch), default=None)
+
+  return min(
+    [candidate for candidate in candidates if candidate.valid(time, recv_pos)],
+    key=lambda candidate: np.linalg.norm(recv_pos - candidate.pos),
+    default=None,
+  )
 
 
 def get_constellation(prn):
