@@ -44,9 +44,9 @@ class AstroDog(object):
     self.nav_fetched_times = TimeRangeHolder()
     self.dcbs_fetched_times = TimeRangeHolder()
 
-    self.orbits = defaultdict(lambda: [])
-    self.nav = defaultdict(lambda: [])
-    self.dcbs = defaultdict(lambda: [])
+    self.orbits = defaultdict(list)
+    self.nav = defaultdict(list)
+    self.dcbs = defaultdict(list)
 
     self.cached_orbit = defaultdict(lambda: None)
     self.cached_nav = defaultdict(lambda: None)
@@ -106,15 +106,9 @@ class AstroDog(object):
     return result
 
   def get_navs(self, time):
-    if time in self.nav_fetched_times:
-      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
-                                                         self.cached_nav)
-    else:
+    if time not in self.nav_fetched_times:
       self.get_nav_data(time)
-      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
-                                                         self.cached_nav)
-
-    return valid_navs
+    return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
 
   def get_orbit(self, prn, time):
     if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
@@ -136,15 +130,9 @@ class AstroDog(object):
       return None
 
   def get_orbits(self, time):
-    if time in self.orbit_fetched_times:
-      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
-                                                           self.cached_orbit)
-    else:
+    if time not in self.orbit_fetched_times:
       self.get_orbit_data(time)
-      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
-                                                           self.cached_orbit)
-
-    return valid_orbits
+    return AstroDog._select_valid_temporal_items(self.orbits, time, self.cached_orbit)
 
   def get_dcb(self, prn, time):
     if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
