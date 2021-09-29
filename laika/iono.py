@@ -241,7 +241,7 @@ def klobuchar(pos, az, el, time, iono_coeffs):
     per = 72000.0
   x = 2.0 * pi * (tt - 50400.0) / per
 
+  mul = 5E-9
   if abs(x) < 1.57:
-    return 2.99792458E8 * f * (5E-9 + amp * (1.0 + x * x * (-0.5 + x * x / 24.0)))
-  else:
-    return 2.99792458E8 * f * 5E-9
+    mul = (5E-9 + amp * (1.0 + x * x * (-0.5 + x * x / 24.0)))
+  return 2.99792458E8 * f * mul

@@ -75,8 +75,7 @@ def quat2rot(quats):
 
   if len(input_shape) < 2:
     return Rs[0]
-  else:
-    return Rs
+  return Rs
 
 
 def rot2quat(rots):
@@ -111,8 +110,7 @@ def rot2quat(rots):
 
   if len(input_shape) < 3:
     return q[0]
-  else:
-    return q
+  return q
 
 
 def euler2rot(eulers):

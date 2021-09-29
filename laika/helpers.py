@@ -115,9 +115,8 @@ def get_constellation(prn):
 
   if identifier in RINEX_CONSTELLATION_IDENTIFIERS:
     return RINEX_CONSTELLATION_IDENTIFIERS[identifier]
-  else:
-    warnings.warn("Unknown constellation for PRN %s" % prn)
-    return None
+  warnings.warn("Unknown constellation for PRN %s" % prn)
+  return None
 
 
 def get_unknown_prn_from_nmea_id(nmea_id):
@@ -195,8 +194,7 @@ def rinex3_obs_from_rinex2_obs(observable):
     return 'C2P'
   if len(observable) == 2:
     return observable + 'C'
-  else:
-      raise NotImplementedError("Don't know this: " + observable)
+  raise NotImplementedError("Don't know this: " + observable)
 
 
 class TimeRangeHolder:
@@ -272,6 +270,5 @@ class TimeRangeHolder:
       if time < start:
         return False
       # Time is in current range
-      else:
-        return True
-      return False
+      return True
+    return False

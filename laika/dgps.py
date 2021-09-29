@@ -151,8 +151,7 @@ class DGPSDelay(object):
     assert abs(self.delays_t[time_index] - time) < 30
     if prn in self.delays[signal] and np.isfinite(self.delays[signal][prn][time_index]):
       return self.delays[signal][prn][time_index]
-    else:
-      return None
+    return None
 
   def valid(self, time, recv_pos):
     return (np.linalg.norm(recv_pos - self.pos) <= self.max_distance and

@@ -80,12 +80,11 @@ class GNSSMeasurement(object):
     sat_info = dog.get_sat_info(self.prn, sat_time)
     if sat_info is None:
       return False
-    else:
-      self.sat_pos = sat_info[0]
-      self.sat_vel = sat_info[1]
-      self.sat_clock_err = sat_info[2]
-      self.processed = True
-      return True
+    self.sat_pos = sat_info[0]
+    self.sat_vel = sat_info[1]
+    self.sat_clock_err = sat_info[2]
+    self.processed = True
+    return True
 
   def correct(self, est_pos, dog):
     for obs in self.observables:
@@ -110,18 +109,16 @@ class GNSSMeasurement(object):
     if 'C1C' in self.observables_final and np.isfinite(self.observables_final['C1C']):
       self.corrected = True
       return True
-    else:
-      return False
+    return False
 
   def as_array(self):
     if not self.corrected:
       raise NotImplementedError('Only corrected measurements can be put into arrays')
-    else:
-      ret = np.array([get_nmea_id_from_prn(self.prn), self.recv_time_week, self.recv_time_sec, self.glonass_freq,
-                    self.observables_final['C1C'], self.observables_std['C1C'],
-                    self.observables_final['D1C'], self.observables_std['D1C']])
-      ret = np.concatenate((ret, self.sat_pos_final, self.sat_vel))
-      return ret
+    ret = np.array([get_nmea_id_from_prn(self.prn), self.recv_time_week, self.recv_time_sec, self.glonass_freq,
+                  self.observables_final['C1C'], self.observables_std['C1C'],
+                  self.observables_final['D1C'], self.observables_std['D1C']])
+    ret = np.concatenate((ret, self.sat_pos_final, self.sat_vel))
+    return ret
 
 
 def process_measurements(measurements, dog=None):
@@ -359,9 +356,8 @@ def get_Q(recv_pos, sat_positions):
                        -np.ones(len(sat_distances))))
   if A.shape[0] < 4 or np.linalg.matrix_rank(A) < 4:
     return np.inf*np.ones((4,4))
-  else:
-    Q = np.linalg.inv(A.T.dot(A))
-    return Q
+  Q = np.linalg.inv(A.T.dot(A))
+  return Q
 
 
 def get_DOP(recv_pos, sat_positions):
