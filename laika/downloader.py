@@ -331,43 +331,22 @@ def download_orbits(time, cache_dir):
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
     folder_path = "%i/" % (time.week)
+    filenames = []
     if GPSTime.from_datetime(datetime.utcnow()) - time > 3*SECS_IN_WEEK:
+      filenames.append("igs%i%i.sp3" % (time.week, time.day))
+    filenames.extend([
+      "igr%i%i.sp3" % (time.week, time.day),
+      "igu%i%i_18.sp3" % (time.week, time.day),
+      "igu%i%i_12.sp3" % (time.week, time.day),
+      "igu%i%i_06.sp3" % (time.week, time.day),
+      "igu%i%i_00.sp3" % (time.week, time.day),
+    ])
+    for filename in filenames:
       try:
-        filename = "igs%i%i.sp3" % (time.week, time.day)
         downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-        continue
+        break
       except IOError:
         pass
-    try:
-      filename = "igr%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_18.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_12.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_06.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_00.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
   return downloaded_files
 
 
@@ -380,26 +359,18 @@ def download_orbits_russia(time, cache_dir):
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
     t = time.as_datetime()
+    folder_paths = []
+    filename = "Sta%i%i.sp3" % (time.week, time.day)
     if GPSTime.from_datetime(datetime.utcnow()) - time > 2*SECS_IN_WEEK:
+      folder_paths.append(t.strftime('%y%j/final/'))
+    folder_paths.append(t.strftime('%y%j/rapid/'))
+    folder_paths.append(t.strftime('%y%j/ultra/'))
+    for folder_path in folder_paths:
       try:
-        folder_path = t.strftime('%y%j/final/')
-        filename = "Sta%i%i.sp3" % (time.week, time.day)
         downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
-        continue
+        break
       except IOError:
         pass
-    try:
-      folder_path = t.strftime('%y%j/rapid/')
-      filename = "Sta%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
-    except IOError:
-      pass
-    try:
-      folder_path = t.strftime('%y%j/ultra/')
-      filename = "Sta%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
-    except IOError:
-      pass
   return downloaded_files
 
 
