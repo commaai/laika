@@ -20,15 +20,8 @@ class TestPositioning(unittest.TestCase):
     dog = AstroDog()
     # Building this cache takes forever just copy it from repo
     cache_directory = '/tmp/gnss/cors_coord/'
-    try:
-      os.mkdir('/tmp/gnss/')
-    except OSError:
-      pass
-
-    try:
-      os.mkdir(cache_directory)
-    except OSError:
-      pass
+    os.makedirs('/tmp/gnss/', exist_ok=True)
+    os.makedirs(cache_directory, exist_ok=True)
 
     examples_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../examples')
     copyfile(os.path.join(examples_directory, 'cors_station_positions'), os.path.join(cache_directory, 'cors_station_positions'))

@@ -92,22 +92,13 @@ def get_closest(time, candidates, recv_pos=None):
   if recv_pos is None:
     # Takes a list of object that have an epoch(GPSTime) value
     # and return the one that is closest the given time (GPSTime)
-    tdiff = np.inf
-    closest = None
-    for candidate in candidates:
-      if abs(time - candidate.epoch) < tdiff:
-        closest = candidate
-        tdiff = abs(time - candidate.epoch)
-    return closest
-  else:
-    pdiff = np.inf
-    closest = None
-    for candidate in candidates:
-      cand_diff = np.linalg.norm(recv_pos - candidate.pos)
-      if cand_diff < pdiff and candidate.valid(time, recv_pos):
-        pdiff = cand_diff
-        closest = candidate
-    return closest
+    return min(candidates, key=lambda candidate: abs(time - candidate.epoch), default=None)
+
+  return min(
+    [candidate for candidate in candidates if candidate.valid(time, recv_pos)],
+    key=lambda candidate: np.linalg.norm(recv_pos - candidate.pos),
+    default=None,
+  )
 
 
 def get_constellation(prn):
@@ -115,9 +106,8 @@ def get_constellation(prn):
 
   if identifier in RINEX_CONSTELLATION_IDENTIFIERS:
     return RINEX_CONSTELLATION_IDENTIFIERS[identifier]
-  else:
-    warnings.warn("Unknown constellation for PRN %s" % prn)
-    return None
+  warnings.warn("Unknown constellation for PRN %s" % prn)
+  return None
 
 
 def get_unknown_prn_from_nmea_id(nmea_id):
@@ -195,8 +185,7 @@ def rinex3_obs_from_rinex2_obs(observable):
     return 'C2P'
   if len(observable) == 2:
     return observable + 'C'
-  else:
-      raise NotImplementedError("Don't know this: " + observable)
+  raise NotImplementedError("Don't know this: " + observable)
 
 
 class TimeRangeHolder:
@@ -272,6 +261,5 @@ class TimeRangeHolder:
       if time < start:
         return False
       # Time is in current range
-      else:
-        return True
-      return False
+      return True
+    return False

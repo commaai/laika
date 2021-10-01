@@ -16,15 +16,13 @@ import numpy as np
 def floatornan(x):
   if x == '' or x[-1] == ' ':
     return np.NaN
-  else:
-    return float(x)
+  return float(x)
 
 
 def digitorzero(x):
   if x == ' ' or x == '':
     return 0
-  else:
-    return int(x)
+  return int(x)
 
 
 def padline(l, n=16):

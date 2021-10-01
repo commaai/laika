@@ -70,7 +70,7 @@ def list_dir(url):
     # decode the urls to normal strings. If they are complicated paths, ignore them
     return [name.decode("latin1") for name in urls if name and b"/" not in name[1:]]
 
-def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
+def ftp_download_files(url_base, folder_path, cacheDir, filenames):
   """
   Like download file, but more of them. Keeps a persistent FTP connection open
   to be more efficient.
@@ -86,33 +86,23 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames, compression='
     filename = filename.lstrip("/")
     if "/" in filename:
       continue
-    filename_zipped = filename + compression
-
     filepath = os.path.join(folder_path_abs, filename)
-    if compression:  # compression only non-empty for rinex files
-      filepath = str(hatanaka.get_decompressed_path(filepath))
-
-    filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
     print("pulling from", url_base, "to", filepath)
 
-    if not os.path.isfile(filepath) or overwrite:
-      if not os.path.exists(folder_path_abs):
-        os.makedirs(folder_path_abs)
+    if not os.path.isfile(filepath):
+      os.makedirs(folder_path_abs, exist_ok=True)
       try:
-        ftp.retrbinary('RETR ' + filename_zipped, open(filepath_zipped, 'wb').write)
+        ftp.retrbinary('RETR ' + filename, open(filepath, 'wb').write)
       except (ftplib.error_perm):
-        raise IOError("Could not download file from: " + url_base + folder_path + filename_zipped)
+        raise IOError("Could not download file from: " + url_base + folder_path + filename)
       except (socket.timeout):
-        raise IOError("Read timed out from: " + url_base + folder_path + filename_zipped)
-      if compression:  # compression only non-empty for rinex files
-        filepaths.append(str(hatanaka.decompress_on_disk(filepath_zipped)))
-      else:
-        filepaths.append(filepath_zipped)
+        raise IOError("Read timed out from: " + url_base + folder_path + filename)
+      filepaths.append(filepath)
     else:
       filepaths.append(filepath)
   return filepaths
 
-def http_download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
+def http_download_files(url_base, folder_path, cacheDir, filenames):
   """
   Similar to ftp_download_files, attempt to download multiple files faster than
   just downloading them one-by-one.
@@ -123,8 +113,6 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
   def write_function(disk_path, handle):
     def do_write(data):
       open(disk_path, "wb").write(data)
-      if compression:
-        hatanaka.decompress_on_disk(disk_path)
     return do_write
 
   fetcher = pycurl.CurlMulti()
@@ -138,23 +126,15 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
     filename = filename.lstrip("/")
     if "/" in filename:
       continue
-    filename_zipped = filename + compression
-
     filepath = os.path.join(folder_path_abs, filename)
-    if compression:  # compression only non-empty for rinex files
-      filepath = str(hatanaka.get_decompressed_path(filepath))
-    filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
-
-    if not os.path.isfile(filepath) or overwrite:
+    if not os.path.isfile(filepath):
       print("pulling from", url_base, "to", filepath)
-      if not os.path.exists(folder_path_abs):
-        os.makedirs(folder_path_abs)
-
-      url_path = url_base + folder_path + filename_zipped
+      os.makedirs(folder_path_abs, exist_ok=True)
+      url_path = url_base + folder_path + filename
       handle = pycurl.Curl()
       handle.setopt(pycurl.URL, url_path)
       handle.setopt(pycurl.CONNECTTIMEOUT, 10)
-      handle.setopt(pycurl.WRITEFUNCTION, write_function(filepath_zipped, handle))
+      handle.setopt(pycurl.WRITEFUNCTION, write_function(filepath, handle))
       fetcher.add_handle(handle)
       filepaths.append(filepath)
 
@@ -178,7 +158,7 @@ def http_download_files(url_base, folder_path, cacheDir, filenames, compression=
   _, requests_processing = fetcher.perform()
   if requests_processing > 0:
     print("some requests stalled, retrying them")
-    return http_download_files(url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=False)
+    return http_download_files(url_base, folder_path, cacheDir, filenames)
 
   return filepaths
 
@@ -235,29 +215,23 @@ def ftp_download_file(url):
 
 
 @retryable
-def download_files(url_base, folder_path, cacheDir, filenames, compression='', overwrite=False):
+def download_files(url_base, folder_path, cacheDir, filenames):
   parsed = urlparse(url_base)
   if parsed.scheme == 'ftp':
-    return ftp_download_files(
-      url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
-    )
+    return ftp_download_files(url_base, folder_path, cacheDir, filenames)
   else:
-    return http_download_files(
-      url_base, folder_path, cacheDir, filenames, compression=compression, overwrite=overwrite
-    )
+    return http_download_files(url_base, folder_path, cacheDir, filenames)
 
 
 @retryable
 def download_file(url_base, folder_path, filename_zipped):
   url = url_base + folder_path + filename_zipped
   print('Downloading ' + url)
-  if 'https' in url:
-    data_zipped = https_download_file(url)
-  elif 'ftp':
-    data_zipped = ftp_download_file(url)
-  else:
-    raise NotImplementedError('Did find ftp or https preamble')
-  return data_zipped
+  if url.startswith('https'):
+    return https_download_file(url)
+  if url.startswith('ftp'):
+    return ftp_download_file(url)
+  raise NotImplementedError('Did find ftp or https preamble')
 
 
 def download_and_cache_file(url_base, folder_path, cacheDir, filename, compression='', overwrite=False):
@@ -275,16 +249,15 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
       raise IOError(f"Too soon to try  {folder_path + filename_zipped} from {url_base} ")
 
   if not os.path.isfile(filepath) or overwrite:
-    if not os.path.exists(folder_path_abs):
-      os.makedirs(folder_path_abs)
+    os.makedirs(folder_path_abs, exist_ok=True)
 
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
     except (IOError, pycurl.error, socket.timeout):
       unix_time = time.time()
-      if not os.path.exists(cacheDir + 'tmp/'):
-        os.makedirs(cacheDir + '/tmp')
-      with tempfile.NamedTemporaryFile(delete=False, dir=cacheDir+'tmp/') as fout:
+      tmp_dir = cacheDir + '/tmp'
+      os.makedirs(tmp_dir, exist_ok=True)
+      with tempfile.NamedTemporaryFile(delete=False, dir=tmp_dir) as fout:
         fout.write(str.encode(str(unix_time)))
       os.replace(fout.name, filepath + '.attempt_time')
       raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")
@@ -336,43 +309,22 @@ def download_orbits(time, cache_dir):
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
     folder_path = "%i/" % (time.week)
+    filenames = []
     if GPSTime.from_datetime(datetime.utcnow()) - time > 3*SECS_IN_WEEK:
+      filenames.append("igs%i%i.sp3" % (time.week, time.day))
+    filenames.extend([
+      "igr%i%i.sp3" % (time.week, time.day),
+      "igu%i%i_18.sp3" % (time.week, time.day),
+      "igu%i%i_12.sp3" % (time.week, time.day),
+      "igu%i%i_06.sp3" % (time.week, time.day),
+      "igu%i%i_00.sp3" % (time.week, time.day),
+    ])
+    for filename in filenames:
       try:
-        filename = "igs%i%i.sp3" % (time.week, time.day)
         downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-        continue
+        break
       except IOError:
         pass
-    try:
-      filename = "igr%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_18.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_12.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_06.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
-    try:
-      filename = "igu%i%i_00.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.Z'))
-      continue
-    except IOError:
-      pass
   return downloaded_files
 
 
@@ -385,26 +337,18 @@ def download_orbits_russia(time, cache_dir):
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
     t = time.as_datetime()
+    folder_paths = []
+    filename = "Sta%i%i.sp3" % (time.week, time.day)
     if GPSTime.from_datetime(datetime.utcnow()) - time > 2*SECS_IN_WEEK:
+      folder_paths.append(t.strftime('%y%j/final/'))
+    folder_paths.append(t.strftime('%y%j/rapid/'))
+    folder_paths.append(t.strftime('%y%j/ultra/'))
+    for folder_path in folder_paths:
       try:
-        folder_path = t.strftime('%y%j/final/')
-        filename = "Sta%i%i.sp3" % (time.week, time.day)
         downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
-        continue
+        break
       except IOError:
         pass
-    try:
-      folder_path = t.strftime('%y%j/rapid/')
-      filename = "Sta%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
-    except IOError:
-      pass
-    try:
-      folder_path = t.strftime('%y%j/ultra/')
-      filename = "Sta%i%i.sp3" % (time.week, time.day)
-      downloaded_files.append(download_and_cache_file(url_bases, folder_path, cache_subdir, filename))
-    except IOError:
-      pass
   return downloaded_files
 
 

@@ -44,9 +44,9 @@ class AstroDog(object):
     self.nav_fetched_times = TimeRangeHolder()
     self.dcbs_fetched_times = TimeRangeHolder()
 
-    self.orbits = defaultdict(lambda: [])
-    self.nav = defaultdict(lambda: [])
-    self.dcbs = defaultdict(lambda: [])
+    self.orbits = defaultdict(list)
+    self.nav = defaultdict(list)
+    self.dcbs = defaultdict(list)
 
     self.cached_orbit = defaultdict(lambda: None)
     self.cached_nav = defaultdict(lambda: None)
@@ -64,10 +64,9 @@ class AstroDog(object):
     self.cached_ionex = get_closest(time, self.ionex_maps)
     if self.cached_ionex is not None and self.cached_ionex.valid(time):
       return self.cached_ionex
-    elif self.auto_update:
+    if self.auto_update:
       raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
-    else:
-      return None
+    return None
 
   def get_nav(self, prn, time):
     if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
@@ -85,8 +84,7 @@ class AstroDog(object):
     self.cached_nav[prn] = get_closest(time, self.nav[prn])
     if self.cached_nav[prn] is not None and self.cached_nav[prn].valid(time):
       return self.cached_nav[prn]
-    else:
-      return None
+    return None
 
   @staticmethod
   def _select_valid_temporal_items(item_dict, time, cache):
@@ -106,15 +104,9 @@ class AstroDog(object):
     return result
 
   def get_navs(self, time):
-    if time in self.nav_fetched_times:
-      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
-                                                         self.cached_nav)
-    else:
+    if time not in self.nav_fetched_times:
       self.get_nav_data(time)
-      valid_navs = AstroDog._select_valid_temporal_items(self.nav, time,
-                                                         self.cached_nav)
-
-    return valid_navs
+    return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
 
   def get_orbit(self, prn, time):
     if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
@@ -132,19 +124,12 @@ class AstroDog(object):
     self.cached_orbit[prn] = get_closest(time, self.orbits[prn])
     if self.cached_orbit[prn] is not None and self.cached_orbit[prn].valid(time):
       return self.cached_orbit[prn]
-    else:
-      return None
+    return None
 
   def get_orbits(self, time):
-    if time in self.orbit_fetched_times:
-      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
-                                                           self.cached_orbit)
-    else:
+    if time not in self.orbit_fetched_times:
       self.get_orbit_data(time)
-      valid_orbits = AstroDog._select_valid_temporal_items(self.orbits, time,
-                                                           self.cached_orbit)
-
-    return valid_orbits
+    return AstroDog._select_valid_temporal_items(self.orbits, time, self.cached_orbit)
 
   def get_dcb(self, prn, time):
     if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
@@ -162,8 +147,7 @@ class AstroDog(object):
     self.cached_dcb[prn] = get_closest(time, self.dcbs[prn])
     if self.cached_dcb[prn] is not None and self.cached_dcb[prn].valid(time):
       return self.cached_dcb[prn]
-    else:
-      return None
+    return None
 
   def get_dgps_corrections(self, time, recv_pos):
     if self.cached_dgps is not None and self.cached_dgps.valid(time, recv_pos):
@@ -177,10 +161,9 @@ class AstroDog(object):
     self.cached_dgps = get_closest(time, self.dgps_delays, recv_pos=recv_pos)
     if self.cached_dgps is not None and self.cached_dgps.valid(time, recv_pos):
       return self.cached_dgps
-    elif self.auto_update:
+    if self.auto_update:
       raise RuntimeError("Pulled dgps, but still can't get valid for time " + str(time))
-    else:
-      return None
+    return None
 
   def add_ephem(self, new_ephem, ephems):
     prn = new_ephem.prn
@@ -279,8 +262,7 @@ class AstroDog(object):
 
     if eph:
       return eph.get_tgd()
-    else:
-      return None
+    return None
 
   def get_sat_info(self, prn, time):
     if get_constellation(prn) not in self.valid_const:
@@ -293,8 +275,7 @@ class AstroDog(object):
 
     if eph:
       return eph.get_sat_info(time)
-    else:
-      return None
+    return None
 
   def get_all_sat_info(self, time):
     if self.pull_orbit:
@@ -308,8 +289,7 @@ class AstroDog(object):
     nav = self.get_nav(prn, time)
     if nav:
       return nav.channel
-    else:
-      return None
+    return None
 
   def get_frequency(self, prn, time, signal='C1C'):
     if get_constellation(prn) == 'GPS':
@@ -319,10 +299,10 @@ class AstroDog(object):
                 '6': constants.GALILEO_E6,
                 '7': constants.GALILEO_E5B,
                 '8': constants.GALILEO_E5AB}
-      if signal[1] in switch:
-        return switch[signal[1]]
-      else:
-        raise NotImplementedError("Dont know this GPS frequency: ", signal, prn)
+      freq = switch.get(signal[1])
+      if freq:
+        return freq
+      raise NotImplementedError("Dont know this GPS frequency: ", signal, prn)
     elif get_constellation(prn) == 'GLONASS':
       n = self.get_glonass_channel(prn, time)
       if n is None:
@@ -333,10 +313,10 @@ class AstroDog(object):
                 '6': constants.GALILEO_E6,
                 '7': constants.GALILEO_E5B,
                 '8': constants.GALILEO_E5AB}
-      if signal[1] in switch:
-        return switch[signal[1]]
-      else:
-        raise NotImplementedError("Dont know this GLONASS frequency: ", signal, prn)
+      freq = switch.get(signal[1])
+      if freq:
+        return freq
+      raise NotImplementedError("Dont know this GLONASS frequency: ", signal, prn)
 
   def get_delay(self, prn, time, rcv_pos, no_dgps=False, signal='C1C', freq=None):
     sat_info = self.get_sat_info(prn, time)
@@ -346,22 +326,26 @@ class AstroDog(object):
     el, az = get_el_az(rcv_pos, sat_pos)
     if el < 0.2:
       return None
+
     if self.dgps and not no_dgps:
-      dgps_corrections = self.get_dgps_corrections(time, rcv_pos)
-      if dgps_corrections is None:
-        return None
-      dgps_delay = dgps_corrections.get_delay(prn, time)
-      if dgps_delay is None:
-        return None
-      return dgps_corrections.get_delay(prn, time)
-    else:
-      if not freq:
-        freq = self.get_frequency(prn, time, signal)
-      ionex = self.get_ionex(time)
-      dcb = self.get_dcb(prn, time)
-      if ionex is None or dcb is None or freq is None:
-        return None
-      iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq)
-      trop_delay = saast(rcv_pos, el)
-      code_bias = dcb.get_delay(signal)
-      return iono_delay + trop_delay + code_bias
+      return self._get_delay_dgps(prn, rcv_pos, time)
+
+    if not freq:
+      freq = self.get_frequency(prn, time, signal)
+    ionex = self.get_ionex(time)
+    dcb = self.get_dcb(prn, time)
+    if ionex is None or dcb is None or freq is None:
+      return None
+    iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq)
+    trop_delay = saast(rcv_pos, el)
+    code_bias = dcb.get_delay(signal)
+    return iono_delay + trop_delay + code_bias
+
+  def _get_delay_dgps(self, prn, rcv_pos, time):
+    dgps_corrections = self.get_dgps_corrections(time, rcv_pos)
+    if dgps_corrections is None:
+      return None
+    dgps_delay = dgps_corrections.get_delay(prn, time)
+    if dgps_delay is None:
+      return None
+    return dgps_corrections.get_delay(prn, time)
