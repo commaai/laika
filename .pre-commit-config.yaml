@@ -10,18 +10,22 @@ repos:
     rev: master
     hooks:
     -   id: mypy
+        exclude: /kalman/
 -   repo: https://github.com/PyCQA/flake8
     rev: master
     hooks:
     -   id: flake8
+        exclude: /kalman/
         args:
         - --select=F
 -   repo: local
     hooks:
     -   id: pylint
+        exclude: /kalman/
         name: pylint
         entry: pylint
         language: system
         types: [python]
         args:
-        - --disable=R,C,W
+        - --disable=R,E,I,C,W
+                    
