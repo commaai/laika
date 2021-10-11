@@ -14,15 +14,14 @@ jobs:
       run: |
         sudo apt update
         sudo apt install libcurl4-openssl-dev libssl-dev
-        pip install -r requirements_examples.txt
+        pip install -r requirements_examples.txt pytest-cov pytest
     - name: Run unittests
-      run: |
-        export NASA_USERNAME=${{ secrets.NASA_USERNAME }}
-        export NASA_PASSWORD=${{ secrets.NASA_PASSWORD }}
-        python -m unittest discover .
+      run: py.test --cov .
+      env:
+        NASA_USERNAME: ${{ secrets.NASA_USERNAME }}
+        NASA_PASSWORD: ${{ secrets.NASA_PASSWORD }}
     - name: Test install
-      run: |
-        python setup.py install
+      run: python setup.py install
   lint:
     runs-on: ubuntu-20.04
     steps:
