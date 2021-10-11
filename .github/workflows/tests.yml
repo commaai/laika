@@ -23,7 +23,14 @@ jobs:
     - name: Test install
       run: |
         python setup.py install
-    - name: Run static analysis
-      run: |
-        pip install pre-commit==2.4.0 pylint==2.5.2
-        pre-commit run --all
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8.2'
+      - name: Run static analysis
+        run: |
+          pip install pre-commit==2.15.0 pylint==2.11.1
+          pre-commit run --all
