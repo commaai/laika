@@ -35,7 +35,7 @@ def normal_meas_from_array(arr):
                          observables, observables_std, arr[3])
 
 
-class GNSSMeasurement(object):
+class GNSSMeasurement:
   PRN = 0
   RECV_TIME_WEEK = 1
   RECV_TIME_SEC = 2
@@ -148,7 +148,7 @@ def group_measurements_by_epoch(measurements):
 
 def group_measurements_by_sat(measurements):
   measurements_by_sat = {}
-  sats = set([m.prn for m in measurements])
+  sats = {m.prn for m in measurements}
   for sat in sats:
     measurements_by_sat[sat] = [m for m in measurements if m.prn == sat]
   return measurements_by_sat

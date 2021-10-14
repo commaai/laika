@@ -15,7 +15,7 @@ from . import constants
 MAX_DGPS_DISTANCE = 100_000  # in meters, because we're not barbarians
 
 
-class AstroDog(object):
+class AstroDog:
   '''
   auto_update: flag indicating whether laika should fetch files from web
   cache_dir:   directory where data files are downloaded to and cached

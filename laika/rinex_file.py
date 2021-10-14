@@ -45,7 +45,7 @@ class RINEXFile:
   def __init__(self, filename, rate=None):
     self.rate = rate
     try:
-      with open(filename, 'r') as f:
+      with open(filename) as f:
         self._read_header(f)
         self._read_data(f)
     except TypeError:
@@ -60,17 +60,17 @@ class RINEXFile:
     self.version = float(version_line[0:9])
     if (self.version > 2.11):
       raise ValueError(
-        "RINEX file versions > 2.11 not supported (file version %f)" % self.version)
+        f"RINEX file versions > 2.11 not supported (file version {self.version:f})")
 
     self.filetype = version_line[20]
     if self.filetype not in "ONGM":  # Check valid file type
-      raise ValueError("RINEX file type '%s' not supported" % self.filetype)
+      raise ValueError(f"RINEX file type '{self.filetype}' not supported")
     if self.filetype != 'O':
       raise ValueError("Only 'OBSERVATION DATA' RINEX files are currently supported")
 
     self.gnss = version_line[40]
     if self.gnss not in " GRSEM":  # Check valid satellite system
-      raise ValueError("Satellite system '%s' not supported" % self.filetype)
+      raise ValueError(f"Satellite system '{self.filetype}' not supported")
     if self.gnss == ' ':
       self.gnss = 'G'
     if self.gnss != 'G':

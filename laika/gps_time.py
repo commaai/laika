@@ -80,7 +80,7 @@ def utc_to_gpst(t_utc):
     return t_gpst
 
 
-class GPSTime(object):
+class GPSTime:
   """
   GPS time class to add and subtract [week, tow]
   """
@@ -108,7 +108,7 @@ class GPSTime(object):
         new_tow += self.seconds_in_week
         new_week -= 1
       return GPSTime(new_week, new_tow)
-    raise NotImplementedError("subtracting %s from %s" % (other, self))
+    raise NotImplementedError(f"subtracting {other} from {self}")
 
   def __add__(self, other):
     if isinstance(other, float) or isinstance(other, int):
@@ -118,7 +118,7 @@ class GPSTime(object):
         new_tow -= self.seconds_in_week
         new_week += 1
       return GPSTime(new_week, new_tow)
-    raise NotImplementedError("adding %s from %s" % (other, self))
+    raise NotImplementedError(f"adding {other} from {self}")
 
   def __lt__(self, other):
     return self - other < 0
@@ -146,7 +146,7 @@ class GPSTime(object):
     return "week: " + str(self.week) + "  tow: " + str(self.tow)
 
 
-class TimeSyncer(object):
+class TimeSyncer:
   """
   Converts logmonotime to gps_time and vice versa
   """

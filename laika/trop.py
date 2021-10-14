@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# ! encoding: UTF8
 
 from numpy import cos, exp, pi
 from .lib.coordinates import ecef2geodetic

@@ -49,7 +49,7 @@ def convert_ublox_ephem(ublox_ephem):
   return ephem
 
 
-class EphemerisType(object):
+class EphemerisType:
   # TODO this isn't properly supported
   NAV = 0
   FINAL_ORBIT = 1
@@ -58,7 +58,7 @@ class EphemerisType(object):
   QCOM_POLY = 4
 
 
-class Ephemeris(object):
+class Ephemeris:
   def valid(self, time):
     # TODO: use proper abstract base class to define members
     return abs(time - self.epoch) <= self.max_time_diff  # pylint: disable=no-member
@@ -154,14 +154,14 @@ class PolyEphemeris(Ephemeris):
     dt = time - self.data['t0']
     deg = self.data['deg']
     deg_t = self.data['deg_t']
-    sat_pos = np.array([sum([(dt**p)*self.data['x'][deg-p] for p in range(deg+1)]),
-                        sum([(dt**p)*self.data['y'][deg-p] for p in range(deg+1)]),
-                        sum([(dt**p)*self.data['z'][deg-p] for p in range(deg+1)])])
-    sat_vel = np.array([sum([p*(dt**(p-1))*self.data['x'][deg-p] for p in range(1,deg+1)]),
-                        sum([p*(dt**(p-1))*self.data['y'][deg-p] for p in range(1,deg+1)]),
-                        sum([p*(dt**(p-1))*self.data['z'][deg-p] for p in range(1,deg+1)])])
-    time_err = sum([(dt**p)*self.data['clock'][deg_t-p] for p in range(deg_t+1)])
-    time_err_rate = sum([p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in range(1,deg_t+1)])
+    sat_pos = np.array([sum((dt**p)*self.data['x'][deg-p] for p in range(deg+1)),
+                        sum((dt**p)*self.data['y'][deg-p] for p in range(deg+1)),
+                        sum((dt**p)*self.data['z'][deg-p] for p in range(deg+1))])
+    sat_vel = np.array([sum(p*(dt**(p-1))*self.data['x'][deg-p] for p in range(1,deg+1)),
+                        sum(p*(dt**(p-1))*self.data['y'][deg-p] for p in range(1,deg+1)),
+                        sum(p*(dt**(p-1))*self.data['z'][deg-p] for p in range(1,deg+1))])
+    time_err = sum((dt**p)*self.data['clock'][deg_t-p] for p in range(deg_t+1))
+    time_err_rate = sum(p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in range(1,deg_t+1))
     time_err_with_rel = time_err - 2*np.inner(sat_pos, sat_vel)/SPEED_OF_LIGHT**2
     return sat_pos, sat_vel, time_err_with_rel, time_err_rate
 
@@ -266,7 +266,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
   ephems = []
   data = {}
   for file_name in file_names:
-    f = open(file_name, 'r')
+    f = open(file_name)
     while True:
       line = f.readline()[:-1]
       if not line:
@@ -337,7 +337,7 @@ def parse_rinex_nav_msg_gps(file_name):
   rinex_ver = None
   #ion_alpha = None
   #ion_beta = None
-  f = open(file_name, 'r')
+  f = open(file_name)
   while True:
     line = f.readline()[:-1]
     if not line:
@@ -399,7 +399,7 @@ def parse_rinex_nav_msg_gps(file_name):
 
 def parse_rinex_nav_msg_glonass(file_name):
   ephems = []
-  f = open(file_name, 'r')
+  f = open(file_name)
   got_header = False
   rinex_ver = None
   while True:
