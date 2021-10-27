@@ -1,6 +1,4 @@
-
-# Laika
-
+## Introduction
 Laika is an open-source GNSS processing library. Laika is similar to projects like [RTKlib](https://github.com/tomojitakasu/RTKLIB) and [GPSTK](https://github.com/SGL-UT/GPSTk), but in Python and with a strong focus on readability, usability and easy integration with other optimizers. Laika can process raw GNSS observations with data gathered online from various analysis groups to produce data ready for position/velocity estimation. Laika is designed to produce accurate results whilst still being readable and easy to use. Laika is the perfect tool to develop accurate GNSS-only or GNSS-fusion localisation algorithms.
 
 
@@ -8,7 +6,7 @@ Laika is an open-source GNSS processing library. Laika is similar to projects li
 
 ## The GNSS problem
 
-GNSS satellites orbit the earth broadcasting signals that allow the receiver to determine the distance to each satellite. These satellites have known orbits and so their positions are known. This makes determining the receiver's position a basic 3-dimensional [trilateration](https://en.wikipedia.org/wiki/Trilateration) problem. In practice observed distances to each satellite will be measured with some offset that is caused by the receiver's clock error. This offset also needs to be determined, making it a 4-dimensional trilateration problem. 
+GNSS satellites orbit the earth broadcasting signals that allow the receiver to determine the distance to each satellite. These satellites have known orbits and so their positions are known. This makes determining the receiver's position a basic 3-dimensional [trilateration](https://en.wikipedia.org/wiki/Trilateration) problem. In practice observed distances to each satellite will be measured with some offset that is caused by the receiver's clock error. This offset also needs to be determined, making it a 4-dimensional trilateration problem.
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/3spheres.svg/622px-3spheres.svg.png" width="60%">
 
 
@@ -21,7 +19,7 @@ However, the above description is over-simplified. Getting accurate distance est
 Astrodog is the main component of the laika. It is a python object, and like the [soviet space dogs](https://en.wikipedia.org/wiki/Soviet_space_dogs) to which it owes its name, an astrodog will do everything to make the life of its owner easier. Which in this case is fetch and process all the necessary data to transform raw GNSS observables into usable distance measurements and satellite positions ready for position estimation.
 
 #### Satellite info
-Astrodog has a get_sat_info function that will provide an accurate position, velocity and clock error for any satellite at any time in history. 
+Astrodog has a get_sat_info function that will provide an accurate position, velocity and clock error for any satellite at any time in history.
 
 
 #### Pseudorange corrections
@@ -30,7 +28,7 @@ Astrodog has a get_delay function that will provide a pseudorange delay correcti
 This delay can either be estimated with mathematical models or with [DGPS station](https://www.ngs.noaa.gov/CORS/) observations, which is more accurate, but slower and only supported in the continental United States.
 
 #### Architecture
-GNSS processing requires getting data from the internet from various analysis groups such as NASA's [CDDIS](https://cddis.nasa.gov/Data_and_Derived_Products/GNSS/GNSS_data_and_product_archive.html). AstroDog downloads files from FTP servers from these groups when it needs them. Downloading and parsing all this data can be slow. AstroDog caches all downloaded files locally to avoid re-downloading. 
+GNSS processing requires getting data from the internet from various analysis groups such as NASA's [CDDIS](https://cddis.nasa.gov/Data_and_Derived_Products/GNSS/GNSS_data_and_product_archive.html). AstroDog downloads files from FTP servers from these groups when it needs them. Downloading and parsing all this data can be slow. AstroDog caches all downloaded files locally to avoid re-downloading.
 
 These files are then parsed by AstroDog and kept in memory. Every one of these parsed objects (DCBs, ionospheric models, satellite orbit polynomials, etc.) has a valid location area and/or a valid time window.  Within those windows these objects can provide information relevant to GNSS processing.
 
@@ -41,7 +39,7 @@ These files are then parsed by AstroDog and kept in memory. Every one of these p
 
 
 ## Laika's accuracy
-To confirm the quality of Laika's GNSS processing, we ran laika's processing and a simple Kalman filter (procedure described in examples) on 2000 minutes of driving of a regular commute in San Francisco. The data comes from a "u-blox M8" chip. The fixes computed with laika's processed data are compared to the live navigation fixes given by the u-blox chip. They compared by looking at the standard deviation of all measured altitudes within every 5×5 m² in the dataset. There is no way to compare horizontal accuracy without ground truth, but there is no reason to believe that vertical and horizontal accuracy are not equally correlated for laika computed positions and u-blox's live positions. Data with the antenna on the roof and antenna inside the car are compared separately, since the results are significantly different. 
+To confirm the quality of Laika's GNSS processing, we ran laika's processing and a simple Kalman filter (procedure described in examples) on 2000 minutes of driving of a regular commute in San Francisco. The data comes from a "u-blox M8" chip. The fixes computed with laika's processed data are compared to the live navigation fixes given by the u-blox chip. They compared by looking at the standard deviation of all measured altitudes within every 5×5 m² in the dataset. There is no way to compare horizontal accuracy without ground truth, but there is no reason to believe that vertical and horizontal accuracy are not equally correlated for laika computed positions and u-blox's live positions. Data with the antenna on the roof and antenna inside the car are compared separately, since the results are significantly different.
 ![altitude distributionplot](distplot_laika.png)
 
 
