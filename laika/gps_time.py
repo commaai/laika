@@ -142,8 +142,8 @@ class GPSTime:
   def day(self):
     return int(self.tow/(24*3600))
 
-  def __str__(self):
-    return "week: " + str(self.week) + "  tow: " + str(self.tow)
+  def __repr__(self):
+    return f"GPSTime(week={self.week}, tow={self.tow})"
 
 
 class TimeSyncer:

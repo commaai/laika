@@ -120,6 +120,10 @@ class GNSSMeasurement:
     ret = np.concatenate((ret, self.sat_pos_final, self.sat_vel))
     return ret
 
+  def __repr__(self):
+    time = self.recv_time.as_datetime().strftime('%Y-%m-%dT%H:%M:%S.%f')
+    return f"<GNSSMeasurement from {self.prn} at {time}>"
+
 
 def process_measurements(measurements, dog=None):
   proc_measurements = []
