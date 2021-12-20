@@ -1,7 +1,7 @@
 # Import dependencies
 from laika.raw_gnss import GNSSMeasurement
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 # Observation kind class
 class ObservationKind:

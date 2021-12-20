@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from bisect import bisect
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from cffi import FFI
 
 TEMPLATE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
