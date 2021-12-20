@@ -75,8 +75,8 @@ def run_car_ekf_offline(kf, observations_by_kind):
 
     times, estimates = run_observations_through_filter(kf, observations)
 
-    forward_states = np.stack(e[1] for e in estimates)
-    forward_covs = np.stack(e[3] for e in estimates)
+    forward_states = np.stack([e[1] for e in estimates])
+    forward_covs = np.stack([e[3] for e in estimates])
     smoothed_states, smoothed_covs = kf.rts_smooth(estimates)
 
     observations_dict = {}
