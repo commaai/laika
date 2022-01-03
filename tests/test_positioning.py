@@ -1,5 +1,5 @@
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import unittest
 from laika import AstroDog
 from shutil import copyfile

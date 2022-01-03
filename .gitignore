@@ -106,3 +106,4 @@ venv.bak/
 .*.swp
 
 laika/.netrc
+/examples/kalman/generated/
