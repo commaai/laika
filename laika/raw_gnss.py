@@ -210,8 +210,8 @@ def read_raw_ublox(report):
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq*constants.GLONASS_L1_DELTA)) * (i.doppler)
         elif i.gnssId==0:
           glonass_freq = np.nan
-          observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * (i.doppler)
-        observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev * 1
+          observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.doppler
+        observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev
         observables['S1C'] = i.cno
         if i.trackingStatus.carrierPhaseValid:
           observables['L1C'] = i.carrierCycles
