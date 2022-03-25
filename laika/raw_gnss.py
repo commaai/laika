@@ -159,7 +159,7 @@ def group_measurements_by_sat(measurements):
 
 
 def read_raw_qcom(report):
-  recv_tow = (report.gpsMilliseconds) * 1.0 / 1000.0  # seconds
+  recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
   recv_week = report.gpsWeek
   recv_time = GPSTime(recv_week, recv_tow)
   measurements = []
@@ -167,7 +167,7 @@ def read_raw_qcom(report):
     svId = i.svId
     if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
       sat_tow = (
-        i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction) / 1000
+        i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency) / 1000
       sat_time = GPSTime(recv_week, sat_tow)
       observables, observables_std = {}, {}
       observables['C1C'] = (recv_time - sat_time)*constants.SPEED_OF_LIGHT
