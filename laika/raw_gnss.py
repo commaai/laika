@@ -166,7 +166,6 @@ def read_raw_qcom(report):
     recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
   else:
     raise NotImplementedError('Only GPS and GLONASS are supported from qcom')
-  print(recv_time)
   measurements = []
   for i in report.sv:
     svId = i.svId
