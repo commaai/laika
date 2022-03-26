@@ -95,6 +95,19 @@ class GPSTime:
     return cls(week, tow)
 
   @classmethod
+  def from_glonass(cls, cycle, days, tow):
+    # https://en.wikipedia.org/wiki/GLONASS
+    # Day number (1 to 1461) within a four-year interval
+    # starting on 1 January of the last leap year
+    t = datetime.datetime(1992, 1, 1, 0, 0, 0, 0, None)
+    t += datetime.timedelta(days=cycle*(365*4+1)+(days-1))
+    # according to Moscow decree time.
+    t -= datetime.timedelta(hours=3)
+    t += datetime.timedelta(seconds=tow)
+    ret = cls.from_datetime(t)
+    return utc_to_gpst(ret)
+
+  @classmethod
   def from_meas(cls, meas):
     return cls(meas[1], meas[2])
 

@@ -160,17 +160,20 @@ def group_measurements_by_sat(measurements):
 
 def read_raw_qcom(report):
   recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
-  recv_week = report.gpsWeek
-  recv_time = GPSTime(recv_week, recv_tow)
+  if report.source == 0:    # gps
+    recv_time = GPSTime(report.gpsWeek, recv_tow)
+  elif report.source == 1:  # glonass
+    recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
+  else:
+    raise NotImplementedError('Only GPS and GLONASS are supported from qcom')
+  print(recv_time)
   measurements = []
   for i in report.sv:
     svId = i.svId
     if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
-      sat_tow = (
-        i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency) / 1000
-      sat_time = GPSTime(recv_week, sat_tow)
+      sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency) / 1000
       observables, observables_std = {}, {}
-      observables['C1C'] = (recv_time - sat_time)*constants.SPEED_OF_LIGHT
+      observables['C1C'] = (recv_tow - sat_tow)*constants.SPEED_OF_LIGHT
       observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT
       observables['D1C'] = i.unfilteredSpeed
       observables_std['D1C'] = i.unfilteredSpeedUncertainty
