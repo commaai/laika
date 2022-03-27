@@ -159,7 +159,7 @@ def group_measurements_by_sat(measurements):
 
 
 def read_raw_qcom(report):
-  recv_tow = (report.milliseconds - report.timeBias) * 1.0 / 1000.0  # seconds
+  recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
   if report.source == 0:    # gps
     recv_time = GPSTime(report.gpsWeek, recv_tow)
   elif report.source == 1:  # glonass
@@ -171,7 +171,7 @@ def read_raw_qcom(report):
   for i in report.sv:
     svId = i.svId
     if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
-      sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency) / 1000
+      sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + report.timeBias) / 1000
       observables, observables_std = {}, {}
       observables['C1C'] = (recv_tow - sat_tow)*constants.SPEED_OF_LIGHT
       observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT
