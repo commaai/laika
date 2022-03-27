@@ -159,13 +159,14 @@ def group_measurements_by_sat(measurements):
 
 
 def read_raw_qcom(report):
-  recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
+  recv_tow = (report.milliseconds - report.timeBias) * 1.0 / 1000.0  # seconds
   if report.source == 0:    # gps
     recv_time = GPSTime(report.gpsWeek, recv_tow)
   elif report.source == 1:  # glonass
     recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
   else:
     raise NotImplementedError('Only GPS and GLONASS are supported from qcom')
+
   measurements = []
   for i in report.sv:
     svId = i.svId
@@ -178,11 +179,13 @@ def read_raw_qcom(report):
       observables_std['D1C'] = i.unfilteredSpeedUncertainty
       observables['S1C'] = np.nan
       observables['L1C'] = np.nan
+      glonass_freq = (i.glonassFrequencyIndex - 7) if report.source == 1 else np.nan
       measurements.append(GNSSMeasurement(get_prn_from_nmea_id(svId),
                                   recv_time.week,
                                   recv_time.tow,
                                   observables,
-                                  observables_std))
+                                  observables_std,
+                                  glonass_freq))
   return measurements
 
 
