@@ -169,18 +169,25 @@ def read_raw_qcom(report):
 
   measurements = []
   for i in report.sv:
-    svId = i.svId
-    if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
+    if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown \
+        and i.measurementStatus.measuredVelocity \
+        and not i.measurementStatus.lastUpdateFromDifference \
+        and not i.measurementStatus.lastUpdateFromVelocityDifference:
       sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + report.timeBias) / 1000
       observables, observables_std = {}, {}
       observables['C1C'] = (recv_tow - sat_tow)*constants.SPEED_OF_LIGHT
       observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT
-      observables['D1C'] = i.unfilteredSpeed
-      observables_std['D1C'] = i.unfilteredSpeedUncertainty
-      observables['S1C'] = np.nan
+      if i.measurementStatus.fineOrCoarseVelocity:
+        # about 10x better, perhaps filtered with carrier phase?
+        observables['D1C'] = i.fineSpeed
+        observables_std['D1C'] = i.fineSpeedUncertainty
+      else:
+        observables['D1C'] = i.unfilteredSpeed
+        observables_std['D1C'] = i.unfilteredSpeedUncertainty
+      observables['S1C'] = i.carrierNoise/100.
       observables['L1C'] = np.nan
       glonass_freq = (i.glonassFrequencyIndex - 7) if report.source == 1 else np.nan
-      measurements.append(GNSSMeasurement(get_prn_from_nmea_id(svId),
+      measurements.append(GNSSMeasurement(get_prn_from_nmea_id(i.svId),
                                   recv_time.week,
                                   recv_time.tow,
                                   observables,
