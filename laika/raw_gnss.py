@@ -1,6 +1,7 @@
 import scipy.optimize as opt
 import numpy as np
 import datetime
+import struct
 from . import constants
 from .lib.coordinates import LocalCoord
 from .gps_time import GPSTime
@@ -159,18 +160,31 @@ def group_measurements_by_sat(measurements):
 
 
 def read_raw_qcom(report):
-  recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
-  if report.source == 0:    # gps
+  dr = 'DrMeasurementReport' in str(report.schema)
+  if report.source == 0 or report.source == 6:    # gps/sbas
+    if dr:
+      recv_tow = (report.gpsMilliseconds) * 1.0 / 1000.0  # seconds
+      time_bias_ms = struct.unpack("f", struct.pack("I", report.gpsTimeBiasMs))[0]
+    else:
+      recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
+      time_bias_ms = report.timeBias
     recv_time = GPSTime(report.gpsWeek, recv_tow)
   elif report.source == 1:  # glonass
-    recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
+    if dr:
+      recv_tow = (report.glonassMilliseconds) * 1.0 / 1000.0  # seconds
+      recv_time = GPSTime.from_glonass(report.glonassYear, report.glonassDay, recv_tow)
+      time_bias_ms = report.glonassTimeBias
+    else:
+      recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
+      recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
+      time_bias_ms = report.timeBias
   else:
     raise NotImplementedError('Only GPS and GLONASS are supported from qcom')
-
+  #print(recv_time, report.source, time_bias_ms, dr)
   measurements = []
   for i in report.sv:
     if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
-      sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + report.timeBias) / 1000
+      sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + time_bias_ms) / 1000
       observables, observables_std = {}, {}
       observables['C1C'] = (recv_tow - sat_tow)*constants.SPEED_OF_LIGHT
       observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT
@@ -183,7 +197,9 @@ def read_raw_qcom(report):
         observables_std['D1C'] = i.unfilteredSpeedUncertainty
       observables['S1C'] = (i.carrierNoise/100.) if i.carrierNoise != 0 else np.nan
       observables['L1C'] = np.nan
-      #print("%.5f %3d %7.2f %7.2f %.2f %d %.5f" % (recv_time.tow, i.svId, observables_std['C1C'], observables_std['D1C'], observables['S1C'], i.latency, report.timeBias), i.observationState)
+      #print("  %.5f %3d %10.2f %7.2f %7.2f %.2f %d" % (recv_time.tow, i.svId,
+      #  observables['C1C'], observables_std['C1C'],
+      #  observables_std['D1C'], observables['S1C'], i.latency), i.observationState, i.measurementStatus.fineOrCoarseVelocity)
       glonass_freq = (i.glonassFrequencyIndex - 7) if report.source == 1 else np.nan
       measurements.append(GNSSMeasurement(get_prn_from_nmea_id(i.svId),
                                   recv_time.week,
