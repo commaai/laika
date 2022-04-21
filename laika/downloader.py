@@ -3,7 +3,7 @@ import ftplib
 import hatanaka
 import os
 import urllib.request
-import pycurl # type: ignore
+import pycurl
 import re
 import time
 import tempfile
