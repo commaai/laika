@@ -9,4 +9,5 @@ matplotlib
 cffi
 gmplot
 pycurl
+types-pycurl
 hatanaka
