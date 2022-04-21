@@ -11,6 +11,7 @@ repos:
     hooks:
       - id: mypy
         exclude: /kalman/
+        additional_dependencies: ['types-pycurl']
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.0
     hooks:
