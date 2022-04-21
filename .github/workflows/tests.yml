@@ -31,5 +31,7 @@ jobs:
           python-version: '3.8.2'
       - name: Run static analysis
         run: |
+          sudo apt update
+          sudo apt install libcurl4-openssl-dev
           pip install pre-commit==2.15.0 pylint==2.11.1 pycurl types-pycurl
           pre-commit run --all
