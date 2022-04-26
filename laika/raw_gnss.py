@@ -211,13 +211,12 @@ def read_raw_qcom(report):
 
 
 def read_raw_ublox(report):
-  recv_tow = (report.rcvTow)  # seconds
+  recv_tow = report.rcvTow  # seconds
   recv_week = report.gpsWeek
-  recv_time = GPSTime(recv_week, recv_tow)
   measurements = []
   for i in report.measurements:
     # only add gps and glonass fixes
-    if (i.gnssId == 0 or i.gnssId==6):
+    if i.gnssId in [0, 6]:
       if i.svId > 32 or i.pseudorange > 2**32:
         continue
       if i.gnssId == 0:
@@ -226,15 +225,15 @@ def read_raw_ublox(report):
         prn = 'R%02i' % i.svId
       observables = {}
       observables_std = {}
-      if i.trackingStatus.pseudorangeValid and i.sigId==0:
+      if i.trackingStatus.pseudorangeValid and i.sigId == 0:
         observables['C1C'] = i.pseudorange
         # Empirically it seems obvious ublox's std is
         # actually a variation
         observables_std['C1C'] = np.sqrt(i.pseudorangeStdev)*10
-        if i.gnssId==6:
+        if i.gnssId == 6:
           glonass_freq = i.glonassFrequencyIndex - 7
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq*constants.GLONASS_L1_DELTA)) * (i.doppler)
-        elif i.gnssId==0:
+        else:  # gnssId=0
           glonass_freq = np.nan
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.doppler
         observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev
@@ -244,8 +243,8 @@ def read_raw_ublox(report):
         else:
           observables['L1C'] = np.nan
         measurements.append(GNSSMeasurement(prn,
-                                    recv_time.week,
-                                    recv_time.tow,
+                                    recv_tow,
+                                    recv_week,
                                     observables,
                                     observables_std,
                                     glonass_freq))
