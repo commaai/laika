@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 import numpy as np
 from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
@@ -262,9 +264,9 @@ class GPSEphemeris(Ephemeris):
     return pos, vel, clock_err, clock_rate_err
 
 
-def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS):
+def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris]:
   ephems = []
-  data = {}
+  data:Dict[str, List] = {}
   for file_name in file_names:
     f = open(file_name)
     while True:
@@ -449,7 +451,7 @@ def parse_ublox_ephems(ublox_ephems):
     svId = ublox_ephem.ubloxGnss.ephemeris.svId
     data = convert_ublox_ephem(ublox_ephem.ubloxGnss.ephemeris)
     epoch = data['toe']
-    ephems.append(GPSEphemeris(svId, data, epoch))
+    ephems.append(GPSEphemeris(data, epoch))
   return ephems
 
 
