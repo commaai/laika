@@ -451,7 +451,7 @@ def parse_ublox_ephems(ublox_ephems):
     svId = ublox_ephem.ubloxGnss.ephemeris.svId
     data = convert_ublox_ephem(ublox_ephem.ubloxGnss.ephemeris)
     epoch = data['toe']
-    ephems.append(GPSEphemeris(data, epoch))
+    ephems.append(GPSEphemeris(svId, data, epoch))
   return ephems
 
 
