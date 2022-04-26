@@ -232,7 +232,7 @@ def read_raw_ublox(report):
         observables_std['C1C'] = np.sqrt(i.pseudorangeStdev)*10
         if i.gnssId == 6:
           glonass_freq = i.glonassFrequencyIndex - 7
-          observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq*constants.GLONASS_L1_DELTA)) * (i.doppler)
+          observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq*constants.GLONASS_L1_DELTA)) * i.doppler
         else:  # gnssId=0
           glonass_freq = np.nan
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.doppler
@@ -243,11 +243,11 @@ def read_raw_ublox(report):
         else:
           observables['L1C'] = np.nan
         measurements.append(GNSSMeasurement(prn,
-                                    recv_tow,
-                                    recv_week,
-                                    observables,
-                                    observables_std,
-                                    glonass_freq))
+                                            recv_tow,
+                                            recv_week,
+                                            observables,
+                                            observables_std,
+                                            glonass_freq))
   return measurements
 
 
