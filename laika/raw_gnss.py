@@ -126,7 +126,7 @@ class GNSSMeasurement:
     return f"<GNSSMeasurement from {self.prn} at {time}>"
 
 
-def process_measurements(measurements, dog=None):
+def process_measurements(measurements, dog):
   proc_measurements = []
   for meas in measurements:
     if meas.process(dog):
@@ -134,7 +134,7 @@ def process_measurements(measurements, dog=None):
   return proc_measurements
 
 
-def correct_measurements(measurements, est_pos, dog=None):
+def correct_measurements(measurements, est_pos, dog):
   corrected_measurements = []
   for meas in measurements:
     if meas.correct(est_pos, dog):
