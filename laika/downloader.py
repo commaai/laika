@@ -1,4 +1,4 @@
-import certifi # type: ignore
+import certifi
 import ftplib
 import hatanaka
 import os
