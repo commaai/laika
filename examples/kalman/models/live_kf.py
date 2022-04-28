@@ -240,7 +240,6 @@ class LiveKalman():
 
     # Should not continue if the quats behave this weirdly
     if not (0.1 < quat_norm < 10):
-      cloudlog.error("Kalman filter quaternions unstable")
       raise KalmanError
 
     self.filter.x[States.ECEF_ORIENTATION, 0] = self.filter.x[States.ECEF_ORIENTATION, 0] / quat_norm
