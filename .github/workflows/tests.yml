@@ -31,5 +31,6 @@ jobs:
           python-version: '3.8.2'
       - name: Run static analysis
         run: |
+          sudo apt update && sudo apt-get install cppcheck
           pip install pre-commit==2.15.0 pylint==2.11.1
           pre-commit run --all
