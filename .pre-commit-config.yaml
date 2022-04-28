@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.1.0
     hooks:
       - id: check-ast
       - id: check-json
@@ -10,7 +10,6 @@ repos:
     rev: v0.931
     hooks:
       - id: mypy
-        exclude: /kalman/
         additional_dependencies: ['git+https://github.com/numpy/numpy-stubs', 'types-requests', 'types-atomicwrites',
                                   'types-pycurl', 'types-certifi']
         args:
@@ -18,19 +17,34 @@ repos:
         - --warn-redundant-casts
         - --warn-unreachable
   - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.0
+    rev: 4.0.1
     hooks:
       - id: flake8
-        exclude: /kalman/
         args:
-          - --select=F
+        - --indent-size=2
+        - --enable-extensions=NIC
+        - --select=F,E112,E113,E304,E502,E701,E702,E703,E71,E72,E731,W191,W6
+        - --statistics
+        - -j4
   - repo: local
     hooks:
       - id: pylint
-        exclude: /kalman/
         name: pylint
         entry: pylint
         language: system
-        types: [ python ]
+        types: [python]
         args:
           - --disable=R,E,I,C,W
+  - repo: local
+    hooks:
+      - id: cppcheck
+        name: cppcheck
+        entry: cppcheck
+        language: system
+        types: [c++]
+        args:
+        - --error-exitcode=1
+        - --language=c++
+        - --quiet
+        - --force
+        - -j8

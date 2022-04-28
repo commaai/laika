@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import List
 
 import numpy as np
 import sympy as sp
@@ -38,7 +39,7 @@ class GNSSKalman():
                (.1)**2, (0)**2, (0.01)**2,
                .1**2, (.01)**2])
 
-  maha_test_kinds = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
+  maha_test_kinds: List[int] = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
   @staticmethod
   def generate_code():
