@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-import kalman.helpers.orientation as orient
+import laika.lib.orientation as orient
 from selfdrive.locationd.kalman.helpers import (TEMPLATE_DIR, load_code,
                                                 write_code)
 from selfdrive.locationd.kalman.helpers.sympy_helpers import quat_matrix_l

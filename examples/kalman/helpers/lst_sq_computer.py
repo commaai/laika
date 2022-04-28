@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import sympy as sp
 
-import kalman.helpers.orientation as orient
+import laika.lib.orientation as orient
 from kalman.helpers import (TEMPLATE_DIR, load_code, write_code)
 from kalman.helpers.sympy_helpers import (quat_rotate, sympy_into_c)
 
@@ -171,4 +171,3 @@ def project(poses, ecef_pos):
 if __name__ == "__main__":
   K = int(sys.argv[1].split("_")[-1])
   LstSqComputer.generate_code(K=K)
-
