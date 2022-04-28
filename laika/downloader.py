@@ -335,11 +335,11 @@ def download_orbits_russia(time, cache_dir):
     'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/',
   )
   downloaded_files = []
-  for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
-    t = time.as_datetime()
+  for t_step in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
+    t = t_step.as_datetime()
     folder_paths = []
-    filename = "Sta%i%i.sp3" % (time.week, time.day)
-    if GPSTime.from_datetime(datetime.utcnow()) - time > 2*SECS_IN_WEEK:
+    filename = "Sta%i%i.sp3" % (t_step.week, t_step.day)
+    if GPSTime.from_datetime(datetime.utcnow()) - t_step > 2*SECS_IN_WEEK:
       folder_paths.append(t.strftime('%y%j/final/'))
     folder_paths.append(t.strftime('%y%j/rapid/'))
     folder_paths.append(t.strftime('%y%j/ultra/'))

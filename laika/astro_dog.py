@@ -1,13 +1,14 @@
 from collections import defaultdict
+from typing import DefaultDict, List, Optional, Union
 
 from .helpers import get_constellation, get_closest, get_el_az, TimeRangeHolder
-from .ephemeris import parse_sp3_orbits, parse_rinex_nav_msg_gps, \
-                       parse_rinex_nav_msg_glonass
+from .ephemeris import GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
+  parse_rinex_nav_msg_glonass
 from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
 from .trop import saast
 from .iono import parse_ionex
-from .dcb import parse_dcbs
+from .dcb import DCB, parse_dcbs
 from .gps_time import GPSTime
 from .dgps import get_closest_station_names, parse_dgps
 from . import constants
@@ -26,6 +27,7 @@ class AstroDog:
   valid_const: list of constellation identifiers laika will try process
 
   '''
+
   def __init__(self, auto_update=True,
                cache_dir='/tmp/gnss/',
                pull_orbit=True, dgps=False,
@@ -44,13 +46,13 @@ class AstroDog:
     self.nav_fetched_times = TimeRangeHolder()
     self.dcbs_fetched_times = TimeRangeHolder()
 
-    self.orbits = defaultdict(list)
-    self.nav = defaultdict(list)
-    self.dcbs = defaultdict(list)
+    self.orbits: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
+    self.nav: DefaultDict[str, List[Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(list)
+    self.dcbs: DefaultDict[str, List[DCB]] = defaultdict(list)
 
-    self.cached_orbit = defaultdict(lambda: None)
-    self.cached_nav = defaultdict(lambda: None)
-    self.cached_dcb = defaultdict(lambda: None)
+    self.cached_orbit: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
+    self.cached_nav: DefaultDict[str, Union[GPSEphemeris, GLONASSEphemeris, None]] = defaultdict(lambda: None)
+    self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
 
   def get_ionex(self, time):
     if self.cached_ionex is not None and self.cached_ionex.valid(time):
@@ -182,7 +184,7 @@ class AstroDog:
     if 'GLONASS' in self.valid_const:
       file_path_glonass = download_nav(time, cache_dir=self.cache_dir, constellation='GLONASS')
       if file_path_glonass:
-         ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
+        ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
 
     fetched_ephems = (ephems_gps + ephems_glonass)
 
@@ -248,8 +250,8 @@ class AstroDog:
       file_path_station = download_cors_station(time, station_name, cache_dir=self.cache_dir)
       if file_path_station:
         dgps = parse_dgps(station_name, file_path_station,
-                         self, max_distance=MAX_DGPS_DISTANCE,
-                         required_constellations=self.valid_const)
+                          self, max_distance=MAX_DGPS_DISTANCE,
+                          required_constellations=self.valid_const)
         if dgps is not None:
           self.dgps_delays.append(dgps)
           break
