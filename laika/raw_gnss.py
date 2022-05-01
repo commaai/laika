@@ -306,7 +306,7 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   if n < 6:
     return []
 
-  Fx_vel = prr_residual(measurements, est_pos, no_weight=no_weight, no_nans=True)
+  Fx_vel = prr_residual(measurements, est_pos, signal=signal, no_weight=no_weight, no_nans=True)
   opt_vel = opt.least_squares(Fx_vel, v0).x
   return opt_vel, Fx_vel(opt_vel, no_weight=True)
 
