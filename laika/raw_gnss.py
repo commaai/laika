@@ -103,10 +103,10 @@ class GNSSMeasurement:
                                        (constants.GPS_L1**2 - constants.GPS_L2**2))
 
     geometric_range = np.linalg.norm(self.sat_pos - est_pos)
-    theta_1 = constants.EARTH_ROTATION_RATE*(geometric_range)/constants.SPEED_OF_LIGHT
-    self.sat_pos_final = [self.sat_pos[0]*np.cos(theta_1) + self.sat_pos[1]*np.sin(theta_1),
-                          self.sat_pos[1]*np.cos(theta_1) - self.sat_pos[0]*np.sin(theta_1),
-                          self.sat_pos[2]]
+    theta_1 = constants.EARTH_ROTATION_RATE * geometric_range / constants.SPEED_OF_LIGHT
+    self.sat_pos_final = np.array([self.sat_pos[0] * np.cos(theta_1) + self.sat_pos[1] * np.sin(theta_1),
+                                   self.sat_pos[1] * np.cos(theta_1) - self.sat_pos[0] * np.sin(theta_1),
+                                   self.sat_pos[2]])
     if 'C1C' in self.observables_final and np.isfinite(self.observables_final['C1C']):
       self.corrected = True
       return True
@@ -287,7 +287,7 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
   '''
   n = len(measurements)
   if n < 6:
-      return []
+    return []
 
   Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight, no_nans=True)
   opt_pos = opt.least_squares(Fx_pos, x0).x
@@ -304,7 +304,7 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   '''
   n = len(measurements)
   if n < 6:
-      return []
+    return []
 
   Fx_vel = prr_residual(measurements, est_pos, no_weight=no_weight, no_nans=True)
   opt_vel = opt.least_squares(Fx_vel, v0).x

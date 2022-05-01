@@ -77,6 +77,16 @@ RINEX_CONSTELLATION_IDENTIFIERS.update(
   dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()])  # type: ignore
 )
 
+CONSTELLATION_ID_TO_GNSS_ID = {
+  'G': 0,
+  'R': 1,
+  'S': 2,
+  'E': 3,
+  'C': 4,
+  'J': 5,
+  'I': 6
+}
+
 
 def get_el_az(pos, sat_pos):
   converter = LocalCoord.from_ecef(pos)
