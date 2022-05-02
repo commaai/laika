@@ -172,11 +172,11 @@ def read_raw_qcom(report):
     recv_time = GPSTime(report.gpsWeek, recv_tow)
   elif report.source == 1:  # glonass
     if dr:
-      recv_tow = report.glonassMilliseconds * 1.0 / 1000.0  # seconds
+      recv_tow = report.glonassMilliseconds / 1000.0  # seconds
       recv_time = GPSTime.from_glonass(report.glonassYear, report.glonassDay, recv_tow)
       time_bias_ms = report.glonassTimeBias
     else:
-      recv_tow = report.milliseconds * 1.0 / 1000.0  # seconds
+      recv_tow = report.milliseconds / 1000.0  # seconds
       recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
       time_bias_ms = report.timeBias
   else:
