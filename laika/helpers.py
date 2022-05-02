@@ -29,8 +29,8 @@ class ConstellationId(IntEnum):
   GPS = 0
   SBAS = 1
   GALILEO = 2
-  IMES = 4
   BEIDOU = 3
+  IMES = 4
   QZNSS = 5
   GLONASS = 6
   # Not supported by Ublox:
@@ -187,7 +187,7 @@ def get_nmea_id_from_prn(prn):
     raise ValueError("PRN must contains number greater then 0")
   constellation_offset = 0
   for entry in NMEA_ID_RANGES:
-    if entry['constellation'] != prn_constellation:
+    if entry['constellation'].name != prn_constellation:
       continue
     start, end = entry['range']
     range_width = end - start + 1

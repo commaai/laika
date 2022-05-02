@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import scipy.optimize as opt
 import numpy as np
@@ -9,8 +9,7 @@ from .lib.coordinates import LocalCoord
 from .gps_time import GPSTime
 from .helpers import ConstellationId, rinex3_obs_from_rinex2_obs, \
   get_nmea_id_from_prn, \
-  get_prn_from_nmea_id, \
-  get_constellation
+  get_prn_from_nmea_id
 
 
 def array_from_normal_meas(meas):
@@ -268,7 +267,9 @@ def read_rinex_obs(obsdata):
           continue
         observables[rinex3_obs_from_rinex2_obs(obs)] = obsdata.data[sat_str][obs][i]
         observables_std[rinex3_obs_from_rinex2_obs(obs)] = 1
-      measurements[-1].append(GNSSMeasurement(get_prn_from_nmea_id(int(sat_str)),
+      sv_id = int(sat_str)
+      constellation_id = ConstellationId(get_prn_from_nmea_id(sv_id)[0])
+      measurements[-1].append(GNSSMeasurement(constellation_id, sv_id,
                               recv_time.week,
                               recv_time.tow,
                               observables,
@@ -310,7 +311,7 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   return opt_vel, Fx_vel(opt_vel, no_weight=True)
 
 
-def pr_residual(measurements, signal='C1C', no_weight=False, no_nans=False):
+def pr_residual(measurements: List[GNSSMeasurement], signal='C1C', no_weight=False, no_nans=False):
   # solve for pos
   def Fx_pos(xxx_todo_changeme, no_weight=no_weight):
     (x, y, z, bc, bg) = xxx_todo_changeme
@@ -340,9 +341,9 @@ def pr_residual(measurements, signal='C1C', no_weight=False, no_nans=False):
           (sat_pos[1] * np.cos(theta) - sat_pos[0] * np.sin(theta) - y) ** 2 +
           (sat_pos[2] - z) ** 2
       )
-      if get_constellation(meas.prn) == 'GLONASS':
+      if meas.constellation_id == ConstellationId.GLONASS:
         rows.append(weight * (val - (pr - bc - bg)))
-      elif get_constellation(meas.prn) == 'GPS':
+      elif meas.constellation_id == ConstellationId.GPS:
         rows.append(weight * (val - (pr - bc)))
     return rows
   return Fx_pos
