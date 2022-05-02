@@ -243,12 +243,8 @@ def read_raw_ublox(report):
           observables['L1C'] = i.carrierCycles
         else:
           observables['L1C'] = np.nan
-          measurements.append(GNSSMeasurement(prn,
-                                              recv_week,
-                                              recv_tow,
-                                              observables,
-                                              observables_std,
-                                              glonass_freq))
+          measurements.append(GNSSMeasurement(prn, recv_week, recv_tow,
+                                              observables, observables_std, glonass_freq))
   return measurements
 
 
