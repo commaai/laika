@@ -7,10 +7,10 @@ import struct
 from . import constants
 from .lib.coordinates import LocalCoord
 from .gps_time import GPSTime
-from .helpers import rinex3_obs_from_rinex2_obs, \
-                    get_nmea_id_from_prn, \
-                    get_prn_from_nmea_id, \
-                    get_constellation
+from .helpers import UbloxGnssId, rinex3_obs_from_rinex2_obs, \
+  get_nmea_id_from_prn, \
+  get_prn_from_nmea_id, \
+  get_constellation
 
 
 def array_from_normal_meas(meas):
@@ -52,11 +52,12 @@ class GNSSMeasurement:
   SAT_POS = slice(8, 11)
   SAT_VEL = slice(11, 14)
 
-  def __init__(self, prn: str, recv_time_week: int, recv_time_sec: float,
-               observables: Dict[str, float], observables_std: Dict[str, float], glonass_freq: Optional[int] = None):
+  def __init__(self, prn: str, recv_time_week: int, recv_time_sec: float, observables: Dict[str, float], observables_std: Dict[str, float],
+               glonass_freq: Optional[int] = None, ublox_gnss_id: Optional[UbloxGnssId] = None):
 
     # Metadata
     self.prn = prn  # satellite ID in rinex convention
+    self.ublox_gnss_id = ublox_gnss_id
     self.recv_time_week = recv_time_week
     self.recv_time_sec = recv_time_sec
     self.recv_time = GPSTime(recv_time_week, recv_time_sec)
@@ -217,24 +218,22 @@ def read_raw_ublox(report):
   measurements = []
   for i in report.measurements:
     # only add Gps and Glonass fixes
-    if i.gnssId in [0, 6]:
+    if i.gnssId in [UbloxGnssId.GPS, UbloxGnssId.GLONASS]:
       if i.svId > 32 or i.pseudorange > 2**32:
         continue
-      if i.gnssId == 0:  # GPS
-        prn = 'G%02i' % i.svId
-      else:  # Glonass
-        prn = 'R%02i' % i.svId
       observables = {}
       observables_std = {}
       if i.trackingStatus.pseudorangeValid and i.sigId == 0:
+        ublox_gnss_id = UbloxGnssId(i.gnssId)
+        prn = '%c%02i' % (ublox_gnss_id.to_constellation_id(), i.svId)
         observables['C1C'] = i.pseudorange
         # Empirically it seems obvious ublox's std is
         # actually a variation
         observables_std['C1C'] = np.sqrt(i.pseudorangeStdev)*10
-        if i.gnssId == 6:
+        if i.gnssId == UbloxGnssId.GPS:
           glonass_freq = i.glonassFrequencyIndex - 7
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq * constants.GLONASS_L1_DELTA)) * i.doppler
-        else:  # gnssId=0
+        else:  # Glonass
           glonass_freq = None
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.doppler
         observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev
@@ -243,8 +242,8 @@ def read_raw_ublox(report):
           observables['L1C'] = i.carrierCycles
         else:
           observables['L1C'] = np.nan
-          measurements.append(GNSSMeasurement(prn, recv_week, recv_tow,
-                                              observables, observables_std, glonass_freq))
+        measurements.append(GNSSMeasurement(prn, recv_week, recv_tow,
+                                            observables, observables_std, glonass_freq, ublox_gnss_id))
   return measurements
 
 
@@ -303,7 +302,7 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   if n < 6:
       return []
 
-  Fx_vel = prr_residual(measurements, est_pos, no_weight=no_weight, no_nans=True)
+  Fx_vel = prr_residual(measurements, est_pos, signal=signal, no_weight=no_weight, no_nans=True)
   opt_vel = opt.least_squares(Fx_vel, v0).x
   return opt_vel, Fx_vel(opt_vel, no_weight=True)
 
