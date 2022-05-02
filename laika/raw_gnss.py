@@ -54,7 +54,6 @@ class GNSSMeasurement:
 
   def __init__(self, prn: str, recv_time_week: int, recv_time_sec: float, observables: Dict[str, float], observables_std: Dict[str, float],
                glonass_freq: Union[int, float] = None, ublox_gnss_id: Optional[UbloxGnssId] = None):
-    # todo fix glonass_freq to Optional[int] by removing np.nan usage
     # Metadata
     self.prn = prn  # satellite ID in rinex convention
     self.ublox_gnss_id = ublox_gnss_id
@@ -202,7 +201,7 @@ def read_raw_qcom(report):
       #print("  %.5f %3d %10.2f %7.2f %7.2f %.2f %d" % (recv_time.tow, i.svId,
       #  observables['C1C'], observables_std['C1C'],
       #  observables_std['D1C'], observables['S1C'], i.latency), i.observationState, i.measurementStatus.fineOrCoarseVelocity)
-      glonass_freq = (i.glonassFrequencyIndex - 7) if report.source == 1 else np.nan  # todo change this to None. Needs to change in private repo too
+      glonass_freq = (i.glonassFrequencyIndex - 7) if report.source == 1 else np.nan
       measurements.append(GNSSMeasurement(get_prn_from_nmea_id(i.svId),
                                   recv_time.week,
                                   recv_time.tow,
@@ -234,7 +233,7 @@ def read_raw_ublox(report):
           glonass_freq = i.glonassFrequencyIndex - 7
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq * constants.GLONASS_L1_DELTA)) * i.doppler
         else:  # GPS
-          glonass_freq = np.nan  # todo change this to None. Needs to change in private repo too
+          glonass_freq = np.nan
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.doppler
         observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev
         observables['S1C'] = i.cno
