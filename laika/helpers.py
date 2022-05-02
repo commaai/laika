@@ -177,10 +177,10 @@ def get_nmea_id_from_prn(prn):
     raise ValueError("PRN must contains number greater then 0")
   constellation_offset = 0
   for entry in NMEA_ID_RANGES:
-    start, end = entry['range']
     constellation = entry['constellation']
     if constellation != prn_constellation:
       continue
+    start, end = entry['range']
     range_width = end - start + 1
     index_in_range = satellite_id - constellation_offset - 1
     if range_width > index_in_range:

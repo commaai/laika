@@ -1,3 +1,5 @@
+from typing import Dict, Optional
+
 import scipy.optimize as opt
 import numpy as np
 import datetime
@@ -50,8 +52,8 @@ class GNSSMeasurement:
   SAT_POS = slice(8, 11)
   SAT_VEL = slice(11, 14)
 
-  def __init__(self, prn, recv_time_week, recv_time_sec,
-               observables, observables_std, glonass_freq=np.nan):
+  def __init__(self, prn: str, recv_time_week: int, recv_time_sec: float,
+               observables: Dict[str, float], observables_std: Dict[str, float], glonass_freq: Optional[int] = None):
 
     # Metadata
     self.prn = prn  # satellite ID in rinex convention
@@ -74,7 +76,7 @@ class GNSSMeasurement:
     self.sat_clock_err = np.nan
 
     self.sat_pos_final = np.nan * np.ones(3)  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
-    self.observables_final = {}
+    self.observables_final: Dict[str, float] = {}
 
   def process(self, dog):
     sat_time = self.recv_time - self.observables['C1C']/constants.SPEED_OF_LIGHT
@@ -118,8 +120,7 @@ class GNSSMeasurement:
     ret = np.array([get_nmea_id_from_prn(self.prn), self.recv_time_week, self.recv_time_sec, self.glonass_freq,
                   self.observables_final['C1C'], self.observables_std['C1C'],
                   self.observables_final['D1C'], self.observables_std['D1C']])
-    ret = np.concatenate((ret, self.sat_pos_final, self.sat_vel))
-    return ret
+    return np.concatenate((ret, self.sat_pos_final, self.sat_vel))
 
   def __repr__(self):
     time = self.recv_time.as_datetime().strftime('%Y-%m-%dT%H:%M:%S.%f')
@@ -163,19 +164,19 @@ def read_raw_qcom(report):
   dr = 'DrMeasurementReport' in str(report.schema)
   if report.source == 0 or report.source == 6:    # gps/sbas
     if dr:
-      recv_tow = (report.gpsMilliseconds) * 1.0 / 1000.0  # seconds
+      recv_tow = report.gpsMilliseconds / 1000.0  # seconds
       time_bias_ms = struct.unpack("f", struct.pack("I", report.gpsTimeBiasMs))[0]
     else:
-      recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
+      recv_tow = report.milliseconds / 1000.0  # seconds
       time_bias_ms = report.timeBias
     recv_time = GPSTime(report.gpsWeek, recv_tow)
   elif report.source == 1:  # glonass
     if dr:
-      recv_tow = (report.glonassMilliseconds) * 1.0 / 1000.0  # seconds
+      recv_tow = report.glonassMilliseconds * 1.0 / 1000.0  # seconds
       recv_time = GPSTime.from_glonass(report.glonassYear, report.glonassDay, recv_tow)
       time_bias_ms = report.glonassTimeBias
     else:
-      recv_tow = (report.milliseconds) * 1.0 / 1000.0  # seconds
+      recv_tow = report.milliseconds * 1.0 / 1000.0  # seconds
       recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
       time_bias_ms = report.timeBias
   else:
@@ -200,7 +201,7 @@ def read_raw_qcom(report):
       #print("  %.5f %3d %10.2f %7.2f %7.2f %.2f %d" % (recv_time.tow, i.svId,
       #  observables['C1C'], observables_std['C1C'],
       #  observables_std['D1C'], observables['S1C'], i.latency), i.observationState, i.measurementStatus.fineOrCoarseVelocity)
-      glonass_freq = (i.glonassFrequencyIndex - 7) if report.source == 1 else np.nan
+      glonass_freq = (i.glonassFrequencyIndex - 7) if report.source == 1 else None
       measurements.append(GNSSMeasurement(get_prn_from_nmea_id(i.svId),
                                   recv_time.week,
                                   recv_time.tow,
@@ -215,13 +216,13 @@ def read_raw_ublox(report):
   recv_week = report.gpsWeek
   measurements = []
   for i in report.measurements:
-    # only add gps and glonass fixes
+    # only add Gps and Glonass fixes
     if i.gnssId in [0, 6]:
       if i.svId > 32 or i.pseudorange > 2**32:
         continue
-      if i.gnssId == 0:
+      if i.gnssId == 0:  # GPS
         prn = 'G%02i' % i.svId
-      else:
+      else:  # Glonass
         prn = 'R%02i' % i.svId
       observables = {}
       observables_std = {}
@@ -232,9 +233,9 @@ def read_raw_ublox(report):
         observables_std['C1C'] = np.sqrt(i.pseudorangeStdev)*10
         if i.gnssId == 6:
           glonass_freq = i.glonassFrequencyIndex - 7
-          observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq*constants.GLONASS_L1_DELTA)) * i.doppler
+          observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq * constants.GLONASS_L1_DELTA)) * i.doppler
         else:  # gnssId=0
-          glonass_freq = np.nan
+          glonass_freq = None
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.doppler
         observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev
         observables['S1C'] = i.cno
@@ -287,7 +288,7 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
   '''
   n = len(measurements)
   if n < 6:
-    return []
+      return []
 
   Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight, no_nans=True)
   opt_pos = opt.least_squares(Fx_pos, x0).x
@@ -304,9 +305,9 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   '''
   n = len(measurements)
   if n < 6:
-    return []
+      return []
 
-  Fx_vel = prr_residual(measurements, est_pos, signal=signal, no_weight=no_weight, no_nans=True)
+  Fx_vel = prr_residual(measurements, est_pos, no_weight=no_weight, no_nans=True)
   opt_vel = opt.least_squares(Fx_vel, v0).x
   return opt_vel, Fx_vel(opt_vel, no_weight=True)
 
