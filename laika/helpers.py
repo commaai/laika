@@ -25,7 +25,7 @@ RINEX_CONSTELLATION_IDENTIFIERS.update(
 
 
 class ConstellationId(IntEnum):
-  # Int values match Ublox version 8
+  # Int values match Ublox gnssid version 8
   GPS = 0
   SBAS = 1
   GALILEO = 2
@@ -40,6 +40,9 @@ class ConstellationId(IntEnum):
     # returns single character id
     return RINEX_CONSTELLATION_IDENTIFIERS[self.name]
 
+  @classmethod
+  def from_prn(cls, prn):
+    return cls[RINEX_CONSTELLATION_IDENTIFIERS[prn[0]]]
 
 # From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
 NMEA_ID_RANGES = (

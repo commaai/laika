@@ -267,8 +267,8 @@ def read_rinex_obs(obsdata):
           continue
         observables[rinex3_obs_from_rinex2_obs(obs)] = obsdata.data[sat_str][obs][i]
         observables_std[rinex3_obs_from_rinex2_obs(obs)] = 1
-      sv_id = int(sat_str)
-      constellation_id = ConstellationId(get_prn_from_nmea_id(sv_id)[0])
+      prn = get_prn_from_nmea_id(int(sat_str))
+      constellation_id, sv_id = ConstellationId.from_prn(prn), int(prn[1:])
       measurements[-1].append(GNSSMeasurement(constellation_id, sv_id,
                               recv_time.week,
                               recv_time.tow,
