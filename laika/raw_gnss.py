@@ -283,7 +283,7 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
   '''
   n = len(measurements)
   if n < 6:
-      return []
+    return []
 
   Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight, no_nans=True)
   opt_pos = opt.least_squares(Fx_pos, x0).x
@@ -300,7 +300,7 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   '''
   n = len(measurements)
   if n < 6:
-      return []
+    return []
 
   Fx_vel = prr_residual(measurements, est_pos, signal=signal, no_weight=no_weight, no_nans=True)
   opt_vel = opt.least_squares(Fx_vel, v0).x
