@@ -243,7 +243,7 @@ def read_raw_ublox(report):
         else:
           observables['L1C'] = np.nan
 
-        constellation_id = ConstellationId[ConstellationId(i.gnssId).name]
+        constellation_id = ConstellationId(i.gnssId)
         measurements.append(GNSSMeasurement(constellation_id, i.svId, recv_week, recv_tow,
                                             observables, observables_std, glonass_freq))
   return measurements
