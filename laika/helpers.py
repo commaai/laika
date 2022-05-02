@@ -90,8 +90,7 @@ RINEX_CONSTELLATION_IDENTIFIERS = {
   'GALILEO': 'E',
   'BEIDOU': 'C',
   'QZNSS': 'J',
-  'IRNSS': 'I',
-  'IMES': 'M'
+  'IRNSS': 'I'
 }
 
 # Make above dictionary bidirectional map:
