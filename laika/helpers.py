@@ -26,27 +26,6 @@ class ConstellationId(IntEnum):
     return cls[RINEX_CONSTELLATION_IDENTIFIERS[prn[0]]]
 
 
-# Source: RINEX 3.04
-RINEX_CONSTELLATION_IDENTIFIERS = {
-  'GPS': 'G',
-  'GLONASS': 'R',
-  'SBAS': 'S',
-  'GALILEO': 'E',
-  'BEIDOU': 'C',
-  'QZNSS': 'J',
-  'IRNSS': 'I',
-  'IMES': 'M'
-}
-
-# Make above dictionary bidirectional map:
-# Now you can ask for constellation using:
-# >>> RINEX_CONSTELLATION_IDENTIFIERS['R']
-#     "GLONASS"
-RINEX_CONSTELLATION_IDENTIFIERS.update(
-  dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()])  # type: ignore
-)
-
-
 # From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
 NMEA_ID_RANGES = (
   {
@@ -101,6 +80,26 @@ NMEA_ID_RANGES = (
     'range': (401, 437),
     'constellation': ConstellationId.BEIDOU,
   }
+)
+
+# Source: RINEX 3.04
+RINEX_CONSTELLATION_IDENTIFIERS = {
+  'GPS': 'G',
+  'GLONASS': 'R',
+  'SBAS': 'S',
+  'GALILEO': 'E',
+  'BEIDOU': 'C',
+  'QZNSS': 'J',
+  'IRNSS': 'I',
+  'IMES': 'M'
+}
+
+# Make above dictionary bidirectional map:
+# Now you can ask for constellation using:
+# >>> RINEX_CONSTELLATION_IDENTIFIERS['R']
+#     "GLONASS"
+RINEX_CONSTELLATION_IDENTIFIERS.update(
+  dict([reversed(i) for i in RINEX_CONSTELLATION_IDENTIFIERS.items()])  # type: ignore
 )
 
 
