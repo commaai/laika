@@ -230,10 +230,10 @@ def read_raw_ublox(report):
         # Empirically it seems obvious ublox's std is
         # actually a variation
         observables_std['C1C'] = np.sqrt(i.pseudorangeStdev)*10
-        if i.gnssId == UbloxGnssId.GPS:
+        if i.gnssId == UbloxGnssId.GLONASS:
           glonass_freq = i.glonassFrequencyIndex - 7
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq * constants.GLONASS_L1_DELTA)) * i.doppler
-        else:  # Glonass
+        else:  # GPS
           glonass_freq = None
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.doppler
         observables_std['D1C'] = (constants.SPEED_OF_LIGHT / constants.GPS_L1) * i.dopplerStdev
