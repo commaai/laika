@@ -4,63 +4,6 @@ from enum import IntEnum
 import numpy as np
 from .lib.coordinates import LocalCoord
 
-# From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
-NMEA_ID_RANGES = (
-  {
-    'range': (1, 32),
-    'constellation': 'GPS'
-  },
-  {
-    'range': (33, 54),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (55, 64),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (65, 88),
-    'constellation': 'GLONASS'
-  },
-  {
-    'range': (89, 96),
-    'constellation': 'GLONASS'
-  },
-  {
-    'range': (120, 151),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (152, 158),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (173, 182),
-    'constellation': 'IMES'
-  },
-  {
-    'range': (193, 197),
-    'constellation': 'QZNSS'
-  },
-  {
-    'range': (198, 200),
-    'constellation': 'QZNSS'
-  },
-  {
-    'range': (201, 235),
-    'constellation': 'BEIDOU'
-  },
-  {
-    'range': (301, 336),
-    'constellation': 'GALILEO'
-  },
-  {
-    'range': (401, 437),
-    'constellation': 'BEIDOU'
-  }
-)
-
-# Source: RINEX 3.04
 RINEX_CONSTELLATION_IDENTIFIERS = {
   'GPS': 'G',
   'GLONASS': 'R',
@@ -68,8 +11,10 @@ RINEX_CONSTELLATION_IDENTIFIERS = {
   'GALILEO': 'E',
   'BEIDOU': 'C',
   'QZNSS': 'J',
-  'IRNSS': 'I'
+  'IRNSS': 'I',
+  'IMES': 'M'
 }
+
 # Make above dictionary bidirectional map:
 # Now you can ask for constellation using:
 # >>> RINEX_CONSTELLATION_IDENTIFIERS['R']
@@ -79,17 +24,78 @@ RINEX_CONSTELLATION_IDENTIFIERS.update(
 )
 
 
-class UbloxGnssId(IntEnum):
-  # For Ublox version 8
+class ConstellationId(IntEnum):
+  # Int values match Ublox version 8
   GPS = 0
   SBAS = 1
   GALILEO = 2
+  IMES = 4
   BEIDOU = 3
   QZNSS = 5
   GLONASS = 6
+  # Not supported by Ublox:
+  IRNSS = 7
 
-  def to_constellation_id(self):
+  def to_rinex_char(self):
+    # returns single character id
     return RINEX_CONSTELLATION_IDENTIFIERS[self.name]
+
+
+# From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
+NMEA_ID_RANGES = (
+  {
+    'range': (1, 32),
+    'constellation': ConstellationId.GPS,
+  },
+  {
+    'range': (33, 54),
+    'constellation': ConstellationId.SBAS,
+  },
+  {
+    'range': (55, 64),
+    'constellation': ConstellationId.SBAS,
+  },
+  {
+    'range': (65, 88),
+    'constellation': ConstellationId.GLONASS,
+  },
+  {
+    'range': (89, 96),
+    'constellation': ConstellationId.GLONASS,
+  },
+  {
+    'range': (120, 151),
+    'constellation': ConstellationId.SBAS,
+  },
+  {
+    'range': (152, 158),
+    'constellation': ConstellationId.SBAS,
+  },
+  {
+    'range': (173, 182),
+    'constellation': ConstellationId.IMES
+  },
+  {
+    'range': (193, 197),
+    'constellation': ConstellationId.QZNSS,
+  },
+  {
+    'range': (198, 200),
+    'constellation': ConstellationId.QZNSS,
+  },
+  {
+    'range': (201, 235),
+    'constellation': ConstellationId.BEIDOU,
+  },
+  {
+    'range': (301, 336),
+    'constellation': ConstellationId.GALILEO,
+  },
+  {
+    'range': (401, 437),
+    'constellation': ConstellationId.BEIDOU,
+  }
+)
 
 
 def get_el_az(pos, sat_pos):
@@ -155,7 +161,7 @@ def get_prn_from_nmea_id(nmea_id):
                       "%i not known" % nmea_id)
         return get_unknown_prn_from_nmea_id(nmea_id)
 
-      identifier = RINEX_CONSTELLATION_IDENTIFIERS.get(constellation)
+      identifier = constellation.to_rinex_char()
       if identifier is None:
         warnings.warn("RINEX3 constellation identifier for "
                       "constellation %s is not known" % constellation)
