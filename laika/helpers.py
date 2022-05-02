@@ -1,4 +1,5 @@
 import warnings
+from enum import IntEnum
 
 import numpy as np
 from .lib.coordinates import LocalCoord
@@ -78,12 +79,25 @@ RINEX_CONSTELLATION_IDENTIFIERS.update(
 )
 
 
+class UbloxGnssId(IntEnum):
+  # For Ublox version 8
+  GPS = 0
+  SBAS = 1
+  GALILEO = 2
+  BEIDOU = 3
+  QZNSS = 5
+  GLONASS = 6
+
+  def to_constellation_id(self):
+    return RINEX_CONSTELLATION_IDENTIFIERS[self.name]
+
+
 def get_el_az(pos, sat_pos):
   converter = LocalCoord.from_ecef(pos)
   sat_ned = converter.ecef2ned(sat_pos)
   sat_range = np.linalg.norm(sat_ned)
 
-  el = np.arcsin(-sat_ned[2]/sat_range)  # pylint: disable=unsubscriptable-object
+  el = np.arcsin(-sat_ned[2] / sat_range)  # pylint: disable=unsubscriptable-object
   az = np.arctan2(sat_ned[1], sat_ned[0])  # pylint: disable=unsubscriptable-object
   return el, az
 
@@ -167,10 +181,9 @@ def get_nmea_id_from_prn(prn):
     raise ValueError("PRN must contains number greater then 0")
   constellation_offset = 0
   for entry in NMEA_ID_RANGES:
-    start, end = entry['range']
-    constellation = entry['constellation']
-    if constellation != prn_constellation:
+    if entry['constellation'] != prn_constellation:
       continue
+    start, end = entry['range']
     range_width = end - start + 1
     index_in_range = satellite_id - constellation_offset - 1
     if range_width > index_in_range:
@@ -190,6 +203,7 @@ def rinex3_obs_from_rinex2_obs(observable):
 
 class TimeRangeHolder:
   '''Class to support test if date is in any of the multiple, sparse ranges'''
+
   def __init__(self):
     # Sorted list
     self._ranges = []
