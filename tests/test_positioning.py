@@ -14,9 +14,14 @@ import laika.raw_gnss as raw
 
 class TestPositioning(unittest.TestCase):
 
-  @unittest.skip("Takes way too long to download for ci")
-  def test_station_position(self):
-    print('WARNING THIS TAKE CAN TAKE A VERY LONG TIME THE FIRST RUN TO DOWNLOAD')
+  @unittest.skip("Takes way too long. Can be used for debugging")
+  def test_station_position_long(self):
+    self.run_station_position(-1)
+
+  def test_station_position_short(self):
+    self.run_station_position(10)
+
+  def run_station_position(self, length):
     dog = AstroDog()
     # Building this cache takes forever just copy it from repo
     cache_directory = '/tmp/gnss/cors_coord/'
@@ -33,18 +38,22 @@ class TestPositioning(unittest.TestCase):
     sc01_exact_position = get_station_position('sc01')
 
     rinex_meas_grouped = raw.read_rinex_obs(obs_data)
+    # Select small sample out of ~2800 to reduce computation time
+    rinex_meas_grouped = rinex_meas_grouped[:length]
     rinex_corr_grouped = []
     for meas in tqdm(rinex_meas_grouped):
-      # proc = raw.process_measurements(meas, dog=dog)
-      corr = raw.correct_measurements(meas, sc01_exact_position, dog=dog)
+      proc = raw.process_measurements(meas, dog=dog)
+      corr = raw.correct_measurements(proc, sc01_exact_position, dog=dog)
       rinex_corr_grouped.append(corr)
 
     # Using laika's WLS solver we can now calculate position
     # fixes for every epoch (every 30s) over 24h.
     ests = []
-    for corr in tqdm(rinex_corr_grouped[:]):
-      fix, _ = raw.calc_pos_fix(corr)
-      ests.append(fix)
+    for corr in tqdm(rinex_corr_grouped):
+      ret = raw.calc_pos_fix(corr)
+      if len(ret) > 0:
+        fix, _ = ret
+        ests.append(fix)
     ests = np.array(ests)
 
     mean_fix = np.mean(ests[:, :3], axis=0)
