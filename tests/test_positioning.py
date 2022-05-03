@@ -14,7 +14,14 @@ import laika.raw_gnss as raw
 
 class TestPositioning(unittest.TestCase):
 
-  def test_station_position(self):
+  @unittest.skip("Takes way too long. Can be used for debugging")
+  def test_station_position_long(self):
+    self.run_station_position(-1)
+
+  def test_station_position_short(self):
+    self.run_station_position(10)
+
+  def run_station_position(self, length):
     dog = AstroDog()
     # Building this cache takes forever just copy it from repo
     cache_directory = '/tmp/gnss/cors_coord/'
@@ -32,7 +39,7 @@ class TestPositioning(unittest.TestCase):
 
     rinex_meas_grouped = raw.read_rinex_obs(obs_data)
     # Select small sample out of ~2800 to reduce computation time
-    rinex_meas_grouped = rinex_meas_grouped[:200]
+    rinex_meas_grouped = rinex_meas_grouped[:length]
     rinex_corr_grouped = []
     for meas in tqdm(rinex_meas_grouped):
       proc = raw.process_measurements(meas, dog=dog)
