@@ -32,7 +32,7 @@ class TestPositioning(unittest.TestCase):
 
     rinex_meas_grouped = raw.read_rinex_obs(obs_data)
     # Select small sample out of ~2800 to reduce computation time
-    rinex_meas_grouped = rinex_meas_grouped[:100]
+    rinex_meas_grouped = rinex_meas_grouped[:200]
     rinex_corr_grouped = []
     for meas in tqdm(rinex_meas_grouped):
       proc = raw.process_measurements(meas, dog=dog)
