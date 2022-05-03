@@ -108,11 +108,6 @@ class TestConstellationPRN(unittest.TestCase):
             self.assertEqual(expected_nmea_id, nmea_id)
 
     def test_nmea_id_from_invalid_prn(self):
-        # Special unknown constellation - valid number
-        self.assertRaises(ValueError, get_nmea_id_from_prn, '?01')
-        self.assertRaises(ValueError, get_nmea_id_from_prn, '?-1')
-        # Special unknown constellation - invalid number
-        self.assertRaises(ValueError, get_nmea_id_from_prn, '???')
         # Constellation with unknwown identifier
         self.assertRaises(ValueError, get_nmea_id_from_prn, 'X01')
         # Valid constellation - invalid number
