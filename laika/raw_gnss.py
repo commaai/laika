@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import scipy.optimize as opt
 import numpy as np
@@ -127,7 +127,7 @@ class GNSSMeasurement:
     return f"<GNSSMeasurement from {self.prn} at {time}>"
 
 
-def process_measurements(measurements, dog):
+def process_measurements(measurements, dog) -> List[GNSSMeasurement]:
   proc_measurements = []
   for meas in measurements:
     if meas.process(dog):
@@ -135,7 +135,7 @@ def process_measurements(measurements, dog):
   return proc_measurements
 
 
-def correct_measurements(measurements, est_pos, dog):
+def correct_measurements(measurements, est_pos, dog) -> List[GNSSMeasurement]:
   corrected_measurements = []
   for meas in measurements:
     if meas.correct(est_pos, dog):
@@ -211,7 +211,7 @@ def read_raw_qcom(report):
   return measurements
 
 
-def read_raw_ublox(report):
+def read_raw_ublox(report) -> List[GNSSMeasurement]:
   recv_tow = report.rcvTow  # seconds
   recv_week = report.gpsWeek
   measurements = []
@@ -246,8 +246,8 @@ def read_raw_ublox(report):
   return measurements
 
 
-def read_rinex_obs(obsdata):
-  measurements = []
+def read_rinex_obs(obsdata) -> List[List[GNSSMeasurement]]:
+  measurements: List[List[GNSSMeasurement]] = []
   first_sat = list(obsdata.data.keys())[0]
   n = len(obsdata.data[first_sat]['Epochs'])
   for i in range(0, n):
@@ -263,7 +263,7 @@ def read_rinex_obs(obsdata):
         if obs == 'Epochs':
           continue
         observables[rinex3_obs_from_rinex2_obs(obs)] = obsdata.data[sat_str][obs][i]
-        observables_std[rinex3_obs_from_rinex2_obs(obs)] = 1
+        observables_std[rinex3_obs_from_rinex2_obs(obs)] = 1.
       measurements[-1].append(GNSSMeasurement(get_prn_from_nmea_id(int(sat_str)),
                               recv_time.week,
                               recv_time.tow,
