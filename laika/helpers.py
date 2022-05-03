@@ -93,7 +93,6 @@ def get_prn_from_nmea_id(nmea_id):
 
 
 def get_nmea_id_from_prn(prn):
-  # todo check if prn is legit
   constellation = get_constellation(prn)
   if constellation is None:
     raise ValueError(f"Constellation not found for prn {prn}")
