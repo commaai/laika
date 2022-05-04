@@ -4,15 +4,17 @@ import numpy as np
 from .lib.coordinates import LocalCoord
 
 # From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
+# NmeaId is the unique 3 digits id for every satellite globally. (Example: 001, 201)
+# SvId is the 2 digits satellite id that is unique within a constellation. (Get the unique satellite with the constellation id. Examples: G01, R01)
 CONSTELLATION_TO_NMEA_RANGES = {
-  # nmea ranges for each constellation with its svid offset.
-  # constellation: [(start, end, svid_offset)]
-  # Sv_id = nmeaId + offset
+  # NmeaId ranges for each constellation with its svId offset.
+  # constellation: [(start, end, svIdOffset)]
+  # svId = nmeaId + offset
   'GPS': [(1, 32, 0)],
   'SBAS': [(33, 64, -32), (120, 158, -87)],
   'GLONASS': [(65, 96, -64)],
   'IMES': [(173, 182, -172)],
-  'QZNSS': [(193, 200, -192)], # todo should be QZSS
+  'QZNSS': [(193, 200, -192)],  # todo should be QZSS
   'BEIDOU': [(201, 235, -200), (401, 437, -365)],
   'GALILEO': [(301, 336, -300)]
 }
@@ -97,9 +99,9 @@ def get_nmea_id_from_prn(prn):
   if constellation is None:
     raise ValueError(f"Constellation not found for prn {prn}")
 
-  sv_id = int(prn[1:]) # satellite id
+  sv_id = int(prn[1:])  # satellite id
   ranges = CONSTELLATION_TO_NMEA_RANGES[constellation]
-  for (start,end,sv_id_offset) in ranges:
+  for (start, end, sv_id_offset) in ranges:
     new_nmea_id = sv_id - sv_id_offset
     if start <= new_nmea_id <= end:
       return new_nmea_id
