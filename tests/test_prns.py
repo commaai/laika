@@ -94,7 +94,6 @@ class TestConstellationPRN(unittest.TestCase):
 
         for prn, expected_nmea_id in data:
             nmea_id = get_nmea_id_from_prn(prn)
-            print(prn)
             self.assertEqual(expected_nmea_id, nmea_id)
 
     def test_nmea_id_from_prn_for_SBAS(self):
