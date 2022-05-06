@@ -61,8 +61,6 @@ class TestAstroDog(unittest.TestCase):
     ephems = read_prn_data(data, prn, deg=deg, deg_t=1)
     self.assertEqual(0, len(ephems))
 
-    # if (np.array(data[prn])[:, 4] > .99).any():
-
 
 if __name__ == "__main__":
   unittest.main()
