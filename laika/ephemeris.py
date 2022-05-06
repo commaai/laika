@@ -266,7 +266,7 @@ class GPSEphemeris(Ephemeris):
 
 def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris]:
   ephems = []
-  data:Dict[str, List] = {}
+  data: Dict[str, List] = {}
   for file_name in file_names:
     f = open(file_name)
     while True:
@@ -284,7 +284,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris
         epoch = GPSTime.from_datetime(datetime(year, month, day, hour, minute, second))
       # pos line
       elif line[0] == 'P':
-        prn = line[1:4].replace(' ','0')
+        prn = line[1:4].replace(' ', '0')
         # In old SP3 files vehicle ID doesn't contain constellation
         # identifier. We assume that constellation is GPS when missing.
         if prn[0] == '0':
@@ -306,30 +306,35 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris
   deg = 16
   deg_t = 1
   for prn in data:
-    # TODO Handle this properly
-    # Currently don't even bother with satellites that have unhealthy times
-    if (np.array(data[prn])[:,4] > .99).any():
+    ephems.extend(read_prn_data(data, prn, deg, deg_t))
+  return ephems
+
+
+def read_prn_data(data, prn, deg, deg_t):
+  ephems = []
+  # TODO Handle this properly
+  np_data_prn = np.array(data[prn])
+  # Currently, don't even bother with satellites that have unhealthy times
+  if (np_data_prn[:, 4] > .99).any():
+    return []
+  for i in range(len(np_data_prn) - deg):
+    epoch = np_data_prn[i + deg // 2][0]
+    measurements = np_data_prn[i:i + deg + 1, :4]
+
+    times = (measurements[:, 0] - epoch).astype(float)
+    if (np.diff(times) != 900).any():
       continue
-    for i in range(len(data[prn]) - deg):
-      times, x, y, z, clock = [],[],[],[],[]
-      epoch = data[prn][i + deg//2][0]
-      for j in range(deg + 1):
-        times.append(data[prn][i + j][0] - epoch)
-        x.append(data[prn][i + j][1])
-        y.append(data[prn][i + j][2])
-        z.append(data[prn][i + j][3])
-        clock.append(data[prn][i + j][4])
-      if (np.diff(times) != 900).any():
-        continue
-      poly_data = {}
-      poly_data['t0'] = epoch
-      poly_data['x'] = np.polyfit(times, x, deg)
-      poly_data['y'] = np.polyfit(times, y, deg)
-      poly_data['z'] = np.polyfit(times, z, deg)
-      poly_data['clock'] = [(data[prn][i + deg//2 + 1][4] - data[prn][i + deg//2 - 1][4])/1800, data[prn][i + deg//2][4]]
-      poly_data['deg'] = deg
-      poly_data['deg_t'] = deg_t
-      ephems.append(PolyEphemeris(prn, poly_data, epoch, healthy=True, eph_type=EphemerisType.RAPID_ORBIT))
+    x, y, z = measurements[:, 1:].astype(float).transpose()
+
+    poly_data = {}
+    poly_data['t0'] = epoch
+    poly_data['x'] = np.polyfit(times, x, deg)
+    poly_data['y'] = np.polyfit(times, y, deg)
+    poly_data['z'] = np.polyfit(times, z, deg)
+    poly_data['clock'] = [(data[prn][i + deg // 2 + 1][4] - data[prn][i + deg // 2 - 1][4]) / 1800, data[prn][i + deg // 2][4]]
+    poly_data['deg'] = deg
+    poly_data['deg_t'] = deg_t
+    ephems.append(PolyEphemeris(prn, poly_data, epoch, healthy=True, eph_type=EphemerisType.RAPID_ORBIT))
   return ephems
 
 
