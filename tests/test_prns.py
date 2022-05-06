@@ -1,6 +1,6 @@
 import unittest
 
-from laika.helpers import get_constellation, get_prn_from_nmea_id, get_nmea_id_from_prn
+from laika.helpers import get_constellation, get_nmea_id_from_prn, get_prn_from_nmea_id
 
 
 MAIN_CONSTELLATIONS = [
