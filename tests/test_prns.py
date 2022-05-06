@@ -1,42 +1,45 @@
 import unittest
 
-from laika.helpers import get_constellation, get_prn_from_nmea_id, \
-                          get_nmea_id_from_prn, NMEA_ID_RANGES
+from laika.helpers import get_constellation, get_prn_from_nmea_id, get_nmea_id_from_prn
 
-SBAS_DATA = [
-    ['S01', 33],
-    ['S02', 34],
-    ['S10', 42],
-    ['S22', 54],
-
-    ['S23', 55],
-    ['S32', 64],
-
-    ['S33', 120],
-    ['S64', 151],
-
-    ['S65', 152],
-    ['S71', 158]
-]
 
 MAIN_CONSTELLATIONS = [
     ['G01', 1],
     ['G10', 10],
     ['G32', 32],
+
+    ['S01', 33],
+    ['S02', 34],
+    ['S10', 42],
+    ['S22', 54],
+    ['S23', 55],
+    ['S32', 64],
+    ['S33', 120],
+    ['S64', 151],
+    ['S65', 152],
+    ['S71', 158],
+
     ['R01', 65],
     ['R10', 74],
     ['R23', 87],
     ['R24', 88],
     ['R25', 89],
     ['R32', 96],
+
+    ['J01', 193],
+    ['J04', 196],
+    ['J08', 200],
+
+    ['C01', 201],
+    ['C02', 202],
+    ['C35', 235],
+
     ['E01', 301],
     ['E02', 302],
     ['E36', 336],
-    ['C01', 201],
-    ['C02', 202],
-    ['C29', 229],
-    ['J01', 193],
-    ['J04', 196]
+
+    ['C36', 401],
+    ['C72', 437],
 ]
 
 
@@ -66,96 +69,49 @@ class TestConstellationPRN(unittest.TestCase):
 
         for prn, expected_constellation in data:
             constellation = get_constellation(prn)
-            self.assertEqual(constellation, expected_constellation)
-
-    def test_constellation_from_prn_with_invalid_identifier(self):
-        prn = '?01'
-
-        self.assertWarns(UserWarning, get_constellation, prn)
-        self.assertIsNone(get_constellation(prn))
+            self.assertEqual(expected_constellation, constellation)
 
     def test_constellation_from_prn_outside_range(self):
         prn = 'G99'
         constellation = get_constellation(prn)
-        self.assertEqual(constellation, 'GPS')
+        self.assertEqual('GPS', constellation)
 
     def test_prn_from_nmea_id_for_main_constellations(self):
         data = MAIN_CONSTELLATIONS
 
         for expected_prn, nmea_id in data:
             prn = get_prn_from_nmea_id(nmea_id)
-            self.assertEqual(prn, expected_prn)
-
-    def test_prn_from_nmea_id_for_SBAS(self):
-        '''Probably numbering SBAS as single constellation doesn't make
-        sense, but programmatically it works the same as for others
-        constellations.'''
-        data = SBAS_DATA
-
-        for expected_prn, nmea_id in data:
-            prn = get_prn_from_nmea_id(nmea_id)
-            self.assertEqual(prn, expected_prn)
-
-    def test_prn_from_invalid_nmea_id(self):
-        data = [
-            (-1,  "?-1"),
-            (0,   "?0"),
-            (100, "?100"),
-            (160, "?160"),
-            (190, "?190"),
-            (300, "?300")
-        ]
-
-        for nmea_id, expected_prn in data:
-            self.assertWarns(UserWarning, get_prn_from_nmea_id, nmea_id)
-            self.assertEqual(get_prn_from_nmea_id(nmea_id), expected_prn)
-
-        self.assertRaises(TypeError, get_prn_from_nmea_id, None)
-        self.assertRaises(TypeError, get_prn_from_nmea_id, '1')
+            self.assertEqual(expected_prn, prn)
 
     def test_nmea_id_from_prn_for_main_constellations(self):
         data = MAIN_CONSTELLATIONS
 
         for prn, expected_nmea_id in data:
             nmea_id = get_nmea_id_from_prn(prn)
-            self.assertEqual(nmea_id, expected_nmea_id)
-
-    def test_nmea_id_from_prn_for_SBAS(self):
-        '''Probably numbering SBAS as single constellation doesn't make
-        sense, but programmatically it works the same as for others
-        constellations.'''
-        data = SBAS_DATA
-
-        for prn, expected_nmea_id in data:
-            nmea_id = get_nmea_id_from_prn(prn)
-            self.assertEqual(nmea_id, expected_nmea_id)
+            self.assertEqual(expected_nmea_id, nmea_id)
 
     def test_nmea_id_from_invalid_prn(self):
-        # Special unknown constellation - valid number
-        self.assertEqual(1, get_nmea_id_from_prn('?01'))
-        self.assertEqual(-1, get_nmea_id_from_prn('?-1'))
-        # Special unknown constellation - invalid number
-        self.assertRaises(ValueError, get_nmea_id_from_prn, '???')
-        # Constellation with unknwown identifier
-        self.assertRaises(NotImplementedError, get_nmea_id_from_prn, 'X01')
+        # Constellation with unknown identifier
+        self.assertRaises(ValueError, get_nmea_id_from_prn, 'X01')
         # Valid constellation - invalid number
         self.assertRaises(ValueError, get_nmea_id_from_prn, 'G00')
         self.assertRaises(ValueError, get_nmea_id_from_prn, 'GAA')
-        self.assertRaises(NotImplementedError, get_nmea_id_from_prn, 'G33')
-        self.assertRaises(NotImplementedError, get_nmea_id_from_prn, 'C99')
-        self.assertRaises(NotImplementedError, get_nmea_id_from_prn, 'R99')
-        self.assertRaises(NotImplementedError, get_nmea_id_from_prn, 'J99')
-        # None
-        self.assertRaises(TypeError, get_nmea_id_from_prn, None)
+        self.assertRaises(ValueError, get_nmea_id_from_prn, 'G33')
+        self.assertRaises(ValueError, get_nmea_id_from_prn, 'C99')
+        self.assertRaises(ValueError, get_nmea_id_from_prn, 'R99')
+        self.assertRaises(ValueError, get_nmea_id_from_prn, 'J99')
+        self.assertRaises(ValueError, get_nmea_id_from_prn, 'C00')
+        self.assertRaises(ValueError, get_nmea_id_from_prn, 'C73')
 
-    def test_nmea_ranges_are_valid(self):
-        last_end = 0
-        for entry in NMEA_ID_RANGES:
-            self.assertIn('range', entry)
-            self.assertIn('constellation', entry)
-            range_ = entry['range']
-            self.assertEqual(len(range_), 2)
-            start, end = range_
-            self.assertLessEqual(start, end)
-            self.assertLess(last_end, start)
-            last_end = end
+    def test_prn_from_invalid_nmeaid(self):
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 97)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 119)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 159)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 172)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 183)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 192)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 236)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 300)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 367)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 400)
+      self.assertRaises(ValueError, get_prn_from_nmea_id, 438)

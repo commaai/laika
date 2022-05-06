@@ -1,64 +1,23 @@
-import warnings
 from enum import IntEnum
 
 import numpy as np
 from .lib.coordinates import LocalCoord
 
 # From https://gpsd.gitlab.io/gpsd/NMEA.html - Satellite IDs section
-NMEA_ID_RANGES = (
-  {
-    'range': (1, 32),
-    'constellation': 'GPS'
-  },
-  {
-    'range': (33, 54),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (55, 64),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (65, 88),
-    'constellation': 'GLONASS'
-  },
-  {
-    'range': (89, 96),
-    'constellation': 'GLONASS'
-  },
-  {
-    'range': (120, 151),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (152, 158),
-    'constellation': 'SBAS'
-  },
-  {
-    'range': (173, 182),
-    'constellation': 'IMES'
-  },
-  {
-    'range': (193, 197),
-    'constellation': 'QZNSS'
-  },
-  {
-    'range': (198, 200),
-    'constellation': 'QZNSS'
-  },
-  {
-    'range': (201, 235),
-    'constellation': 'BEIDOU'
-  },
-  {
-    'range': (301, 336),
-    'constellation': 'GALILEO'
-  },
-  {
-    'range': (401, 437),
-    'constellation': 'BEIDOU'
-  }
-)
+# NmeaId is the unique 3 digits id for every satellite globally. (Example: 001, 201)
+# SvId is the 2 digits satellite id that is unique within a constellation. (Get the unique satellite with the constellation id. Examples: G01, R01)
+CONSTELLATION_TO_NMEA_RANGES = {
+  # NmeaId ranges for each constellation with its svId offset.
+  # constellation: [(start, end, svIdOffset)]
+  # svId = nmeaId + offset
+  'GPS': [(1, 32, 0)],
+  'SBAS': [(33, 64, -32), (120, 158, -87)],
+  'GLONASS': [(65, 96, -64)],
+  'IMES': [(173, 182, -172)],
+  'QZNSS': [(193, 200, -192)],  # todo should be QZSS
+  'BEIDOU': [(201, 235, -200), (401, 437, -365)],
+  'GALILEO': [(301, 336, -300)]
+}
 
 # Source: RINEX 3.04
 RINEX_CONSTELLATION_IDENTIFIERS = {
@@ -120,77 +79,34 @@ def get_constellation(prn):
 
   if identifier in RINEX_CONSTELLATION_IDENTIFIERS:
     return RINEX_CONSTELLATION_IDENTIFIERS[identifier]
-  warnings.warn(f"Unknown constellation for PRN {prn}")
   return None
 
 
-def get_unknown_prn_from_nmea_id(nmea_id):
-  return "?%d" % nmea_id
-
-
-def get_nmea_id_from_unknown_prn(prn):
-  return int(prn[1:])
-
-
-def is_unknown_prn(prn):
-  return prn[0] == '?'
-
-
 def get_prn_from_nmea_id(nmea_id):
-  constellation_offsets = {}
+  for c, ranges in CONSTELLATION_TO_NMEA_RANGES.items():
+    for (start, end, sv_id_offset) in ranges:
+      if start <= nmea_id <= end:
+        constellation = c
+        svid = nmea_id + sv_id_offset
 
-  for entry in NMEA_ID_RANGES:
-    start, end = entry['range']
-    constellation = entry['constellation']
+        return "%s%02d" % (RINEX_CONSTELLATION_IDENTIFIERS[constellation], svid)
 
-    if nmea_id < start:
-      warnings.warn("RINEX PRN for nmea id %i not known" % nmea_id)
-      return get_unknown_prn_from_nmea_id(nmea_id)
-
-    constellation_offset = constellation_offsets.get(constellation, 0)
-
-    if nmea_id <= end:
-      if constellation is None:
-        warnings.warn("Constellation for nmea id "
-                      "%i not known" % nmea_id)
-        return get_unknown_prn_from_nmea_id(nmea_id)
-
-      identifier = RINEX_CONSTELLATION_IDENTIFIERS.get(constellation)
-      if identifier is None:
-        warnings.warn("RINEX3 constellation identifier for "
-                      "constellation %s is not known" % constellation)
-        return get_unknown_prn_from_nmea_id(nmea_id)
-
-      number = nmea_id - start + 1 + constellation_offset
-      return "%s%02d" % (identifier, number)
-    else:
-      range_width = end - start + 1
-      constellation_offsets[constellation] = constellation_offset + range_width
-
-  warnings.warn("RINEX PRN for nmea id %i not known" % nmea_id)
-  return get_unknown_prn_from_nmea_id(nmea_id)
+  raise ValueError(f"constellation not found for nmeaid {nmea_id}")
 
 
 def get_nmea_id_from_prn(prn):
-  if is_unknown_prn(prn):
-    return get_nmea_id_from_unknown_prn(prn)
+  constellation = get_constellation(prn)
+  if constellation is None:
+    raise ValueError(f"Constellation not found for prn {prn}")
 
-  prn_constellation = get_constellation(prn)
-  satellite_id = int(prn[1:])
-  if satellite_id < 1:
-    raise ValueError("PRN must contains number greater then 0")
-  constellation_offset = 0
-  for entry in NMEA_ID_RANGES:
-    if entry['constellation'] != prn_constellation:
-      continue
-    start, end = entry['range']
-    range_width = end - start + 1
-    index_in_range = satellite_id - constellation_offset - 1
-    if range_width > index_in_range:
-      return start + index_in_range
-    else:
-      constellation_offset += range_width
-  raise NotImplementedError(f"NMEA ID not found for PRN {prn}")
+  sv_id = int(prn[1:])  # satellite id
+  ranges = CONSTELLATION_TO_NMEA_RANGES[constellation]
+  for (start, end, sv_id_offset) in ranges:
+    new_nmea_id = sv_id - sv_id_offset
+    if start <= new_nmea_id <= end:
+      return new_nmea_id
+
+  raise ValueError(f"NMEA ID not found for constellation {constellation} with satellite id {sv_id}")
 
 
 def rinex3_obs_from_rinex2_obs(observable):
