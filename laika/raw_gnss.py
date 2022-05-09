@@ -168,9 +168,9 @@ def group_measurements_by_sat(measurements):
 
 def read_raw_qcom(report):
   dr = 'DrMeasurementReport' in str(report.schema)
-  constellation_id = ConstellationId.from_qcom_source(report.source)
   # Only gps/sbas and glonass are supported
-  if constellation_id is not ConstellationId.GLONASS:  # gps/sbas
+  constellation_id = ConstellationId.from_qcom_source(report.source)
+  if constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]:  # gps/sbas
     if dr:
       recv_tow = report.gpsMilliseconds / 1000.0  # seconds
       time_bias_ms = struct.unpack("f", struct.pack("I", report.gpsTimeBiasMs))[0]
@@ -178,7 +178,7 @@ def read_raw_qcom(report):
       recv_tow = report.milliseconds / 1000.0  # seconds
       time_bias_ms = report.timeBias
     recv_time = GPSTime(report.gpsWeek, recv_tow)
-  else:
+  elif constellation_id == ConstellationId.GLONASS:
     if dr:
       recv_tow = report.glonassMilliseconds / 1000.0  # seconds
       recv_time = GPSTime.from_glonass(report.glonassYear, report.glonassDay, recv_tow)
@@ -187,6 +187,8 @@ def read_raw_qcom(report):
       recv_tow = report.milliseconds / 1000.0  # seconds
       recv_time = GPSTime.from_glonass(report.glonassCycleNumber, report.glonassNumberOfDays, recv_tow)
       time_bias_ms = report.timeBias
+  else:
+    raise NotImplementedError('Only GPS (0), SBAS (1) and GLONASS (6) are supported from qcom, not:', {report.source})
   #print(recv_time, report.source, time_bias_ms, dr)
   measurements = []
   for i in report.sv:
