@@ -58,7 +58,7 @@ class GNSSMeasurement:
     # prn: unique satellite id
     self.prn = "%s%02d" % (constellation_id.to_rinex_char(), sv_id)  # satellite ID in rinex convention
     self.constellation_id = constellation_id
-    self.sv_id = sv_id
+    self.sv_id = sv_id  # satellite id per constellation
 
     self.recv_time_week = recv_time_week
     self.recv_time_sec = recv_time_sec
@@ -170,7 +170,7 @@ def read_raw_qcom(report):
   dr = 'DrMeasurementReport' in str(report.schema)
   constellation_id = ConstellationId.from_qcom_source(report.source)
   # Only gps/sbas and glonass are supported
-  if constellation_id is not ConstellationId.GLONASS:    # gps/sbas
+  if constellation_id is not ConstellationId.GLONASS:  # gps/sbas
     if dr:
       recv_tow = report.gpsMilliseconds / 1000.0  # seconds
       time_bias_ms = struct.unpack("f", struct.pack("I", report.gpsTimeBiasMs))[0]
@@ -190,7 +190,7 @@ def read_raw_qcom(report):
   #print(recv_time, report.source, time_bias_ms, dr)
   measurements = []
   for i in report.sv:
-    nmea_id = i.svId  # todo change svId to nmea_id in cereal message. Or better: change the publisher to publish correct svId's
+    nmea_id = i.svId  # todo change svId to nmea_id in cereal message. Or better: change the publisher to publish correct svId's, since constellation id is also given
     if nmea_id == 255:
       # todo nmea_id is not valid. Fix publisher
       continue
