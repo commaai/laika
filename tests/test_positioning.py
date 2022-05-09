@@ -14,7 +14,7 @@ import laika.raw_gnss as raw
 
 class TestPositioning(unittest.TestCase):
 
-  @unittest.skip("Takes way too long. Can be used for debugging")
+  @unittest.skip("Takes way too long for CI. Can be used for debugging")
   def test_station_position_long(self):
     self.run_station_position(-1)
 
