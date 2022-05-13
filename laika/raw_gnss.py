@@ -133,7 +133,7 @@ class GNSSMeasurement:
     return get_nmea_id_from_constellation_and_svid(self.constellation_id, self.sv_id)
 
 
-def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSMeasurement]:
+def process_measurements(measurements, dog) -> List[GNSSMeasurement]:
   proc_measurements = []
   for meas in measurements:
     if meas.process(dog):
@@ -141,7 +141,7 @@ def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSM
   return proc_measurements
 
 
-def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog) -> List[GNSSMeasurement]:
+def correct_measurements(measurements, est_pos, dog) -> List[GNSSMeasurement]:
   corrected_measurements = []
   for meas in measurements:
     if meas.correct(est_pos, dog):
