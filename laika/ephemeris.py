@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 from datetime import datetime
@@ -18,14 +18,20 @@ def read4(f, rinex_ver):
   return float(line[4:23]), float(line[23:42]), float(line[42:61]), float(line[61:80])
 
 
-def convert_ublox_ephem(ublox_ephem, current_gps_time: GPSTime):
-  ephem = {}
-  # Week time published has a roll-over period of 10 bits (19.6 years)
+def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
+  # Week time of ephemeris gps msg has a roll-over period of 10 bits (19.6 years)
   # The latest roll-over was on 2019-04-07
-  week = ublox_ephem.gpsWeek + 1024  # Assume not using data before year ~2000
-  if current_gps_time >= GPSTime(2048, 0):
-    week += 1024
+  week = ublox_ephem.gpsWeek
+  if current_time is None:
+    # Assume no messages before week 1877 (2015-12-27). These will be incremented in steps of 1024
+    while week < 1877:
+      week += 1024
+  else:
+    roll_overs = GPSTime.from_datetime(current_time).week // 1024
+    while week < roll_overs * 1024:
+      week += 1024
 
+  ephem = {}
   ephem['sv_id'] = ublox_ephem.svId
   ephem['toe'] = GPSTime(week, ublox_ephem.toe)
   ephem['toc'] = GPSTime(week, ublox_ephem.toc)
