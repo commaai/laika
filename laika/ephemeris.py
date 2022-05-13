@@ -17,13 +17,13 @@ def read4(f, rinex_ver):
   return float(line[4:23]), float(line[23:42]), float(line[42:61]), float(line[61:80])
 
 
-def convert_ublox_ephem(ublox_ephem):
+def convert_ublox_ephem(ublox_ephem, time_first_gnss_message):
   ephem = {}
-  print('ublox_ephem', ublox_ephem)
-  if ublox_ephem.gpsWeek < 1024:
-    week = ublox_ephem.gpsWeek + 1024
-  else:
-    week = ublox_ephem.gpsWeek
+  # Week time published has a roll-over period of 10 bits (19.6 years)
+  # The latest roll-over was on 2019-04-07
+  week = ublox_ephem.gpsWeek + 1024
+  if time_first_gnss_message.as_datetime() >= datetime(2019, 4, 7):
+    week += 1024
 
   ephem['sv_id'] = ublox_ephem.svId
   ephem['toe'] = GPSTime(week, ublox_ephem.toe)
@@ -51,7 +51,8 @@ def convert_ublox_ephem(ublox_ephem):
   ephem['omegadot'] = ublox_ephem.omegaDot
   ephem['omega0'] = ublox_ephem.omega0
 
-  return ephem
+  epoch = ephem['toe']
+  return GPSEphemeris(ephem, epoch)
 
 
 class EphemerisType:
@@ -69,11 +70,11 @@ class Ephemeris:
     self.data = data
     self.epoch = epoch
     self.healthy = healthy
-  
+
   def valid(self, time):
     # TODO: use proper abstract base class to define members
     return abs(time - self.epoch) <= self.max_time_diff  # pylint: disable=no-member
-  
+
   def __repr__(self):
     time = self.epoch.as_datetime().strftime('%Y-%m-%dT%H:%M:%S.%f')
     return f"<{self.__class__.__name__} from {self.prn} at {time}>"
@@ -453,12 +454,6 @@ def parse_rinex_nav_msg_glonass(file_name):
   return ephems
 
 
-def parse_ublox_ephem(ublox_ephemeris):
-  data = convert_ublox_ephem(ublox_ephemeris)
-  epoch = data['toe']
-  print('toe', data['toe'].as_datetime())
-  print('toc', data['toc'].as_datetime())
-  return GPSEphemeris(data, epoch)
 '''
 
 def parse_qcom_ephems(qcom_polys, current_week):

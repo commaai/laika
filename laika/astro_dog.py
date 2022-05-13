@@ -104,8 +104,6 @@ class AstroDog:
 
   def get_orbit(self, prn: str, time: GPSTime):
     skip_download = time in self.orbit_fetched_times
-    print(f"Get orbit {prn}", time.as_datetime())
-    print("self.orbits[prn]", self.orbits[prn])
     orbit = self._get_latest_data(self.orbits[prn], self.cached_orbit[prn], self.get_orbit_data, time, skip_download=skip_download)
     if orbit is not None:
       self.cached_orbit[prn] = orbit
