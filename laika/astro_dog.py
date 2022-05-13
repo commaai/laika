@@ -326,7 +326,10 @@ class AstroDog:
       return latest_data
     if skip_download or not self.use_internet:
       return None
-    download_data_func(time, recv_pos)
+    if recv_pos is not None:
+      download_data_func(time, recv_pos)
+    else:
+      download_data_func(time)
     latest_data = get_closest(time, data, recv_pos=recv_pos)
     if is_valid(latest_data):
       return latest_data
