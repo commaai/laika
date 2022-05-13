@@ -19,10 +19,13 @@ def read4(f, rinex_ver):
 
 def convert_ublox_ephem(ublox_ephem):
   ephem = {}
+  print('ublox_ephem', ublox_ephem)
   if ublox_ephem.gpsWeek < 1024:
     week = ublox_ephem.gpsWeek + 1024
   else:
     week = ublox_ephem.gpsWeek
+
+  ephem['sv_id'] = ublox_ephem.svId
   ephem['toe'] = GPSTime(week, ublox_ephem.toe)
   ephem['toc'] = GPSTime(week, ublox_ephem.toc)
   ephem['af0'] = ublox_ephem.af0
@@ -61,17 +64,23 @@ class EphemerisType:
 
 
 class Ephemeris:
+  def __init__(self, prn, data, epoch, healthy):
+    self.prn = prn
+    self.data = data
+    self.epoch = epoch
+    self.healthy = healthy
+  
   def valid(self, time):
     # TODO: use proper abstract base class to define members
     return abs(time - self.epoch) <= self.max_time_diff  # pylint: disable=no-member
-
+  
+  def __repr__(self):
+    time = self.epoch.as_datetime().strftime('%Y-%m-%dT%H:%M:%S.%f')
+    return f"<{self.__class__.__name__} from {self.prn} at {time}>"
 
 class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
-    self.prn = data['prn']
-    self.epoch = epoch
-    self.healthy = healthy
-    self.data = data
+    super().__init__(data['prn'], data, epoch, healthy)
     self.max_time_diff = 25*SECS_IN_MIN
     self.type = EphemerisType.NAV
     self.channel = data['freq_num']
@@ -142,10 +151,7 @@ class GLONASSEphemeris(Ephemeris):
 
 class PolyEphemeris(Ephemeris):
   def __init__(self, prn, data, epoch, healthy=True, eph_type=None, tgd=0):
-    self.prn = prn
-    self.epoch = epoch
-    self.healthy = healthy
-    self.data = data
+    super().__init__(prn, data, epoch, healthy)
     self.tgd = tgd
     self.max_time_diff = SECS_IN_HR
     self.type = eph_type
@@ -170,9 +176,7 @@ class PolyEphemeris(Ephemeris):
 
 class GPSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
-    self.prn = 'G%02i' % data['prn']
-    self.epoch = epoch
-    self.healthy = healthy
+    super().__init__('G%02i' % data['sv_id'], data, epoch, healthy)
     self.data = data
     self.max_time_diff = 2*SECS_IN_HR
     self.max_time_diff_tgd = SECS_IN_DAY
@@ -370,10 +374,10 @@ def parse_rinex_nav_msg_gps(file_name):
       if line[0] != 'G':
         continue
     if rinex_ver == 3:
-      prn = int(line[1:3])
+      sv_id = int(line[1:3])
       epoch = GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S"))
     elif rinex_ver == 2:
-      prn = int(line[0:2])
+      sv_id = int(line[0:2])
       # 2000 year is in RINEX file as 0, but Python requires two digit year: 00
       epoch_str = line[3:20]
       if epoch_str[0] == ' ':
@@ -382,7 +386,7 @@ def parse_rinex_nav_msg_gps(file_name):
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format
-    e = {'epoch': epoch, 'prn': prn}
+    e = {'epoch': epoch, 'sv_id': sv_id}
     e['toc'] = epoch
     e['af0'] = float(line[23:42])
     e['af1'] = float(line[42:61])
@@ -449,16 +453,13 @@ def parse_rinex_nav_msg_glonass(file_name):
   return ephems
 
 
+def parse_ublox_ephem(ublox_ephemeris):
+  data = convert_ublox_ephem(ublox_ephemeris)
+  epoch = data['toe']
+  print('toe', data['toe'].as_datetime())
+  print('toc', data['toc'].as_datetime())
+  return GPSEphemeris(data, epoch)
 '''
-def parse_ublox_ephems(ublox_ephems):
-  ephems = []
-  for ublox_ephem in ublox_ephems:
-    svId = ublox_ephem.ubloxGnss.ephemeris.svId
-    data = convert_ublox_ephem(ublox_ephem.ubloxGnss.ephemeris)
-    epoch = data['toe']
-    ephems.append(GPSEphemeris(svId, data, epoch))
-  return ephems
-
 
 def parse_qcom_ephems(qcom_polys, current_week):
   ephems = []

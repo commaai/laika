@@ -88,7 +88,7 @@ def get_closest(time, candidates, recv_pos=None):
     # Takes a list of object that have an epoch(GPSTime) value
     # and return the one that is closest the given time (GPSTime)
     return min(candidates, key=lambda candidate: abs(time - candidate.epoch), default=None)
-
+  print(recv_pos, time)
   return min(
     (candidate for candidate in candidates if candidate.valid(time, recv_pos)),
     key=lambda candidate: np.linalg.norm(recv_pos - candidate.pos),
