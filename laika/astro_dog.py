@@ -98,7 +98,7 @@ class AstroDog:
     return result
 
   def get_navs(self, time):
-    if time not in self.nav_fetched_times:
+    if time not in self.nav_fetched_times and self.use_internet:
       self.get_nav_data(time)
     return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
 
