@@ -18,12 +18,12 @@ def read4(f, rinex_ver):
   return float(line[4:23]), float(line[23:42]), float(line[42:61]), float(line[61:80])
 
 
-def convert_ublox_ephem(ublox_ephem, time_first_gnss_message: datetime):
+def convert_ublox_ephem(ublox_ephem, current_gps_time: GPSTime):
   ephem = {}
   # Week time published has a roll-over period of 10 bits (19.6 years)
   # The latest roll-over was on 2019-04-07
   week = ublox_ephem.gpsWeek + 1024  # Assume not using data before year ~2000
-  if time_first_gnss_message >= datetime(2019, 4, 7):
+  if current_gps_time >= GPSTime(2048, 0):
     week += 1024
 
   ephem['sv_id'] = ublox_ephem.svId
