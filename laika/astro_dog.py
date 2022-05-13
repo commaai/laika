@@ -104,7 +104,7 @@ class AstroDog:
 
   def get_orbit(self, prn: str, time: GPSTime):
     skip_download = time in self.orbit_fetched_times
-    orbit = self._get_latest_valid_data(self.orbits[prn], self.cached_orbit[prn], self.get_orbit_data, time, skip_download=skip_download)
+    orbit = self._get_latest_valid_data(self.orbits[prn], self.cached_orbit[prn], self.get_orbit_data, time, skip_download)
     if orbit is not None:
       self.cached_orbit[prn] = orbit
     return orbit
@@ -116,13 +116,13 @@ class AstroDog:
 
   def get_dcb(self, prn, time):
     skip_download = time in self.dcbs_fetched_times
-    dcb = self._get_latest_valid_data(self.dcbs[prn], self.cached_dcb[prn], self.get_dcb_data, time, skip_download=skip_download)
+    dcb = self._get_latest_valid_data(self.dcbs[prn], self.cached_dcb[prn], self.get_dcb_data, time, skip_download)
     if dcb is not None:
       self.cached_dcb[prn] = dcb
     return dcb
 
   def get_dgps_corrections(self, time, recv_pos):
-    latest_data = self._get_latest_valid_data(self.dgps_delays, self.cached_dgps, self.get_dgps_data, time, recv_pos)
+    latest_data = self._get_latest_valid_data(self.dgps_delays, self.cached_dgps, self.get_dgps_data, time, recv_pos=recv_pos)
     if latest_data is None and self.auto_update:
       raise RuntimeError("Pulled dgps, but still can't get valid for time " + str(time))
     return latest_data
@@ -312,7 +312,7 @@ class AstroDog:
       return None
     return dgps_corrections.get_delay(prn, time)
 
-  def _get_latest_valid_data(self, data, latest_data, download_data_func, time, recv_pos=None, skip_download=False):
+  def _get_latest_valid_data(self, data, latest_data, download_data_func, time, skip_download=False, recv_pos=None):
     def is_valid(latest_data):
         if recv_pos is None:
           return latest_data is not None and latest_data.valid(time)
