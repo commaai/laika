@@ -4,13 +4,9 @@ import numpy as np
 from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
 
-from diskcache import Cache
-
 from .gps_time import GPSTime, utc_to_gpst
 from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, EARTH_ROTATION_RATE, EARTH_GM
 from .helpers import get_constellation
-
-cache = Cache("cachedir")
 
 
 def read4(f, rinex_ver):
@@ -268,7 +264,6 @@ class GPSEphemeris(Ephemeris):
     return pos, vel, clock_err, clock_rate_err
 
 
-@cache.memoize()
 def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris]:
   ephems = []
   data: Dict[str, List] = {}
