@@ -307,9 +307,6 @@ class AstroDog:
     dgps_corrections = self.get_dgps_corrections(time, rcv_pos)
     if dgps_corrections is None:
       return None
-    dgps_delay = dgps_corrections.get_delay(prn, time)
-    if dgps_delay is None:
-      return None
     return dgps_corrections.get_delay(prn, time)
 
   def _get_latest_valid_data(self, data, latest_data, download_data_func, time, skip_download=False, recv_pos=None):
