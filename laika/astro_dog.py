@@ -58,20 +58,13 @@ class AstroDog:
     self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
 
   def get_ionex(self, time):
-    if self.cached_ionex is not None and self.cached_ionex.valid(time):
-      return self.cached_ionex
-
-    self.cached_ionex = get_closest(time, self.ionex_maps)
-    if self.cached_ionex is not None and self.cached_ionex.valid(time):
-      return self.cached_ionex
-
-    self.get_ionex_data(time)
-    self.cached_ionex = get_closest(time, self.ionex_maps)
-    if self.cached_ionex is not None and self.cached_ionex.valid(time):
-      return self.cached_ionex
-    if self.auto_update:
-      raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
-    return None
+    ionex = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
+    if ionex is None:
+      if self.auto_update:
+        raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
+    else:
+      self.cached_ionex = ionex
+    return ionex
 
   def get_nav(self, prn, time):
     skip_download = time in self.nav_fetched_times
