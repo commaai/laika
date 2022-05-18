@@ -23,9 +23,9 @@ def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
   # The latest roll-over was on 2019-04-07
   week = ublox_ephem.gpsWeek
   if current_time is None:
-    # Assume no messages before week 1877 (2015-12-27). These will be incremented in steps of 1024
-    if week < 1024:
-      week += 1024
+    # Each message is incremented to be greater or equal than week 1877 (2015-12-27).
+    #  To skip this use the current_time argument
+    week += 1024
     if week < 1877:
       week += 1024
   else:
