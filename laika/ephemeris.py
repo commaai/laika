@@ -24,12 +24,13 @@ def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
   week = ublox_ephem.gpsWeek
   if current_time is None:
     # Assume no messages before week 1877 (2015-12-27). These will be incremented in steps of 1024
-    while week < 1877:
+    if week < 1024:
+      week += 1024
+    if week < 1877:
       week += 1024
   else:
     roll_overs = GPSTime.from_datetime(current_time).week // 1024
-    while week < roll_overs * 1024:
-      week += 1024
+    week += (roll_overs - (week // 1024)) * 1024
 
   ephem = {}
   ephem['sv_id'] = ublox_ephem.svId
