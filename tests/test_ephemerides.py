@@ -1,7 +1,9 @@
+from unittest.mock import Mock
+
 import numpy as np
 import unittest
 
-from laika.ephemeris import read_prn_data
+from laika.ephemeris import convert_ublox_ephem, read_prn_data
 from laika.gps_time import GPSTime
 from laika import AstroDog
 
@@ -60,6 +62,25 @@ class TestAstroDog(unittest.TestCase):
     data[prn][0][4] = 1.
     ephems = read_prn_data(data, prn, deg=deg, deg_t=1)
     self.assertEqual(0, len(ephems))
+
+  def test_ephemeris_parsing(self):
+    ublox_ephem = Mock()
+    ublox_ephem.gpsWeek = 0
+    ublox_ephem.svId = 1
+    ublox_ephem.toe = 0
+    ephemeris = convert_ublox_ephem(ublox_ephem)
+
+    # Should roll-over twice with steps of 1024
+    updated_time = GPSTime(ublox_ephem.gpsWeek + 2048, 0)
+    self.assertEqual(ephemeris.epoch, updated_time)
+
+    # Check only one roll-over when passing extra argument current_time
+    roll_over_time = GPSTime(1024, 0).as_datetime()
+    ephemeris = convert_ublox_ephem(ublox_ephem, roll_over_time)
+
+    # Should roll-over twice with 1024
+    updated_time = GPSTime(ublox_ephem.gpsWeek + 1024, 0)
+    self.assertEqual(updated_time, ephemeris.epoch)
 
 
 if __name__ == "__main__":
