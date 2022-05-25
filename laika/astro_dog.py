@@ -7,7 +7,7 @@ from .ephemeris import GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_
 from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
 from .trop import saast
-from .iono import parse_ionex
+from .iono import IonexMap, parse_ionex
 from .dcb import DCB, parse_dcbs
 from .gps_time import GPSTime
 from .dgps import get_closest_station_names, parse_dgps
@@ -18,7 +18,7 @@ MAX_DGPS_DISTANCE = 100_000  # in meters, because we're not barbarians
 
 class AstroDog:
   '''
-  auto_update: flag indicating whether laika should fetch files from web
+  use_internet: flag indicating whether laika should fetch files from web
   cache_dir:   directory where data files are downloaded to and cached
   pull_orbit:  flag indicating whether laika should fetch sp3 orbits
                  instead of nav files (orbits are more accurate)
@@ -28,39 +28,37 @@ class AstroDog:
 
   '''
 
-  def __init__(self, auto_update=True,
+  def __init__(self, use_internet=True,
                cache_dir='/tmp/gnss/',
                pull_orbit=True, dgps=False,
-               valid_const=['GPS', 'GLONASS'],
-               use_internet=True):
-    self.auto_update = auto_update
+               valid_const=['GPS', 'GLONASS']):
+    self.use_internet = use_internet
     self.cache_dir = cache_dir
+
     self.dgps = dgps
-    self.dgps_delays = []
-    self.ionex_maps = []
     self.pull_orbit = pull_orbit
     self.valid_const = valid_const
-    self.cached_ionex = None
-    self.cached_dgps = None
-
-    self.use_internet = use_internet
 
     self.orbit_fetched_times = TimeRangeHolder()
     self.nav_fetched_times = TimeRangeHolder()
     self.dcbs_fetched_times = TimeRangeHolder()
 
+    self.dgps_delays = []
+    self.ionex_maps: List[IonexMap] = []
     self.orbits: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
     self.nav: DefaultDict[str, List[Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(list)
     self.dcbs: DefaultDict[str, List[DCB]] = defaultdict(list)
 
+    self.cached_ionex: Optional[IonexMap] = None
+    self.cached_dgps = None
     self.cached_orbit: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
     self.cached_nav: DefaultDict[str, Union[GPSEphemeris, GLONASSEphemeris, None]] = defaultdict(lambda: None)
     self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
 
-  def get_ionex(self, time):
-    ionex = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
+  def get_ionex(self, time) -> Optional[IonexMap]:
+    ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
     if ionex is None:
-      if self.auto_update:
+      if self.use_internet:
         raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
     else:
       self.cached_ionex = ionex
@@ -116,8 +114,11 @@ class AstroDog:
 
   def get_dgps_corrections(self, time, recv_pos):
     latest_data = self._get_latest_valid_data(self.dgps_delays, self.cached_dgps, self.get_dgps_data, time, recv_pos=recv_pos)
-    if latest_data is None and self.auto_update:
-      raise RuntimeError("Pulled dgps, but still can't get valid for time " + str(time))
+    if latest_data is None:
+      if self.use_internet:
+        raise RuntimeError("Pulled dgps, but still can't get valid for time " + str(time))
+    else:
+      self.cached_dgps = latest_data
     return latest_data
 
   def add_ephem(self, new_ephem, ephems):
