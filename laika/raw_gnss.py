@@ -286,7 +286,7 @@ def read_rinex_obs(obsdata) -> List[List[GNSSMeasurement]]:
   return measurements
 
 
-def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'):
+def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C', min_measurements=6):
   '''
   Calculates gps fix with WLS optimizer
 
@@ -295,7 +295,7 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
   1 -> pseudorange errs
   '''
   n = len(measurements)
-  if n < 6:
+  if n < min_measurements:
     return []
 
   Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight, no_nans=True)
