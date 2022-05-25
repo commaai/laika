@@ -282,7 +282,7 @@ class AstroDog:
     if el < 0.2:
       return None
 
-    if self.use_internet and self.dgps and not no_dgps:
+    if self.dgps and not no_dgps:
       return self._get_delay_dgps(prn, rcv_pos, time)
 
     ionex = self.get_ionex(time)
