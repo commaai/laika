@@ -129,16 +129,16 @@ class AstroDog:
     ephems[prn].append(new_ephem)
 
   def get_nav_data(self, time):
-    def parse_constellation(constellation, parse_rinex_nav_func):
+    def download_and_parse(constellation, parse_rinex_nav_func):
       file_path = download_nav(time, cache_dir=self.cache_dir, constellation=constellation)
       return parse_rinex_nav_func(file_path) if file_path else []
 
     fetched_ephems = []
 
     if 'GPS' in self.valid_const:
-      fetched_ephems += parse_constellation(ConstellationId.GPS, parse_rinex_nav_msg_gps)
+      fetched_ephems += download_and_parse(ConstellationId.GPS, parse_rinex_nav_msg_gps)
     if 'GLONASS' in self.valid_const:
-      fetched_ephems += parse_constellation(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass)
+      fetched_ephems += download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass)
 
     for ephem in fetched_ephems:
       self.add_ephem(ephem, self.nav)
