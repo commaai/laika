@@ -15,6 +15,7 @@ from io import BytesIO
 
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
+from .helpers import ConstellationId
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -270,28 +271,30 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
   return filepath
 
 
-def download_nav(time, cache_dir, constellation='GPS'):
+# Currently, only GPS and Glonass are supported for daily and hourly data.
+CONSTELLATION_NASA_CHAR = {ConstellationId.GPS: 'n', ConstellationId.GLONASS: 'g'}
+
+
+def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
   t = time.as_datetime()
   try:
+    if constellation not in CONSTELLATION_NASA_CHAR:
+      return None
+    c = CONSTELLATION_NASA_CHAR[constellation]
     if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
       url_bases = (
         'https://github.com/commaai/gnss-data/raw/master/gnss/data/daily/',
         'https://cddis.nasa.gov/archive/gnss/data/daily/',
       )
       cache_subdir = cache_dir + 'daily_nav/'
-      if constellation =='GPS':
-        filename = t.strftime("brdc%j0.%yn")
-        folder_path = t.strftime('%Y/%j/%yn/')
-      elif constellation =='GLONASS':
-        filename = t.strftime("brdc%j0.%yg")
-        folder_path = t.strftime('%Y/%j/%yg/')
+      filename = t.strftime(f"brdc%j0.%y{c}")
+      folder_path = t.strftime(f'%Y/%j/%y{c}/')
       compression = '.gz' if folder_path >= '2020/335/' else '.Z'
       return download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression=compression)
-    else:
-      url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
-      cache_subdir = cache_dir + 'hourly_nav/'
-      if constellation =='GPS':
-        filename = t.strftime("hour%j0.%yn")
+    elif constellation == ConstellationId.GPS:
+        url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
+        cache_subdir = cache_dir + 'hourly_nav/'
+        filename = t.strftime(f"hour%j0.%y{c}")
         folder_path = t.strftime('%Y/%j/')
         compression = '.gz' if folder_path >= '2020/336/' else '.Z'
         return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression=compression, overwrite=True)
@@ -308,7 +311,7 @@ def download_orbits(time, cache_dir):
   )
   downloaded_files = []
   for time in [time - SECS_IN_DAY, time, time + SECS_IN_DAY]:
-    folder_path = "%i/" % (time.week)
+    folder_path = "%i/" % time.week
     filenames = []
     if GPSTime.from_datetime(datetime.utcnow()) - time > 3*SECS_IN_WEEK:
       filenames.append("igs%i%i.sp3" % (time.week, time.day))

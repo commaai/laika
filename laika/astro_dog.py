@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import DefaultDict, List, Optional, Union
 
-from .helpers import get_constellation, get_closest, get_el_az, TimeRangeHolder
+from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
 from .downloader import download_orbits, download_orbits_russia, download_nav, download_ionex, download_dcb
@@ -129,17 +129,16 @@ class AstroDog:
     ephems[prn].append(new_ephem)
 
   def get_nav_data(self, time):
-    ephems_gps, ephems_glonass = [], []
-    if 'GPS' in self.valid_const:
-      file_path_gps = download_nav(time, cache_dir=self.cache_dir, constellation='GPS')
-      if file_path_gps:
-        ephems_gps = parse_rinex_nav_msg_gps(file_path_gps)
-    if 'GLONASS' in self.valid_const:
-      file_path_glonass = download_nav(time, cache_dir=self.cache_dir, constellation='GLONASS')
-      if file_path_glonass:
-        ephems_glonass = parse_rinex_nav_msg_glonass(file_path_glonass)
+    def download_and_parse(constellation, parse_rinex_nav_func):
+      file_path = download_nav(time, cache_dir=self.cache_dir, constellation=constellation)
+      return parse_rinex_nav_func(file_path) if file_path else []
 
-    fetched_ephems = (ephems_gps + ephems_glonass)
+    fetched_ephems = []
+
+    if 'GPS' in self.valid_const:
+      fetched_ephems += download_and_parse(ConstellationId.GPS, parse_rinex_nav_msg_gps)
+    if 'GLONASS' in self.valid_const:
+      fetched_ephems += download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass)
 
     for ephem in fetched_ephems:
       self.add_ephem(ephem, self.nav)
@@ -151,8 +150,8 @@ class AstroDog:
       max_epoch = max_ephem.epoch + max_ephem.max_time_diff
       self.nav_fetched_times.add(min_epoch, max_epoch)
     else:
-      begin_day = GPSTime(time.week, constants.SECS_IN_DAY * (time.tow // (constants.SECS_IN_DAY)))
-      end_day = GPSTime(time.week, constants.SECS_IN_DAY * (1 + (time.tow // (constants.SECS_IN_DAY))))
+      begin_day = GPSTime(time.week, constants.SECS_IN_DAY * (time.tow // constants.SECS_IN_DAY))
+      end_day = GPSTime(time.week, constants.SECS_IN_DAY * (1 + (time.tow // constants.SECS_IN_DAY)))
       self.nav_fetched_times.add(begin_day, end_day)
 
   def get_orbit_data(self, time):
