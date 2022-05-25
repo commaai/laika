@@ -274,7 +274,7 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
 CONSTELLATION_NASA_CHAR = {ConstellationId.GPS: 'n', ConstellationId.GLONASS: 'g'}
 
 
-def download_nav(time, cache_dir, constellation: ConstellationId):
+def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
   t = time.as_datetime()
   try:
     if constellation not in CONSTELLATION_NASA_CHAR:
