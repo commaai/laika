@@ -270,6 +270,7 @@ def download_and_cache_file(url_base, folder_path, cacheDir, filename, compressi
     filepath = str(hatanaka.decompress_on_disk(filepath_zipped))
   return filepath
 
+
 # Currently, only GPS and Glonass are supported for daily and hourly data.
 CONSTELLATION_NASA_CHAR = {ConstellationId.GPS: 'n', ConstellationId.GLONASS: 'g'}
 
