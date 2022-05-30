@@ -2,6 +2,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import DefaultDict, List, Optional, Union
 
+from .constants import SECS_IN_DAY
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
@@ -151,15 +152,15 @@ class AstroDog:
       max_epoch = max_ephem.epoch + max_ephem.max_time_diff
       self.nav_fetched_times.add(min_epoch, max_epoch)
     else:
-      begin_day = GPSTime(time.week, constants.SECS_IN_DAY * (time.tow // constants.SECS_IN_DAY))
-      end_day = GPSTime(time.week, constants.SECS_IN_DAY * (1 + (time.tow // constants.SECS_IN_DAY)))
+      begin_day = GPSTime(time.week, SECS_IN_DAY * (time.tow // SECS_IN_DAY))
+      end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
       self.nav_fetched_times.add(begin_day, end_day)
 
   def download_parse_orbit_data(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
     def parse_orbits(file_futures):
       return parse_sp3_orbits([f.result() for f in file_futures if f.result()], self.valid_const, skip_before_epoch)
 
-    time_steps = [gps_time - constants.SECS_IN_DAY, gps_time, gps_time + constants.SECS_IN_DAY]
+    time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
       futures_russia = [executor.submit(download_orbits_russia, t, self.cache_dir) for t in time_steps]
       futures_orbits = [executor.submit(download_orbits, t, self.cache_dir) for t in time_steps]
