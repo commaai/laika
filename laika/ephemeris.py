@@ -278,46 +278,48 @@ class GPSEphemeris(Ephemeris):
     return pos, vel, clock_err, clock_rate_err
 
 
-def parse_sp3_orbits(file_name, SUPPORTED_CONSTELLATIONS, skip_before_time: Optional[GPSTime] = None) -> List[PolyEphemeris]:
+def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS, skip_before_time: Optional[GPSTime] = None) -> List[PolyEphemeris]:
   if skip_before_time is None:
     skip_before_time = GPSTime(0, 0)
   data: Dict[str, List] = {}
-  with open(file_name) as f:
-    while True:
-      line = f.readline()[:-1]
-      if not line:
-        break
-      # epoch header
-      if line[0:2] == '* ':
-        year = int(line[3:7])
-        month = int(line[8:10])
-        day = int(line[11:13])
-        hour = int(line[14:16])
-        minute = int(line[17:19])
-        second = int(float(line[20:31]))
-        epoch = GPSTime.from_datetime(datetime(year, month, day, hour, minute, second))
-      # pos line
-      elif line[0] == 'P':
-        if epoch < skip_before_time:
-          continue
-        prn = line[1:4].replace(' ', '0')
-        # In old SP3 files vehicle ID doesn't contain constellation
-        # identifier. We assume that constellation is GPS when missing.
-        if prn[0] == '0':
-          prn = 'G' + prn[1:]
-        if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
-          continue
-        if prn not in data:
-          data[prn] = []
-        #TODO this is a crappy way to deal with overlapping ultra rapid
-        if len(data[prn]) < 1 or epoch - data[prn][-1][0] > 0:
-          parsed = [epoch,
-                    1e3*float(line[4:18]),
-                    1e3*float(line[18:32]),
-                    1e3*float(line[32:46]),
-                    1e-6*float(line[46:60])]
-          if (np.array(parsed[1:]) != 0).all():
-            data[prn].append(parsed)
+  for file_name in file_names:
+    with open(file_name) as f:
+      while True:
+        line = f.readline()[:-1]
+        if not line:
+          break
+        # epoch header
+        if line[0:2] == '* ':
+          year = int(line[3:7])
+          month = int(line[8:10])
+          day = int(line[11:13])
+          hour = int(line[14:16])
+          minute = int(line[17:19])
+          second = int(float(line[20:31]))
+          epoch = GPSTime.from_datetime(datetime(year, month, day, hour, minute, second))
+        # pos line
+        elif line[0] == 'P':
+          # Skipping data can reduce the time significantly when parsing the ephemeris
+          if epoch < skip_before_time:
+            continue
+          prn = line[1:4].replace(' ', '0')
+          # In old SP3 files vehicle ID doesn't contain constellation
+          # identifier. We assume that constellation is GPS when missing.
+          if prn[0] == '0':
+            prn = 'G' + prn[1:]
+          if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
+            continue
+          if prn not in data:
+            data[prn] = []
+          #TODO this is a crappy way to deal with overlapping ultra rapid
+          if len(data[prn]) < 1 or epoch - data[prn][-1][0] > 0:
+            parsed = [epoch,
+                      1e3*float(line[4:18]),
+                      1e3*float(line[18:32]),
+                      1e3*float(line[32:46]),
+                      1e-6*float(line[46:60])]
+            if (np.array(parsed[1:]) != 0).all():
+              data[prn].append(parsed)
   ephems = []
   for prn in data:
     ephems.extend(read_prn_data(data, prn))

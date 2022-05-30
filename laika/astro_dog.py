@@ -157,17 +157,9 @@ class AstroDog:
 
   def download_parse_orbit_data(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
     def parse_orbits(file_futures):
-      # Checks most recent day first and stop when gps_time is found in ephems
-      ephems_sp3 = []
-      for f in file_futures:
-        # check if gps_time is in current list
-        if len(ephems_sp3) == 0 or ephems_sp3[0].epoch > gps_time:
-          file_path_sp3 = f.result()
-          if file_path_sp3:
-            ephems_sp3 = parse_sp3_orbits(file_path_sp3, self.valid_const, skip_before_epoch) + ephems_sp3
-      return ephems_sp3
+      return parse_sp3_orbits([f.result() for f in file_futures], self.valid_const, skip_before_epoch)
 
-    time_steps = [gps_time + constants.SECS_IN_DAY, gps_time, gps_time - constants.SECS_IN_DAY]
+    time_steps = [gps_time - constants.SECS_IN_DAY, gps_time, gps_time + constants.SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
       futures_russia = [executor.submit(download_orbits_russia, t, self.cache_dir) for t in time_steps]
       futures_orbits = [executor.submit(download_orbits, t, self.cache_dir) for t in time_steps]
