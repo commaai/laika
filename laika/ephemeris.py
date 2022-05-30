@@ -278,11 +278,11 @@ class GPSEphemeris(Ephemeris):
     return pos, vel, clock_err, clock_rate_err
 
 
-def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris]:
-  ephems = []
+def parse_sp3_orbits(file_name, SUPPORTED_CONSTELLATIONS, skip_before_time: Optional[GPSTime] = None) -> List[PolyEphemeris]:
+  if skip_before_time is None:
+    skip_before_time = GPSTime(0, 0)
   data: Dict[str, List] = {}
-  for file_name in file_names:
-    f = open(file_name)
+  with open(file_name) as f:
     while True:
       line = f.readline()[:-1]
       if not line:
@@ -298,6 +298,8 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris
         epoch = GPSTime.from_datetime(datetime(year, month, day, hour, minute, second))
       # pos line
       elif line[0] == 'P':
+        if epoch < skip_before_time:
+          continue
         prn = line[1:4].replace(' ', '0')
         # In old SP3 files vehicle ID doesn't contain constellation
         # identifier. We assume that constellation is GPS when missing.
@@ -316,21 +318,19 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS) -> List[PolyEphemeris
                     1e-6*float(line[46:60])]
           if (np.array(parsed[1:]) != 0).all():
             data[prn].append(parsed)
-    f.close()
-  deg = 16
-  deg_t = 1
+  ephems = []
   for prn in data:
-    ephems.extend(read_prn_data(data, prn, deg, deg_t))
+    ephems.extend(read_prn_data(data, prn))
   return ephems
 
 
-def read_prn_data(data, prn, deg, deg_t):
-  ephems = []
+def read_prn_data(data, prn, deg=16, deg_t=1):
   # TODO Handle this properly
   np_data_prn = np.array(data[prn])
   # Currently, don't even bother with satellites that have unhealthy times
   if (np_data_prn[:, 4] > .99).any():
     return []
+  ephems = []
   for i in range(len(np_data_prn) - deg):
     epoch = np_data_prn[i + deg // 2][0]
     measurements = np_data_prn[i:i + deg + 1, :4]
