@@ -157,7 +157,7 @@ class AstroDog:
 
   def download_parse_orbit_data(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
     def parse_orbits(file_futures):
-      return parse_sp3_orbits([f.result() for f in file_futures], self.valid_const, skip_before_epoch)
+      return parse_sp3_orbits([f.result() for f in file_futures if f.result()], self.valid_const, skip_before_epoch)
 
     time_steps = [gps_time - constants.SECS_IN_DAY, gps_time, gps_time + constants.SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
