@@ -276,7 +276,6 @@ def download_and_cache_file(url_base, folder_path, cache_dir, filename, compress
       os.replace(fout.name, filepath + '.attempt_time')
       raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")
 
-
     with open(filepath_zipped, 'wb') as wf:
       wf.write(data_zipped)
 
@@ -334,7 +333,7 @@ def download_orbits(time, cache_dir):
                     f"igu{time_str}_12.sp3",
                     f"igu{time_str}_06.sp3",
                     f"igu{time_str}_00.sp3", ])
-  folder_file_names = [(folder_path, f) for f in filenames]
+  folder_file_names = [(folder_path, filename) for filename in filenames]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
 
 
@@ -374,7 +373,6 @@ def download_ionex(time, cache_dir):
 
 def download_dcb(time, cache_dir):
   cache_subdir = cache_dir + 'dcb/'
-  # seem to be a lot of data missing, so try many days
   filenames = []
   folder_paths = []
   url_bases = (
@@ -382,13 +380,13 @@ def download_dcb(time, cache_dir):
     'https://cddis.nasa.gov/archive/gnss/products/bias/',
     'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/',
   )
-
+  # seem to be a lot of data missing, so try many days
   for time_step in [time - i*SECS_IN_DAY for i in range(14)]:
     t = time_step.as_datetime()
-    filenames.append(t.strftime('%Y/'))
-    folder_paths.append(t.strftime("CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX"))
+    folder_paths.append(t.strftime('%Y/'))
+    filenames.append(t.strftime("CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX"))
 
-  return download_and_cache_file_return_first_success(url_bases, zip(folder_paths, filenames), cache_subdir, compression='.gz', raise_error=True)
+  return download_and_cache_file_return_first_success(url_bases, list(zip(folder_paths, filenames)), cache_subdir, compression='.gz', raise_error=True)
 
 
 def download_cors_coords(cache_dir):
