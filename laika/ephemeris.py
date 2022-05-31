@@ -72,7 +72,7 @@ class EphemerisType(IntEnum):
   QCOM_POLY = 4
 
   @staticmethod
-  def all_orbits():
+  def orbits():
     return EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT, EphemerisType.ULTRA_RAPID_ORBIT
 
   @classmethod

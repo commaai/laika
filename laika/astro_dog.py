@@ -33,13 +33,13 @@ class AstroDog:
                cache_dir='/tmp/gnss/',
                dgps=False,
                valid_const=('GPS', 'GLONASS'),
-               valid_ephem_types=EphemerisType.all_orbits()):
+               valid_ephem_types=EphemerisType.orbits()):
     self.use_internet = use_internet
     self.cache_dir = cache_dir
     self.dgps = dgps
     if not isinstance(valid_ephem_types, Iterable):
       valid_ephem_types = [valid_ephem_types]
-    self.pull_orbit = len(set(EphemerisType.all_orbits()) & set(valid_ephem_types)) > 0
+    self.pull_orbit = len(set(EphemerisType.orbits()) & set(valid_ephem_types)) > 0
     self.pull_nav = EphemerisType.NAV in valid_ephem_types
     self.valid_const = valid_const
     self.valid_ephem_types = valid_ephem_types
