@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 import certifi
 import ftplib
 import hatanaka
@@ -237,15 +236,13 @@ def download_file(url_base, folder_path, filename_zipped):
 
 
 def download_and_cache_file_return_first_success(url_base, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
-    with ThreadPoolExecutor() as executor:
-      futures = [executor.submit(download_and_cache_file, url_base, folder_path, cache_dir, filename, compression, overwrite) for folder_path, filename in folder_and_file_names]
-      for future in futures:
-        try:
-          file = future.result()
-          return file
-        except IOError:
-          if raise_error:
-            raise
+  for folder_path, filename in folder_and_file_names:
+    try:
+      file = download_and_cache_file(url_base, folder_path, cache_dir, filename, compression, overwrite)
+      return file
+    except IOError:
+      if raise_error:
+        raise
 
 
 def download_and_cache_file(url_base, folder_path, cache_dir, filename, compression='', overwrite=False):
