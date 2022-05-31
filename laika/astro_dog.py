@@ -170,8 +170,8 @@ class AstroDog:
       if "GPS" in self.valid_const:
         futures_orbits = [executor.submit(download_orbits, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
-        ephems_sp3_ru = parse_orbits(futures_russia) if "GLONASS" in self.valid_const else []
-        ephems_sp3_us = parse_orbits(futures_orbits) if "GPS" in self.valid_const else []
+      ephems_sp3_ru = parse_orbits(futures_russia) if "GLONASS" in self.valid_const else []
+      ephems_sp3_us = parse_orbits(futures_orbits) if "GPS" in self.valid_const else []
 
     return ephems_sp3_ru + ephems_sp3_us
 
