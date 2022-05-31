@@ -13,6 +13,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 from io import BytesIO
 
+from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
 from .helpers import ConstellationId
@@ -311,7 +312,7 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
     pass
 
 
-def download_orbits(time, cache_dir):
+def download_orbits(time, cache_dir, ephem_types=(EphemerisType.all_orbits())):
   cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
@@ -322,19 +323,20 @@ def download_orbits(time, cache_dir):
   filenames = []
   time_str = "%i%i" % (time.week, time.day)
   # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
-  if GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
-    filenames.append(f"igs{time_str}.sp3")  # Final
-  filenames.extend([f"igr{time_str}.sp3",  # Rapid
-                    # Ultra-Rapid:
-                    f"igu{time_str}_18.sp3",
-                    f"igu{time_str}_12.sp3",
-                    f"igu{time_str}_06.sp3",
-                    f"igu{time_str}_00.sp3", ])
+  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
+    filenames.append(f"igs{time_str}.sp3")
+  if EphemerisType.RAPID_ORBIT in ephem_types:
+    filenames.append(f"igr{time_str}.sp3")
+  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
+    filenames.extend([f"igu{time_str}_18.sp3",
+                      f"igu{time_str}_12.sp3",
+                      f"igu{time_str}_06.sp3",
+                      f"igu{time_str}_00.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
 
 
-def download_orbits_russia(time, cache_dir):
+def download_orbits_russia(time, cache_dir, ephem_types):
   cache_subdir = cache_dir + 'russian_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/',
@@ -343,10 +345,12 @@ def download_orbits_russia(time, cache_dir):
   t = time.as_datetime()
   folder_paths = []
   filename = "Sta%i%i.sp3" % (time.week, time.day)
-  if GPSTime.from_datetime(datetime.utcnow()) - time > 2 * SECS_IN_WEEK:
+  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 2 * SECS_IN_WEEK:
     folder_paths.append(t.strftime('%y%j/final/'))
-  folder_paths.extend([t.strftime('%y%j/rapid/'),
-                       t.strftime('%y%j/ultra/')])
+  if EphemerisType.RAPID_ORBIT in ephem_types:
+    folder_paths.append(t.strftime('%y%j/rapid/'))
+  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
+    folder_paths.append(t.strftime('%y%j/ultra/'))
 
   folder_file_names = [(folder_path, filename) for folder_path in folder_paths]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir)

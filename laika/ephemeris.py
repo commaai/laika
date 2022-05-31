@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import IntEnum
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -63,21 +64,35 @@ def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
   return GPSEphemeris(ephem, epoch)
 
 
-class EphemerisType:
-  # TODO this isn't properly supported
+class EphemerisType(IntEnum):
   NAV = 0
   FINAL_ORBIT = 1
   RAPID_ORBIT = 2
   ULTRA_RAPID_ORBIT = 3
   QCOM_POLY = 4
 
+  @staticmethod
+  def all_orbits():
+    return EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT, EphemerisType.ULTRA_RAPID_ORBIT
+
+  @classmethod
+  def from_file_name(cls, file_name: str):
+    if "/final" in file_name or "/igs" in file_name:
+      return EphemerisType.FINAL_ORBIT
+    if "/rapid" in file_name or "/igr" in file_name:
+      return EphemerisType.RAPID_ORBIT
+    if "/ultra" in file_name or "/igu" in file_name:
+      return EphemerisType.ULTRA_RAPID_ORBIT
+    raise RuntimeError(f"Ephemeris type not found in filename: {file_name}")
+
 
 class Ephemeris(ABC):
 
-  def __init__(self, prn, data, epoch, healthy, max_time_diff):
+  def __init__(self, prn: str, data, epoch: GPSTime, eph_type: EphemerisType, healthy: bool, max_time_diff: float):
     self.prn = prn
     self.data = data
     self.epoch = epoch
+    self.eph_type = eph_type
     self.healthy = healthy
     self.max_time_diff = max_time_diff
 
@@ -100,8 +115,7 @@ class Ephemeris(ABC):
 
 class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
-    super().__init__(data['prn'], data, epoch, healthy, max_time_diff=25*SECS_IN_MIN)
-    self.type = EphemerisType.NAV
+    super().__init__(data['prn'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=25*SECS_IN_MIN)
     self.channel = data['freq_num']
 
   def _get_sat_info(self, time: GPSTime):
@@ -167,10 +181,9 @@ class GLONASSEphemeris(Ephemeris):
 
 
 class PolyEphemeris(Ephemeris):
-  def __init__(self, prn, data, epoch, healthy=True, eph_type=None, tgd=0):
-    super().__init__(prn, data, epoch, healthy, max_time_diff=SECS_IN_HR)
+  def __init__(self, prn, data, epoch, ephem_type: EphemerisType, healthy=True, tgd=0):
+    super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=SECS_IN_HR)
     self.tgd = tgd
-    self.type = eph_type
 
   def _get_sat_info(self, time: GPSTime):
     dt = time - self.data['t0']
@@ -190,9 +203,8 @@ class PolyEphemeris(Ephemeris):
 
 class GPSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
-    super().__init__('G%02i' % data['sv_id'], data, epoch, healthy, max_time_diff=2*SECS_IN_HR)
+    super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=2*SECS_IN_HR)
     self.max_time_diff_tgd = SECS_IN_DAY
-    self.type = EphemerisType.NAV
 
   def get_tgd(self):
     return self.data['tgd']
@@ -284,6 +296,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS, skip_before_time: Opt
   data: Dict[str, List] = {}
   for file_name in file_names:
     with open(file_name) as f:
+      ephem_type = EphemerisType.from_file_name(file_name)
       while True:
         line = f.readline()[:-1]
         if not line:
@@ -312,13 +325,14 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS, skip_before_time: Opt
           if prn not in data:
             data[prn] = []
           #TODO this is a crappy way to deal with overlapping ultra rapid
-          if len(data[prn]) < 1 or epoch - data[prn][-1][0] > 0:
-            parsed = [epoch,
+          if len(data[prn]) < 1 or epoch - data[prn][-1][1] > 0:
+            parsed = [ephem_type,
+                      epoch,
                       1e3*float(line[4:18]),
                       1e3*float(line[18:32]),
                       1e3*float(line[32:46]),
                       1e-6*float(line[46:60])]
-            if (np.array(parsed[1:]) != 0).all():
+            if (np.array(parsed[2:]) != 0).all():
               data[prn].append(parsed)
   ephems = []
   for prn in data:
@@ -330,12 +344,13 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
   # TODO Handle this properly
   np_data_prn = np.array(data[prn])
   # Currently, don't even bother with satellites that have unhealthy times
-  if (np_data_prn[:, 4] > .99).any():
+  if (np_data_prn[:, 5] > .99).any():
     return []
   ephems = []
   for i in range(len(np_data_prn) - deg):
-    epoch = np_data_prn[i + deg // 2][0]
-    measurements = np_data_prn[i:i + deg + 1, :4]
+    epoch_index = i + deg // 2
+    epoch = np_data_prn[epoch_index][1]
+    measurements = np_data_prn[i:i + deg + 1, 1:5]
 
     times = (measurements[:, 0] - epoch).astype(float)
     if (np.diff(times) != 900).any():
@@ -347,10 +362,11 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
     poly_data['x'] = np.polyfit(times, x, deg)
     poly_data['y'] = np.polyfit(times, y, deg)
     poly_data['z'] = np.polyfit(times, z, deg)
-    poly_data['clock'] = [(data[prn][i + deg // 2 + 1][4] - data[prn][i + deg // 2 - 1][4]) / 1800, data[prn][i + deg // 2][4]]
+    poly_data['clock'] = [(np_data_prn[epoch_index + 1][5] - np_data_prn[epoch_index - 1][5]) / 1800, np_data_prn[epoch_index][5]]
     poly_data['deg'] = deg
     poly_data['deg_t'] = deg_t
-    ephems.append(PolyEphemeris(prn, poly_data, epoch, healthy=True, eph_type=EphemerisType.RAPID_ORBIT))
+    # It can happen that a mix of orbit ephemeris types are used in the polyfit.
+    ephems.append(PolyEphemeris(prn, poly_data, epoch, ephem_type=np_data_prn[epoch_index][0], healthy=True))
   return ephems
 
 
