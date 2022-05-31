@@ -1,6 +1,8 @@
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from typing import DefaultDict, List, Optional, Union
 
+from .constants import SECS_IN_DAY
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
@@ -121,13 +123,13 @@ class AstroDog:
       self.cached_dgps = latest_data
     return latest_data
 
-  def add_ephem(self, new_ephem, ephems):
-    prn = new_ephem.prn
-    # TODO make this check work
-    # for eph in ephems[prn]:
-    #   if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
-    #     raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
-    ephems[prn].append(new_ephem)
+  def add_ephems(self, new_ephems, ephems):
+    for e in new_ephems:
+      # TODO make this check work
+      # for eph in ephems[prn]:
+      #   if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
+      #     raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
+      ephems[e.prn].append(e)
 
   def get_nav_data(self, time):
     def download_and_parse(constellation, parse_rinex_nav_func):
@@ -141,8 +143,7 @@ class AstroDog:
     if 'GLONASS' in self.valid_const:
       fetched_ephems += download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass)
 
-    for ephem in fetched_ephems:
-      self.add_ephem(ephem, self.nav)
+    self.add_ephems(fetched_ephems, self.nav)
 
     if len(fetched_ephems) != 0:
       min_ephem = min(fetched_ephems, key=lambda e: e.epoch)
@@ -151,21 +152,30 @@ class AstroDog:
       max_epoch = max_ephem.epoch + max_ephem.max_time_diff
       self.nav_fetched_times.add(min_epoch, max_epoch)
     else:
-      begin_day = GPSTime(time.week, constants.SECS_IN_DAY * (time.tow // constants.SECS_IN_DAY))
-      end_day = GPSTime(time.week, constants.SECS_IN_DAY * (1 + (time.tow // constants.SECS_IN_DAY)))
+      begin_day = GPSTime(time.week, SECS_IN_DAY * (time.tow // SECS_IN_DAY))
+      end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
       self.nav_fetched_times.add(begin_day, end_day)
 
-  def get_orbit_data(self, time):
-    file_paths_sp3_ru = download_orbits_russia(time, cache_dir=self.cache_dir)
-    ephems_sp3_ru = parse_sp3_orbits(file_paths_sp3_ru, self.valid_const)
-    file_paths_sp3_us = download_orbits(time, cache_dir=self.cache_dir)
-    ephems_sp3_us = parse_sp3_orbits(file_paths_sp3_us, self.valid_const)
-    ephems_sp3 = ephems_sp3_ru + ephems_sp3_us
+  def download_parse_orbit_data(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
+    def parse_orbits(file_futures):
+      return parse_sp3_orbits([f.result() for f in file_futures if f.result()], self.valid_const, skip_before_epoch)
+
+    time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
+    with ThreadPoolExecutor() as executor:
+      futures_russia = [executor.submit(download_orbits_russia, t, self.cache_dir) for t in time_steps]
+      futures_orbits = [executor.submit(download_orbits, t, self.cache_dir) for t in time_steps]
+
+      ephems_sp3_ru = parse_orbits(futures_russia)
+      ephems_sp3_us = parse_orbits(futures_orbits)
+
+    return ephems_sp3_ru + ephems_sp3_us
+
+  def get_orbit_data(self, time: GPSTime):
+    ephems_sp3 = self.download_parse_orbit_data(time)
     if len(ephems_sp3) < 5:
       raise RuntimeError('No orbit data found on either servers')
 
-    for ephem in ephems_sp3:
-      self.add_ephem(ephem, self.orbits)
+    self.add_ephems(ephems_sp3, self.orbits)
 
     if len(ephems_sp3) != 0:
       min_ephem = min(ephems_sp3, key=lambda e: e.epoch)
