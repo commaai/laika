@@ -69,7 +69,7 @@ class EphemerisType(IntEnum):
   FINAL_ORBIT = 1
   RAPID_ORBIT = 2
   ULTRA_RAPID_ORBIT = 3
-  QCOM_POLY = 4
+  QCOM_POLY = 4  # Currently not supported
 
   @staticmethod
   def orbits():
