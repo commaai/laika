@@ -13,7 +13,7 @@ gps_times = [GPSTime(*gps_time_list) for gps_time_list in gps_times_list]
 
 class TestFailCache(unittest.TestCase):
   def test_no_infinite_pulls(self):
-    dog = AstroDog(valid_ephem_types=EphemerisType.all_orbits())
+    dog = AstroDog(valid_ephem_types=EphemerisType.orbits())
     for gps_time in gps_times:
       for svId in svIds:
         dog.get_sat_info(svId, gps_time)

@@ -312,7 +312,7 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
     pass
 
 
-def download_orbits(time, cache_dir, ephem_types=(EphemerisType.all_orbits())):
+def download_orbits(time, cache_dir, ephem_types=(EphemerisType.orbits())):
   cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',

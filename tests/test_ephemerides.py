@@ -18,7 +18,7 @@ gps_times = [GPSTime(*gps_time_list) for gps_time_list in gps_times_list]
 class TestAstroDog(unittest.TestCase):
   '''
   def test_nav_vs_orbit_now(self):
-    dog_orbit = AstroDog(valid_ephem_types=EphemerisType.all_orbits())
+    dog_orbit = AstroDog(valid_ephem_types=EphemerisType.orbits())
     dog_nav = AstroDog(valid_ephem_types=EphemerisType.NAV)
     gps_time = GPSTime.from_datetime(datetime.utcnow()) - SECS_IN_DAY*2
     for svId in svIds:
@@ -31,7 +31,7 @@ class TestAstroDog(unittest.TestCase):
   '''
 
   def test_nav_vs_orbit__old(self):
-    dog_orbit = AstroDog(valid_ephem_types=EphemerisType.all_orbits())
+    dog_orbit = AstroDog(valid_ephem_types=EphemerisType.orbits())
     dog_nav = AstroDog(valid_ephem_types=EphemerisType.NAV)
     for gps_time in gps_times:
       for svId in svIds:
