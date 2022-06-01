@@ -98,7 +98,7 @@ class AstroDog:
       self.get_nav_data(time)
     return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
 
-  def get_orbit(self, prn: str, time: GPSTime) -> PolyEphemeris:
+  def get_orbit(self, prn: str, time: GPSTime) -> Optional[PolyEphemeris]:
     skip_download = time in self.orbit_fetched_times
     orbit = self._get_latest_valid_data(self.orbits[prn], self.cached_orbit[prn], self.get_orbit_data, time, skip_download)
     if orbit is not None:
@@ -164,6 +164,7 @@ class AstroDog:
       return parse_sp3_orbits([f.result() for f in file_futures if f.result()], self.valid_const, skip_before_epoch)
 
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
+    ephems_sp3_other = ephems_sp3_us = []
     with ThreadPoolExecutor() as executor:
       futures_other = futures_gps = None
       if len(set(self.valid_const).difference(["GPS"])) > 0:
@@ -171,8 +172,10 @@ class AstroDog:
       if "GPS" in self.valid_const:
         futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
-      ephems_sp3_other = parse_orbits(futures_other) if futures_other else []
-      ephems_sp3_us = parse_orbits(futures_gps) if futures_gps else []
+      if futures_other:
+        ephems_sp3_other = parse_orbits(futures_other)
+      if futures_gps:
+        ephems_sp3_us = parse_orbits(futures_gps)
 
     return ephems_sp3_other + ephems_sp3_us
 
