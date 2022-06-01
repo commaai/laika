@@ -290,7 +290,7 @@ class GPSEphemeris(Ephemeris):
     return pos, vel, clock_err, clock_rate_err
 
 
-def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS, skip_before_time: Optional[GPSTime] = None) -> List[PolyEphemeris]:
+def parse_sp3_orbits(file_names, supported_constellations, skip_before_time: Optional[GPSTime] = None) -> List[PolyEphemeris]:
   if skip_before_time is None:
     skip_before_time = GPSTime(0, 0)
   data: Dict[str, List] = {}
@@ -320,7 +320,7 @@ def parse_sp3_orbits(file_names, SUPPORTED_CONSTELLATIONS, skip_before_time: Opt
           # identifier. We assume that constellation is GPS when missing.
           if prn[0] == '0':
             prn = 'G' + prn[1:]
-          if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
+          if get_constellation(prn) not in supported_constellations:
             continue
           if prn not in data:
             data[prn] = []
