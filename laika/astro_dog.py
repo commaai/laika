@@ -6,7 +6,7 @@ from .constants import SECS_IN_DAY
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
-from .downloader import download_gps_orbits, download_other_orbits, download_nav, download_ionex, download_dcb
+from .downloader import download_orbits_gps, download_orbits_others, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
 from .trop import saast
 from .iono import IonexMap, parse_ionex
@@ -167,9 +167,9 @@ class AstroDog:
     with ThreadPoolExecutor() as executor:
       futures_other = futures_gps = None
       if len(set(self.valid_const).difference(["GPS"])) > 0:
-        futures_other = [executor.submit(download_other_orbits, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
+        futures_other = [executor.submit(download_orbits_others, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
       if "GPS" in self.valid_const:
-        futures_gps = [executor.submit(download_gps_orbits, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
+        futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
       ephems_sp3_other = parse_orbits(futures_other) if futures_other else []
       ephems_sp3_us = parse_orbits(futures_gps) if futures_gps else []
