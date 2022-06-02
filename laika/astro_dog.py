@@ -99,7 +99,7 @@ class AstroDog:
       self.get_nav_data(time)
     return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
 
-  def get_orbit(self, prn: str, time: GPSTime) -> Optional[PolyEphemeris]:
+  def get_orbit(self, prn: str, time: GPSTime):
     skip_download = time in self.orbit_fetched_times
     orbit = self._get_latest_valid_data(self.orbits[prn], self.cached_orbit[prn], self.get_orbit_data, time, skip_download)
     if orbit is not None:
