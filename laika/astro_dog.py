@@ -6,7 +6,7 @@ from .constants import SECS_IN_DAY
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
-from .downloader import download_orbits_gps, download_orbits_others, download_nav, download_ionex, download_dcb
+from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
 from .trop import saast
 from .iono import IonexMap, parse_ionex
@@ -33,13 +33,14 @@ class AstroDog:
                cache_dir='/tmp/gnss/',
                dgps=False,
                valid_const=('GPS', 'GLONASS'),
-               valid_ephem_types=EphemerisType.orbits()):
+               valid_ephem_types=EphemerisType.observation_orbits()):
     self.use_internet = use_internet
     self.cache_dir = cache_dir
     self.dgps = dgps
     if not isinstance(valid_ephem_types, Iterable):
       valid_ephem_types = [valid_ephem_types]
-    self.pull_orbit = len(set(EphemerisType.orbits()) & set(valid_ephem_types)) > 0
+    # todo check that final/rapid are not combined with ultra
+    self.pull_orbit = len(set(EphemerisType.observation_orbits()) & set(valid_ephem_types)) > 0
     self.pull_nav = EphemerisType.NAV in valid_ephem_types
     self.valid_const = valid_const
     self.valid_ephem_types = valid_ephem_types
@@ -160,22 +161,19 @@ class AstroDog:
       self.nav_fetched_times.add(begin_day, end_day)
 
   def download_parse_orbit_data(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
-    def parse_orbits(file_futures):
-      return parse_sp3_orbits([f.result() for f in file_futures if f.result()], self.valid_const, skip_before_epoch)
-
+    # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
-    ephems_sp3_other = ephems_sp3_us = []
+    # Assume Ultra-rapid is only used for online data. Only download next day if we use Final or Rapid orbits.
+    if EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types:
+      time_steps = [gps_time]
     with ThreadPoolExecutor() as executor:
-      futures_other = futures_gps = None
-      if len(set(self.valid_const).difference(["GPS"])) > 0:
-        futures_other = [executor.submit(download_orbits_others, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
+      futures_other = [executor.submit(download_orbits_russia_src, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
+      futures_gps = None
       if "GPS" in self.valid_const:
         futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
-      if futures_other:
-        ephems_sp3_other = parse_orbits(futures_other)
-      if futures_gps:
-        ephems_sp3_us = parse_orbits(futures_gps)
+      ephems_sp3_other = parse_sp3_orbits([f.result() for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
+      ephems_sp3_us = parse_sp3_orbits([f.result() for f in futures_gps if f.result()], self.valid_const, skip_before_epoch) if futures_gps else []
 
     return ephems_sp3_other + ephems_sp3_us
 

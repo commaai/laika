@@ -316,7 +316,7 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
     pass
 
 
-def download_orbits_gps(time, cache_dir, ephem_types=(EphemerisType.orbits())):
+def download_orbits_gps(time, cache_dir, ephem_types=EphemerisType.observation_orbits()):
   cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
@@ -340,7 +340,8 @@ def download_orbits_gps(time, cache_dir, ephem_types=(EphemerisType.orbits())):
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
 
 
-def download_orbits_others(time, cache_dir, ephem_types):
+def download_orbits_russia_src(time, cache_dir, ephem_types):
+  # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
   cache_subdir = cache_dir + 'russian_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/',

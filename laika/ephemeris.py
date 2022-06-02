@@ -72,8 +72,9 @@ class EphemerisType(IntEnum):
   QCOM_POLY = 4  # Currently not supported
 
   @staticmethod
-  def orbits():
-    return EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT, EphemerisType.ULTRA_RAPID_ORBIT
+  def observation_orbits():
+    # Orbit types without predictions
+    return EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT
 
   @classmethod
   def from_file_name(cls, file_name: str):
