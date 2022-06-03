@@ -13,6 +13,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 from io import BytesIO
 
+from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
 from .helpers import ConstellationId
@@ -40,6 +41,7 @@ def retryable(f):
     raise IOError("Multiple URL failures attempting to pull file(s)")
   return wrapped
 
+
 def ftp_connect(url):
   parsed = urlparse(url)
   assert parsed.scheme == 'ftp'
@@ -54,6 +56,7 @@ def ftp_connect(url):
   except ftplib.error_perm:
     raise IOError("Permission failure with folder: " + url)
   return ftp
+
 
 @retryable
 def list_dir(url):
@@ -70,6 +73,7 @@ def list_dir(url):
     urls = re.findall(b"<a href=\"([^\"]+)\">", listing)
     # decode the urls to normal strings. If they are complicated paths, ignore them
     return [name.decode("latin1") for name in urls if name and b"/" not in name[1:]]
+
 
 def ftp_download_files(url_base, folder_path, cacheDir, filenames):
   """
@@ -115,6 +119,7 @@ def http_download_files(url_base, folder_path, cacheDir, filenames):
   def write_function(disk_path, handle):
     def do_write(data):
       open(disk_path, "wb").write(data)
+
     return do_write
 
   fetcher = pycurl.CurlMulti()
@@ -235,10 +240,10 @@ def download_file(url_base, folder_path, filename_zipped):
   raise NotImplementedError('Did find ftp or https preamble')
 
 
-def download_and_cache_file_return_first_success(url_base, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
+def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
   for folder_path, filename in folder_and_file_names:
     try:
-      file = download_and_cache_file(url_base, folder_path, cache_dir, filename, compression, overwrite)
+      file = download_and_cache_file(url_bases, folder_path, cache_dir, filename, compression, overwrite)
       return file
     except IOError:
       if raise_error:
@@ -301,17 +306,17 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
       compression = '.gz' if folder_path >= '2020/335/' else '.Z'
       return download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression=compression)
     elif constellation == ConstellationId.GPS:
-        url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
-        cache_subdir = cache_dir + 'hourly_nav/'
-        filename = t.strftime(f"hour%j0.%y{c}")
-        folder_path = t.strftime('%Y/%j/')
-        compression = '.gz' if folder_path >= '2020/336/' else '.Z'
-        return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression=compression, overwrite=True)
+      url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
+      cache_subdir = cache_dir + 'hourly_nav/'
+      filename = t.strftime(f"hour%j0.%y{c}")
+      folder_path = t.strftime('%Y/%j/')
+      compression = '.gz' if folder_path >= '2020/336/' else '.Z'
+      return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression=compression, overwrite=True)
   except IOError:
     pass
 
 
-def download_orbits(time, cache_dir):
+def download_orbits_gps(time, cache_dir, ephem_types):
   cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
@@ -322,19 +327,21 @@ def download_orbits(time, cache_dir):
   filenames = []
   time_str = "%i%i" % (time.week, time.day)
   # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
-  if GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
-    filenames.append(f"igs{time_str}.sp3")  # Final
-  filenames.extend([f"igr{time_str}.sp3",  # Rapid
-                    # Ultra-Rapid:
-                    f"igu{time_str}_18.sp3",
-                    f"igu{time_str}_12.sp3",
-                    f"igu{time_str}_06.sp3",
-                    f"igu{time_str}_00.sp3", ])
+  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
+    filenames.append(f"igs{time_str}.sp3")
+  if EphemerisType.RAPID_ORBIT in ephem_types:
+    filenames.append(f"igr{time_str}.sp3")
+  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
+    filenames.extend([f"igu{time_str}_18.sp3",
+                      f"igu{time_str}_12.sp3",
+                      f"igu{time_str}_06.sp3",
+                      f"igu{time_str}_00.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
 
 
-def download_orbits_russia(time, cache_dir):
+def download_orbits_russia_src(time, cache_dir, ephem_types):
+  # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
   cache_subdir = cache_dir + 'russian_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/',
@@ -342,12 +349,14 @@ def download_orbits_russia(time, cache_dir):
   )
   t = time.as_datetime()
   folder_paths = []
+  current_gps_time = GPSTime.from_datetime(datetime.utcnow())
   filename = "Sta%i%i.sp3" % (time.week, time.day)
-  if GPSTime.from_datetime(datetime.utcnow()) - time > 2 * SECS_IN_WEEK:
+  if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
     folder_paths.append(t.strftime('%y%j/final/'))
-  folder_paths.extend([t.strftime('%y%j/rapid/'),
-                       t.strftime('%y%j/ultra/')])
-
+  if EphemerisType.RAPID_ORBIT in ephem_types:
+    folder_paths.append(t.strftime('%y%j/rapid/'))
+  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
+    folder_paths.append(t.strftime('%y%j/ultra/'))
   folder_file_names = [(folder_path, filename) for folder_path in folder_paths]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir)
 
@@ -378,7 +387,7 @@ def download_dcb(time, cache_dir):
     'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/',
   )
   # seem to be a lot of data missing, so try many days
-  for time_step in [time - i*SECS_IN_DAY for i in range(14)]:
+  for time_step in [time - i * SECS_IN_DAY for i in range(14)]:
     t = time_step.as_datetime()
     folder_paths.append(t.strftime('%Y/'))
     filenames.append(t.strftime("CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX"))

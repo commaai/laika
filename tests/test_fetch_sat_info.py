@@ -2,6 +2,7 @@ from datetime import datetime
 import unittest
 
 from laika import AstroDog
+from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
 
 
@@ -21,7 +22,7 @@ class TestFetchSatInfo(unittest.TestCase):
     available_date = GPSTime.from_datetime(datetime(2020, 5, 1, 12, 0))
     not_available_date = GPSTime.from_datetime(datetime(2000, 1, 1))
 
-    dog = AstroDog(pull_orbit=True, valid_const=constellations)
+    dog = AstroDog(valid_const=constellations)
     sat_info = dog.get_sat_info(prn, not_available_date)
     self.assertIsNone(sat_info)
     sat_info = dog.get_sat_info(prn, available_date)
@@ -29,14 +30,16 @@ class TestFetchSatInfo(unittest.TestCase):
 
   def test_get_all_sat_info_gps(self):
     time = GPSTime.from_datetime(datetime(2020, 5, 1, 12, 0, 0))
+    orbit_types = EphemerisType.observation_orbits()
+    only_nav = EphemerisType.NAV
     kwargs_list = [
-        {"valid_const": ["GPS"], "pull_orbit": True},
-        {"valid_const": ["GPS"], "pull_orbit": False},
-        {"valid_const": ["GLONASS"], "pull_orbit": True},
-        {"valid_const": ["GLONASS"], "pull_orbit": False},
-        {"valid_const": ["BEIDOU"], "pull_orbit": True},
-        {"valid_const": ["GALILEO"], "pull_orbit": True},
-        {"valid_const": ["QZNSS"], "pull_orbit": True}
+        {"valid_const": ["GPS"], "valid_ephem_types": orbit_types},
+        {"valid_const": ["GPS"], "valid_ephem_types": only_nav},
+        {"valid_const": ["GLONASS"], "valid_ephem_types": orbit_types},
+        {"valid_const": ["GLONASS"], "valid_ephem_types": only_nav},
+        {"valid_const": ["BEIDOU"], "valid_ephem_types": orbit_types},
+        {"valid_const": ["GALILEO"], "valid_ephem_types": orbit_types},
+        {"valid_const": ["QZNSS"], "valid_ephem_types": orbit_types}
     ]
 
     for kwargs in kwargs_list:
