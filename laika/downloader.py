@@ -353,7 +353,6 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
     'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/',
   )
   t = time.as_datetime()
-  current_gps_time = GPSTime.from_datetime(datetime.utcnow())
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
     # Download predictions
     file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
@@ -372,7 +371,7 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
 
   folder_paths = []
   filename = "Sta%i%i.sp3" % (time.week, time.day)
-  if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
+  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 2 * SECS_IN_WEEK:
     folder_paths.append(t.strftime('%y%j/final/'))
   if EphemerisType.RAPID_ORBIT in ephem_types:
     folder_paths.append(t.strftime('%y%j/rapid/'))
