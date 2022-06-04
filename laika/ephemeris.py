@@ -349,7 +349,7 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
   # TODO Handle this properly
   np_data_prn = np.array(data[prn])
   # Currently, don't even bother with satellites that have unhealthy times
-  if (np_data_prn[:, 5] > .99).any():
+  if len(np_data_prn) == 0 or (np_data_prn[:, 5] > .99).any():
     return []
   ephems = []
   for i in range(len(np_data_prn) - deg):

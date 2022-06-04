@@ -9,7 +9,7 @@ import time
 import tempfile
 import socket
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
 
@@ -332,10 +332,14 @@ def download_orbits_gps(time, cache_dir, ephem_types):
   if EphemerisType.RAPID_ORBIT in ephem_types:
     filenames.append(f"igr{time_str}.sp3")
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    filenames.extend([f"igu{time_str}_18.sp3",
-                      f"igu{time_str}_12.sp3",
+    # Download predictions
+    time_prev = time - SECS_IN_DAY
+    time_str_prev = "%i%i" % (time_prev.week, time_prev.day)
+    filenames.extend([f"igu{time_str}_12.sp3",
                       f"igu{time_str}_06.sp3",
-                      f"igu{time_str}_00.sp3"])
+                      f"igu{time_str}_00.sp3",
+                      f"igu{time_str_prev}_18.sp3",
+                      f"igu{time_str_prev}_12.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
 
@@ -350,15 +354,29 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
   t = time.as_datetime()
   folder_paths = []
   current_gps_time = GPSTime.from_datetime(datetime.utcnow())
-  filename = "Sta%i%i.sp3" % (time.week, time.day)
+  # Filename for full day observations.
+  full_day = "Sta%i%i.sp3" % (time.week, time.day)
+  filenames = []
+  folder_and_file_names = []
   if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
-    folder_paths.append(t.strftime('%y%j/final/'))
+    folder_and_file_names.append(t.strftime('%y%j/final/'))
+    filenames.append(full_day)
   if EphemerisType.RAPID_ORBIT in ephem_types:
     folder_paths.append(t.strftime('%y%j/rapid/'))
+    filenames.append(full_day)
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    folder_paths.append(t.strftime('%y%j/ultra/'))
-  folder_file_names = [(folder_path, filename) for folder_path in folder_paths]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir)
+    # Download predictions
+    file_prefix = "Stark_1D_"+t.strftime('%y%m%d')
+    file_prefix_prev = "Stark_1D_"+(t-timedelta(days=1)).strftime('%y%m%d')
+    # Example: Stark_1D_22060100.sp3
+    ultras = [file_prefix + "12.sp3",
+              file_prefix + "06.sp3",
+              file_prefix + "00.sp3",
+              file_prefix_prev + "18.sp3",
+              file_prefix_prev + "12.sp3"]
+    filenames.extend(ultras)
+    folder_paths.extend([t.strftime('%y%j/ultra/') for _ in range(len(ultras))])
+  return download_and_cache_file_return_first_success(url_bases, list(zip(folder_paths, filenames)), cache_subdir)
 
 
 def download_ionex(time, cache_dir):

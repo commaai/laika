@@ -37,6 +37,7 @@ class AstroDog:
     self.use_internet = use_internet
     self.cache_dir = cache_dir
     self.dgps = dgps
+    # todo check that final/rapid are not combined with ultra
     if not isinstance(valid_ephem_types, Iterable):
       valid_ephem_types = [valid_ephem_types]
     self.pull_orbit = len(set(EphemerisType.all_orbits()) & set(valid_ephem_types)) > 0
@@ -162,6 +163,9 @@ class AstroDog:
   def download_parse_orbit_data(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
+    # Assume Ultra-rapid is only used for online data. Only download next day if we use Final or Rapid orbits.
+    if EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types:
+      time_steps = [gps_time]
     with ThreadPoolExecutor() as executor:
       futures_other = [executor.submit(download_orbits_russia_src, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
       futures_gps = None
