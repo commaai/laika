@@ -20,7 +20,7 @@ MAX_DGPS_DISTANCE = 100_000  # in meters, because we're not barbarians
 
 class AstroDog:
   '''
-  use_internet: flag indicating whether laika should fetch files from web
+  auto_update: flag indicating whether laika should fetch files from web automatically
   cache_dir:   directory where data files are downloaded to and cached
   dgps:        flag indicating whether laika should use dgps (CORS)
                data to calculate pseudorange corrections
@@ -29,12 +29,12 @@ class AstroDog:
                 Default is set to use observation orbit ephemeris types (orbits observations are the most accurate)
   '''
 
-  def __init__(self, use_internet=True,
+  def __init__(self, auto_update=True,
                cache_dir='/tmp/gnss/',
                dgps=False,
                valid_const=('GPS', 'GLONASS'),
                valid_ephem_types=EphemerisType.observation_orbits()):
-    self.use_internet = use_internet
+    self.auto_update = auto_update
     self.cache_dir = cache_dir
     self.dgps = dgps
     # todo check that final/rapid are not combined with ultra
@@ -64,7 +64,7 @@ class AstroDog:
   def get_ionex(self, time) -> Optional[IonexMap]:
     ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
     if ionex is None:
-      if self.use_internet:
+      if self.auto_update:
         raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
     else:
       self.cached_ionex = ionex
@@ -95,7 +95,7 @@ class AstroDog:
     return result
 
   def get_navs(self, time):
-    if time not in self.nav_fetched_times and self.use_internet:
+    if time not in self.nav_fetched_times and self.auto_update:
       self.get_nav_data(time)
     return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
 
@@ -121,7 +121,7 @@ class AstroDog:
   def get_dgps_corrections(self, time, recv_pos):
     latest_data = self._get_latest_valid_data(self.dgps_delays, self.cached_dgps, self.get_dgps_data, time, recv_pos=recv_pos)
     if latest_data is None:
-      if self.use_internet:
+      if self.auto_update:
         raise RuntimeError("Pulled dgps, but still can't get valid for time " + str(time))
     else:
       self.cached_dgps = latest_data
@@ -150,10 +150,7 @@ class AstroDog:
     self.add_ephems(fetched_ephems, self.nav)
 
     if len(fetched_ephems) != 0:
-      min_ephem = min(fetched_ephems, key=lambda e: e.epoch)
-      max_ephem = max(fetched_ephems, key=lambda e: e.epoch)
-      min_epoch = min_ephem.epoch - min_ephem.max_time_diff
-      max_epoch = max_ephem.epoch + max_ephem.max_time_diff
+      min_epoch, max_epoch = self.get_epoch_range(fetched_ephems)
       self.nav_fetched_times.add(min_epoch, max_epoch)
     else:
       begin_day = GPSTime(time.week, SECS_IN_DAY * (time.tow // SECS_IN_DAY))
@@ -185,12 +182,7 @@ class AstroDog:
     self.add_ephems(ephems_sp3, self.orbits)
 
     if len(ephems_sp3) != 0:
-      min_ephem = min(ephems_sp3, key=lambda e: e.epoch)
-      max_ephem = max(ephems_sp3, key=lambda e: e.epoch)
-
-      min_epoch = min_ephem.epoch - min_ephem.max_time_diff
-      max_epoch = max_ephem.epoch + max_ephem.max_time_diff
-
+      min_epoch, max_epoch = self.get_epoch_range(ephems_sp3)
       self.orbit_fetched_times.add(min_epoch, max_epoch)
 
   def get_dcb_data(self, time):
@@ -200,13 +192,15 @@ class AstroDog:
       self.dcbs[dcb.prn].append(dcb)
 
     if len(dcbs) != 0:
-      min_dcb = min(dcbs, key=lambda e: e.epoch)
-      max_dcb = max(dcbs, key=lambda e: e.epoch)
-
-      min_epoch = min_dcb.epoch - min_dcb.max_time_diff
-      max_epoch = max_dcb.epoch + max_dcb.max_time_diff
-
+      min_epoch, max_epoch = self.get_epoch_range(dcbs)
       self.dcbs_fetched_times.add(min_epoch, max_epoch)
+
+  def get_epoch_range(self, new_ephems):
+    min_ephem = min(new_ephems, key=lambda e: e.epoch)
+    max_ephem = max(new_ephems, key=lambda e: e.epoch)
+    min_epoch = min_ephem.epoch - min_ephem.max_time_diff
+    max_epoch = max_ephem.epoch + max_ephem.max_time_diff
+    return min_epoch, max_epoch
 
   def get_ionex_data(self, time):
     file_path_ionex = download_ionex(time, cache_dir=self.cache_dir)
@@ -308,7 +302,7 @@ class AstroDog:
       freq = self.get_frequency(prn, time, signal)
     dcb = self.get_dcb(prn, time)
     # When using internet we expect all data or return None
-    if self.use_internet and (ionex is None or dcb is None or freq is None):
+    if self.auto_update and (ionex is None or dcb is None or freq is None):
       return None
     iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq) if ionex is not None else 0.
     trop_delay = saast(rcv_pos, el)
@@ -323,17 +317,18 @@ class AstroDog:
 
   def _get_latest_valid_data(self, data, latest_data, download_data_func, time, skip_download=False, recv_pos=None):
     def is_valid(latest_data):
-        if recv_pos is None:
-          return latest_data is not None and latest_data.valid(time)
-        else:
-          return latest_data is not None and latest_data.valid(time, recv_pos)
+      if recv_pos is None:
+        return latest_data is not None and latest_data.valid(time)
+      else:
+        return latest_data is not None and latest_data.valid(time, recv_pos)
+
     if is_valid(latest_data):
       return latest_data
 
     latest_data = get_closest(time, data, recv_pos=recv_pos)
     if is_valid(latest_data):
       return latest_data
-    if skip_download or not self.use_internet:
+    if skip_download or not self.auto_update:
       return None
     if recv_pos is not None:
       download_data_func(time, recv_pos)
