@@ -75,11 +75,6 @@ class EphemerisType(IntEnum):
   def all_orbits():
     return EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT, EphemerisType.ULTRA_RAPID_ORBIT
 
-  @staticmethod
-  def observation_orbits():
-    # Orbit types without predictions
-    return EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT
-
   @classmethod
   def from_file_name(cls, file_name: str):
     if "/final" in file_name or "/igs" in file_name:
