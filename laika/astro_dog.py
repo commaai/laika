@@ -37,7 +37,6 @@ class AstroDog:
     self.auto_update = auto_update
     self.cache_dir = cache_dir
     self.dgps = dgps
-    # todo check that final/rapid are not combined with ultra
     if not isinstance(valid_ephem_types, Iterable):
       valid_ephem_types = [valid_ephem_types]
     self.pull_orbit = len(set(EphemerisType.all_orbits()) & set(valid_ephem_types)) > 0
