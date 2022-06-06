@@ -30,23 +30,20 @@ class TestFetchSatInfo(unittest.TestCase):
 
   def test_get_all_sat_info_gps(self):
     time = GPSTime.from_datetime(datetime(2020, 5, 1, 12, 0, 0))
-    orbit_types = EphemerisType.all_orbits()
-    only_nav = EphemerisType.NAV
+    all_ephem_types = (EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT, EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)
     kwargs_list = [
-        {"valid_const": ["GPS"], "valid_ephem_types": orbit_types},
-        {"valid_const": ["GPS"], "valid_ephem_types": only_nav},
-        {"valid_const": ["GLONASS"], "valid_ephem_types": orbit_types},
-        {"valid_const": ["GLONASS"], "valid_ephem_types": only_nav},
-        {"valid_const": ["BEIDOU"], "valid_ephem_types": orbit_types},
-        {"valid_const": ["GALILEO"], "valid_ephem_types": orbit_types},
-        {"valid_const": ["QZNSS"], "valid_ephem_types": orbit_types}
+      *[{"valid_const": ["GPS"], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
+      *[{"valid_const": ["GLONASS"], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
+      *[{"valid_const": ["BEIDOU"], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
+      *[{"valid_const": ["GALILEO"], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
+      *[{"valid_const": ["QZNSS"], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
     ]
 
     for kwargs in kwargs_list:
-        dog = AstroDog(**kwargs)
-        infos = dog.get_all_sat_info(time)
-        self.assertGreater(len(infos), 0)
+      dog = AstroDog(**kwargs)
+      infos = dog.get_all_sat_info(time)
+      self.assertGreater(len(infos), 0, f"No ephemeris found for {kwargs}")
 
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

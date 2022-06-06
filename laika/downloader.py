@@ -9,7 +9,7 @@ import time
 import tempfile
 import socket
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
 
@@ -339,6 +339,46 @@ def download_orbits_gps(time, cache_dir, ephem_types):
   folder_file_names = [(folder_path, filename) for filename in filenames]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
 
+
+def download_prediction_orbits_russia_src(gps_time, cache_dir):
+  # Download single file that contains Ultra_Rapid predictions for GPS, GLONASS and other constellations
+  t = gps_time.as_datetime()
+  # Files exist starting at 29-01-2022
+  if t < datetime(2022, 1, 29):
+    return None
+  cache_subdir = cache_dir + 'russian_products/'
+  url_bases = 'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/'
+  folder_path = t.strftime('%y%j/ultra/')
+  file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
+
+  # Predictions are 24H so previous day can also be used.
+  prev_day = (t - timedelta(days=1))
+  file_prefix_prev = "Stark_1D_" + prev_day.strftime('%y%m%d')
+  folder_path_prev = prev_day.strftime('%y%j/ultra/')
+
+  current_day = GPSTime.from_datetime(datetime(t.year, t.month, t.day))
+  # Ultra-Orbit is published in gnss-data-alt every 10th minute past the 5,11,17,23 hour.
+  # Predictions published are delayed by around 10 hours.
+  # Download latest file that includes gps_time with 20 minutes margin.:
+  if gps_time > current_day + 23.5 * SECS_IN_HR:
+    prev_day, current_day = [], [6, 12]
+  elif gps_time > current_day + 17.5 * SECS_IN_HR:
+    prev_day, current_day = [], [0, 6]
+  elif gps_time > current_day + 11.5 * SECS_IN_HR:
+    prev_day, current_day = [18], [0]
+  elif gps_time > current_day + 5.5 * SECS_IN_HR:
+    prev_day, current_day = [12, 18], []
+  else:
+    prev_day, current_day = [6, 12], []
+  # Example: Stark_1D_22060100.sp3
+  folder_and_file_names = [(folder_path, file_prefix + f"{h:02}.sp3") for h in reversed(current_day)] + \
+                          [(folder_path_prev, file_prefix_prev + f"{h:02}.sp3") for h in reversed(prev_day)]
+  file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
+  if file is None: # todo remove this when gnss-alt repo is fixed
+    # Download directly from source if github fails
+    url_bases = 'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/'
+    file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
+  return file
 
 def download_orbits_russia_src(time, cache_dir, ephem_types):
   # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
