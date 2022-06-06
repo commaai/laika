@@ -396,8 +396,7 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
   if EphemerisType.RAPID_ORBIT in ephem_types:
     folder_paths.append(t.strftime('%y%j/rapid/'))
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    folder_path = t.strftime('%y%j/ultra/')
-    folder_paths.append(folder_path)
+    folder_paths.append(t.strftime('%y%j/ultra/'))
   folder_file_names = [(folder_path, filename) for folder_path in folder_paths]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir)
 
