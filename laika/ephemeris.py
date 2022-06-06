@@ -291,7 +291,6 @@ class GPSEphemeris(Ephemeris):
 
 
 def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Optional[GPSTime] = None) -> List[PolyEphemeris]:
-  deg = 16
   if skip_until_epoch is None:
     skip_until_epoch = GPSTime(0, 0)
   data: Dict[str, List] = {}
@@ -339,7 +338,7 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
               data[prn].append(parsed)
   ephems = []
   for prn in data:
-    ephems.extend(read_prn_data(data, prn, deg))
+    ephems.extend(read_prn_data(data, prn))
   return ephems
 
 
