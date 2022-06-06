@@ -2,11 +2,11 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import DefaultDict, Iterable, List, Optional, Union
 
-from .constants import SECS_IN_DAY
+from .constants import SECS_IN_DAY, SECS_IN_HR
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
-from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb
+from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src
 from .downloader import download_cors_station
 from .trop import saast
 from .iono import IonexMap, parse_ionex
@@ -157,12 +157,9 @@ class AstroDog:
       end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
       self.nav_fetched_times.add(begin_day, end_day)
 
-  def download_parse_orbit_data(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
+  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
-    # Assume Ultra-rapid is only used for online data. Only download next day if we use Final or Rapid orbits.
-    if EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types:
-      time_steps = [gps_time]
     with ThreadPoolExecutor() as executor:
       futures_other = [executor.submit(download_orbits_russia_src, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
       futures_gps = None
@@ -174,15 +171,33 @@ class AstroDog:
 
     return ephems_sp3_other + ephems_sp3_us
 
-  def get_orbit_data(self, time: GPSTime):
-    ephems_sp3 = self.download_parse_orbit_data(time)
+  def download_parse_prediction_orbit(self, gps_time: GPSTime):
+    assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
+    skip_until_epoch = gps_time - 2 * SECS_IN_HR
+
+    result = download_prediction_orbits_russia_src(gps_time, self.cache_dir)
+    if result is not None:
+      result = [result]
+    elif "GPS" in self.valid_const:
+      # Slower fallback. Russia src prediction orbits are published from 2022
+      result = [download_orbits_gps(t, self.cache_dir, self.valid_ephem_types) for t in [gps_time - SECS_IN_DAY, gps_time]]
+    if result is None:
+      return []
+    return parse_sp3_orbits(result, self.valid_const, skip_until_epoch=skip_until_epoch)
+
+  def get_orbit_data(self, time: GPSTime, only_predictions=False):
+    if only_predictions:
+      ephems_sp3 = self.download_parse_prediction_orbit(time)
+    else:
+      ephems_sp3 = self.download_parse_orbit(time)
     if len(ephems_sp3) < 5:
-      raise RuntimeError('No orbit data found on either servers')
+      raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
 
     self.add_ephems(ephems_sp3, self.orbits)
 
     if len(ephems_sp3) != 0:
       min_epoch, max_epoch = self.get_epoch_range(ephems_sp3)
+      print(min_epoch.as_datetime(), max_epoch.as_datetime())
       self.orbit_fetched_times.add(min_epoch, max_epoch)
 
   def get_dcb_data(self, time):

@@ -326,24 +326,59 @@ def download_orbits_gps(time, cache_dir, ephem_types):
   folder_path = "%i/" % time.week
   filenames = []
   time_str = "%i%i" % (time.week, time.day)
+  # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
+  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
+    filenames.append(f"igs{time_str}.sp3")
+  if EphemerisType.RAPID_ORBIT in ephem_types:
+    filenames.append(f"igr{time_str}.sp3")
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    # Download predictions
-    time_prev = time - SECS_IN_DAY
-    time_str_prev = "%i%i" % (time_prev.week, time_prev.day)
-    filenames.extend([f"igu{time_str}_12.sp3",
+    filenames.extend([f"igu{time_str}_18.sp3",
+                      f"igu{time_str}_12.sp3",
                       f"igu{time_str}_06.sp3",
-                      f"igu{time_str}_00.sp3",
-                      f"igu{time_str_prev}_18.sp3",
-                      f"igu{time_str_prev}_12.sp3"])
-  else:
-    # Download filenames in order of quality. Final -> Rapid
-    if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
-      filenames.append(f"igs{time_str}.sp3")
-    if EphemerisType.RAPID_ORBIT in ephem_types:
-      filenames.append(f"igr{time_str}.sp3")
+                      f"igu{time_str}_00.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
 
+
+def download_prediction_orbits_russia_src(gps_time, cache_dir):
+  # Download single file that contains Ultra_Rapid predictions for GPS, GLONASS and other constellations
+  t = gps_time.as_datetime()
+  # Files exist starting at 29-01-2022
+  if t < datetime(2022, 1, 29):
+    return None
+  cache_subdir = cache_dir + 'russian_products/'
+  url_bases = 'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/'
+  folder_path = t.strftime('%y%j/ultra/')
+  file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
+
+  # Predictions are 24H so previous day can also be used.
+  prev_day = (t - timedelta(days=1))
+  file_prefix_prev = "Stark_1D_" + prev_day.strftime('%y%m%d')
+  folder_path_prev = prev_day.strftime('%y%j/ultra/')
+
+  current_day = GPSTime.from_datetime(datetime(t.year, t.month, t.day))
+  # Ultra-Orbit is published in gnss-data-alt every 10th minute past the 5,11,17,23 hour.
+  # Predictions published are delayed by around 10 hours.
+  # Download latest file that includes gps_time with 20 minutes margin.:
+  if gps_time > current_day + 23.5 * SECS_IN_HR:
+    prev_day, current_day = [], [6, 12]
+  elif gps_time > current_day + 17.5 * SECS_IN_HR:
+    prev_day, current_day = [], [0, 6]
+  elif gps_time > current_day + 11.5 * SECS_IN_HR:
+    prev_day, current_day = [18], [0]
+  elif gps_time > current_day + 5.5 * SECS_IN_HR:
+    prev_day, current_day = [12, 18], []
+  else:
+    prev_day, current_day = [6, 12], []
+  # Example: Stark_1D_22060100.sp3
+  folder_and_file_names = [(folder_path, file_prefix + f"{h:02}.sp3") for h in reversed(current_day)] + \
+                          [(folder_path_prev, file_prefix_prev + f"{h:02}.sp3") for h in reversed(prev_day)]
+  file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
+  if file is None: # todo remove this when gnss-alt repo is fixed
+    # Download directly from source if github fails
+    url_bases = 'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/'
+    file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
+  return file
 
 def download_orbits_russia_src(time, cache_dir, ephem_types):
   # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
@@ -353,28 +388,16 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
     'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/',
   )
   t = time.as_datetime()
-  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    # Download predictions
-    file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
-    folder_path = t.strftime('%y%j/ultra/')
-
-    prev_day = (t - timedelta(days=1))
-    file_prefix_prev = "Stark_1D_" + prev_day.strftime('%y%m%d')
-    folder_path_prev = prev_day.strftime('%y%j/ultra/')
-    # Example: Stark_1D_22060100.sp3
-    folder_and_file_names = [(folder_path, file_prefix + "12.sp3"),
-                             (folder_path, file_prefix + "06.sp3"),
-                             (folder_path, file_prefix + "00.sp3"),
-                             (folder_path_prev, file_prefix_prev + "18.sp3"),
-                             (folder_path_prev, file_prefix_prev + "12.sp3")]
-    return download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
-
   folder_paths = []
+  current_gps_time = GPSTime.from_datetime(datetime.utcnow())
   filename = "Sta%i%i.sp3" % (time.week, time.day)
-  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 2 * SECS_IN_WEEK:
+  if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
     folder_paths.append(t.strftime('%y%j/final/'))
   if EphemerisType.RAPID_ORBIT in ephem_types:
     folder_paths.append(t.strftime('%y%j/rapid/'))
+  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
+    folder_path = t.strftime('%y%j/ultra/')
+    folder_paths.append(folder_path)
   folder_file_names = [(folder_path, filename) for folder_path in folder_paths]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir)
 
