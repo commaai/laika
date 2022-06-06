@@ -26,14 +26,14 @@ class AstroDog:
                data to calculate pseudorange corrections
   valid_const: list of constellation identifiers laika will try process
   valid_ephem_types: set of ephemeris types that are allowed to use and download.
-                Default is set to use observation orbit ephemeris types (orbits observations are the most accurate)
+                Default is set to use all orbit ephemeris types
   '''
 
   def __init__(self, use_internet=True,
                cache_dir='/tmp/gnss/',
                dgps=False,
                valid_const=('GPS', 'GLONASS'),
-               valid_ephem_types=EphemerisType.observation_orbits()):
+               valid_ephem_types=EphemerisType.all_orbits()):
     self.use_internet = use_internet
     self.cache_dir = cache_dir
     self.dgps = dgps
