@@ -340,7 +340,6 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
     ephems.extend(read_prn_data(data, prn))
   return ephems
 
-
 def read_prn_data(data, prn, deg=16, deg_t=1):
   # TODO Handle this properly
   np_data_prn = np.array(data[prn])
@@ -356,11 +355,10 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
     times = (measurements[:, 0] - epoch).astype(float)
     if (np.diff(times) != 900).any():
       continue
-    x, y, z = measurements[:, 1:].astype(float).transpose()
-
+    
     poly_data = {}
     poly_data['t0'] = epoch
-    poly_data['xyz'] = poly.polyfit(times, np.array([x,y,z]).transpose(), deg)
+    poly_data['xyz'] = poly.polyfit(times, measurements[:, 1:].astype(float), deg)
     poly_data['clock'] = [(np_data_prn[epoch_index + 1][5] - np_data_prn[epoch_index - 1][5]) / 1800, np_data_prn[epoch_index][5]]
     poly_data['deg'] = deg
     poly_data['deg_t'] = deg_t
