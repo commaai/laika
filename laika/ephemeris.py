@@ -191,9 +191,9 @@ class PolyEphemeris(Ephemeris):
     deg = self.data['deg']
     deg_t = self.data['deg_t']
     indices = np.arange(deg+1)[:,np.newaxis]
-    sat_pos = np.sum(self.data['xyz']*(dt**indices), axis=0)
+    sat_pos = np.sum((dt**indices)*self.data['xyz'], axis=0)
     indices = indices[1:]
-    sat_vel = np.sum(self.data['xyz'][1:]*indices*(dt**(indices-1)), axis=0)
+    sat_vel = np.sum(indices*(dt**(indices-1)*self.data['xyz'][1:]), axis=0)
     time_err = sum((dt**p)*self.data['clock'][deg_t-p] for p in range(deg_t+1))
     time_err_rate = sum(p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in range(1,deg_t+1))
     time_err_with_rel = time_err - 2*np.inner(sat_pos, sat_vel)/SPEED_OF_LIGHT**2
