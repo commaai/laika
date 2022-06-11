@@ -196,7 +196,6 @@ class AstroDog:
 
     if len(ephems_sp3) != 0:
       min_epoch, max_epoch = self.get_epoch_range(ephems_sp3)
-      print(min_epoch.as_datetime(), max_epoch.as_datetime())
       self.orbit_fetched_times.add(min_epoch, max_epoch)
 
   def get_dcb_data(self, time):
