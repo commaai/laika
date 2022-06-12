@@ -27,6 +27,7 @@ class AstroDog:
   valid_const: list of constellation identifiers laika will try process
   valid_ephem_types: set of ephemeris types that are allowed to use and download.
                 Default is set to use all orbit ephemeris types
+  clear_old_ephemeris: flag indicating if ephemeris should be overwritten when new ephemeris is added.
   '''
 
   def __init__(self, auto_update=True,
