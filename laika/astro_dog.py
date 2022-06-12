@@ -37,6 +37,7 @@ class AstroDog:
                clear_old_ephemeris=False):
     self.auto_update = auto_update
     self.cache_dir = cache_dir
+    self.clear_old_ephemeris = clear_old_ephemeris
     self.dgps = dgps
     if not isinstance(valid_ephem_types, Iterable):
       valid_ephem_types = [valid_ephem_types]
@@ -162,12 +163,9 @@ class AstroDog:
     if 'GLONASS' in self.valid_const:
       fetched_ephems += download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass)
 
-    self.add_ephems(fetched_ephems, self.nav)
+    self.add_navs(fetched_ephems)
 
-    if len(fetched_ephems) != 0:
-      min_epoch, max_epoch = self.get_epoch_range(fetched_ephems)
-      self.nav_fetched_times.add(min_epoch, max_epoch)
-    else:
+    if len(fetched_ephems) == 0:
       begin_day = GPSTime(time.week, SECS_IN_DAY * (time.tow // SECS_IN_DAY))
       end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
       self.nav_fetched_times.add(begin_day, end_day)
