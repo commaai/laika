@@ -33,7 +33,8 @@ class AstroDog:
                cache_dir='/tmp/gnss/',
                dgps=False,
                valid_const=('GPS', 'GLONASS'),
-               valid_ephem_types=EphemerisType.all_orbits()):
+               valid_ephem_types=EphemerisType.all_orbits(),
+               clear_old_ephemeris=False):
     self.auto_update = auto_update
     self.cache_dir = cache_dir
     self.dgps = dgps
@@ -126,13 +127,28 @@ class AstroDog:
       self.cached_dgps = latest_data
     return latest_data
 
-  def add_ephems(self, new_ephems, ephems):
+  def add_orbits(self, new_ephems):
+    self._add_ephems(new_ephems, self.orbits, self.orbit_fetched_times)
+
+  def add_navs(self, new_ephems):
+    self._add_ephems(new_ephems, self.nav, self.nav_fetched_times)
+
+  def _add_ephems(self, new_ephems, ephems_dict, fetched_times):
+    new_ephem_dict = defaultdict(list)
     for e in new_ephems:
       # TODO make this check work
       # for eph in ephems[prn]:
       #   if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
       #     raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
-      ephems[e.prn].append(e)
+      new_ephem_dict[e.prn].append(e)
+    for k,v in new_ephem_dict.items():
+      if self.clear_old_ephemeris:
+        ephems_dict[k] = v
+      else:
+        ephems_dict[k].extend(v)
+    if len(new_ephems) != 0:
+      min_epoch, max_epoch = self.get_epoch_range(new_ephems)
+      fetched_times.add(min_epoch, max_epoch)
 
   def get_nav_data(self, time):
     def download_and_parse(constellation, parse_rinex_nav_func):
@@ -192,12 +208,7 @@ class AstroDog:
     if len(ephems_sp3) < 5:
       raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
 
-    self.add_ephems(ephems_sp3, self.orbits)
-
-    if len(ephems_sp3) != 0:
-      min_epoch, max_epoch = self.get_epoch_range(ephems_sp3)
-      print(min_epoch.as_datetime(), max_epoch.as_datetime())
-      self.orbit_fetched_times.add(min_epoch, max_epoch)
+    self.add_orbits(ephems_sp3)
 
   def get_dcb_data(self, time):
     file_path_dcb = download_dcb(time, cache_dir=self.cache_dir)
