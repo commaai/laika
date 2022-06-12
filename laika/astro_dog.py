@@ -144,10 +144,11 @@ class AstroDog:
       #     raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
       new_ephem_dict[e.prn].append(e)
     for k,v in new_ephem_dict.items():
-      if self.clear_old_ephemeris:
-        ephems_dict[k] = v
-      else:
-        ephems_dict[k].extend(v)
+      if len(v) > 0:
+        if self.clear_old_ephemeris:
+          ephems_dict[k] = v
+        else:
+          ephems_dict[k].extend(v)
     if len(new_ephems) != 0:
       min_epoch, max_epoch = self.get_epoch_range(new_ephems)
       fetched_times.add(min_epoch, max_epoch)
