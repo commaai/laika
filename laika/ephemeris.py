@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from enum import IntEnum
 from typing import Dict, List, Optional
 
@@ -112,6 +113,17 @@ class Ephemeris(ABC):
   @abstractmethod
   def _get_sat_info(self, time):
     pass
+
+  def to_json(self):
+    dict = self.__dict__
+    dict['class_name'] = self.__class__.__name__
+    return dict
+
+  @classmethod
+  def from_json(cls, dct):
+    obj = cls.__new__(globals()[dct['class_name']])
+    obj.__dict__.update(dct)
+    return obj
 
 
 class GLONASSEphemeris(Ephemeris):
@@ -289,7 +301,7 @@ class GPSEphemeris(Ephemeris):
     return pos, vel, clock_err, clock_rate_err
 
 
-def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Optional[GPSTime] = None) -> List[PolyEphemeris]:
+def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Optional[GPSTime] = None) -> Dict[str, List[PolyEphemeris]]:
   if skip_until_epoch is None:
     skip_until_epoch = GPSTime(0, 0)
   data: Dict[str, List] = {}
@@ -335,9 +347,9 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
                       1e-6*float(line[46:60])]
             if (np.array(parsed[2:]) != 0).all():
               data[prn].append(parsed)
-  ephems = []
+  ephems = {}
   for prn in data:
-    ephems.extend(read_prn_data(data, prn))
+    ephems[prn] = read_prn_data(data, prn)
   return ephems
 
 def read_prn_data(data, prn, deg=16, deg_t=1):
@@ -355,7 +367,7 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
     times = (measurements[:, 0] - epoch).astype(float)
     if (np.diff(times) != 900).any():
       continue
-    
+
     poly_data = {}
     poly_data['t0'] = epoch
     poly_data['xyz'] = poly.polyfit(times, measurements[:, 1:].astype(float), deg)
@@ -368,7 +380,7 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
 
 
 def parse_rinex_nav_msg_gps(file_name):
-  ephems = []
+  ephems = defaultdict(list)
   got_header = False
   rinex_ver = None
   #ion_alpha = None
@@ -428,13 +440,14 @@ def parse_rinex_nav_msg_gps(file_name):
     e['toe'] = GPSTime(toe_week, toe_tow)
     e['healthy'] = (e['health'] == 0.0)
 
-    ephems.append(GPSEphemeris(e, epoch))
+    ephem = GPSEphemeris(e, epoch)
+    ephems[ephem.prn].append(ephem)
   f.close()
   return ephems
 
 
 def parse_rinex_nav_msg_glonass(file_name):
-  ephems = []
+  ephems = defaultdict(list)
   f = open(file_name)
   got_header = False
   rinex_ver = None
@@ -473,7 +486,7 @@ def parse_rinex_nav_msg_glonass(file_name):
 
     e['healthy'] = (e['health'] == 0.0)
 
-    ephems.append(GLONASSEphemeris(e, epoch))
+    ephems[prn].append(GLONASSEphemeris(e, epoch))
   f.close()
   return ephems
 
