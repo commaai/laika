@@ -3,6 +3,7 @@ from enum import IntEnum
 from typing import Dict, List, Optional
 
 import numpy as np
+import numpy.polynomial.polynomial as poly
 from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
 
@@ -189,12 +190,10 @@ class PolyEphemeris(Ephemeris):
     dt = time - self.data['t0']
     deg = self.data['deg']
     deg_t = self.data['deg_t']
-    sat_pos = np.array([sum((dt**p)*self.data['x'][deg-p] for p in range(deg+1)),
-                        sum((dt**p)*self.data['y'][deg-p] for p in range(deg+1)),
-                        sum((dt**p)*self.data['z'][deg-p] for p in range(deg+1))])
-    sat_vel = np.array([sum(p*(dt**(p-1))*self.data['x'][deg-p] for p in range(1,deg+1)),
-                        sum(p*(dt**(p-1))*self.data['y'][deg-p] for p in range(1,deg+1)),
-                        sum(p*(dt**(p-1))*self.data['z'][deg-p] for p in range(1,deg+1))])
+    indices = np.arange(deg+1)[:,np.newaxis]
+    sat_pos = np.sum((dt**indices)*self.data['xyz'], axis=0)
+    indices = indices[1:]
+    sat_vel = np.sum(indices*(dt**(indices-1)*self.data['xyz'][1:]), axis=0)
     time_err = sum((dt**p)*self.data['clock'][deg_t-p] for p in range(deg_t+1))
     time_err_rate = sum(p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in range(1,deg_t+1))
     time_err_with_rel = time_err - 2*np.inner(sat_pos, sat_vel)/SPEED_OF_LIGHT**2
@@ -341,7 +340,6 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
     ephems.extend(read_prn_data(data, prn))
   return ephems
 
-
 def read_prn_data(data, prn, deg=16, deg_t=1):
   # TODO Handle this properly
   np_data_prn = np.array(data[prn])
@@ -357,13 +355,10 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
     times = (measurements[:, 0] - epoch).astype(float)
     if (np.diff(times) != 900).any():
       continue
-    x, y, z = measurements[:, 1:].astype(float).transpose()
-
+    
     poly_data = {}
     poly_data['t0'] = epoch
-    poly_data['x'] = np.polyfit(times, x, deg)
-    poly_data['y'] = np.polyfit(times, y, deg)
-    poly_data['z'] = np.polyfit(times, z, deg)
+    poly_data['xyz'] = poly.polyfit(times, measurements[:, 1:].astype(float), deg)
     poly_data['clock'] = [(np_data_prn[epoch_index + 1][5] - np_data_prn[epoch_index - 1][5]) / 1800, np_data_prn[epoch_index][5]]
     poly_data['deg'] = deg
     poly_data['deg_t'] = deg_t

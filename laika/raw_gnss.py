@@ -1,3 +1,4 @@
+from math import sqrt
 from typing import Dict, List, Union
 
 import scipy.optimize as opt
@@ -74,11 +75,11 @@ class GNSSMeasurement:
     self.corrected = False
 
     # sat info
-    self.sat_pos = np.nan * np.ones(3)
-    self.sat_vel = np.nan * np.ones(3)
+    self.sat_pos = np.array([np.nan, np.nan, np.nan])
+    self.sat_vel = np.array([np.nan, np.nan, np.nan])
     self.sat_clock_err = np.nan
 
-    self.sat_pos_final = np.nan * np.ones(3)  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
+    self.sat_pos_final = np.array([np.nan, np.nan, np.nan])  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
     self.observables_final: Dict[str, float] = {}
 
   def process(self, dog):
@@ -239,7 +240,7 @@ def read_raw_ublox(report) -> List[GNSSMeasurement]:
         observables['C1C'] = i.pseudorange
         # Empirically it seems obvious ublox's std is
         # actually a variation
-        observables_std['C1C'] = np.sqrt(i.pseudorangeStdev)*10
+        observables_std['C1C'] = sqrt(i.pseudorangeStdev)*10
         if i.gnssId == ConstellationId.GLONASS:
           glonass_freq = i.glonassFrequencyIndex - 7
           observables['D1C'] = -(constants.SPEED_OF_LIGHT / (constants.GLONASS_L1 + glonass_freq * constants.GLONASS_L1_DELTA)) * i.doppler
