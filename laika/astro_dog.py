@@ -207,7 +207,7 @@ class AstroDog:
       ephems_sp3 = self.download_parse_prediction_orbit(time)
     else:
       ephems_sp3 = self.download_parse_orbit(time)
-    if len(ephems_sp3) < 5:
+    if sum([len(v) for v in ephems_sp3.values()]) < 5:
       raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
 
     self.add_orbits(ephems_sp3)
