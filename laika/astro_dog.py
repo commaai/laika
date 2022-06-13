@@ -1,10 +1,10 @@
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import DefaultDict, Iterable, List, Optional, Union
+from typing import DefaultDict, Dict, Iterable, List, Optional, Union
 
 from .constants import SECS_IN_DAY, SECS_IN_HR
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
-from .ephemeris import EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
+from .ephemeris import Ephemeris, EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
 from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src
 from .downloader import download_cors_station
@@ -129,42 +129,44 @@ class AstroDog:
       self.cached_dgps = latest_data
     return latest_data
 
-  def add_orbits(self, new_ephems):
+  def add_orbits(self, new_ephems: Dict[str, List[Ephemeris]]):
     self._add_ephems(new_ephems, self.orbits, self.orbit_fetched_times)
 
-  def add_navs(self, new_ephems):
+  def add_navs(self, new_ephems: Dict[str, List[Ephemeris]]):
     self._add_ephems(new_ephems, self.nav, self.nav_fetched_times)
 
-  def _add_ephems(self, new_ephems, ephems_dict, fetched_times):
-    new_ephem_dict = defaultdict(list)
-    for e in new_ephems:
-      # TODO make this check work
-      # for eph in ephems[prn]:
-      #   if eph.type == new_ephem.type and eph.epoch == new_ephem.epoch:
-      #     raise RuntimeError('Trying to add an ephemeris that is already there, something is wrong')
-      new_ephem_dict[e.prn].append(e)
-    for k,v in new_ephem_dict.items():
+  def _add_ephems(self, new_ephems: Dict[str, List[Ephemeris]], ephems_dict, fetched_times):
+    for k, v in new_ephems.items():
       if len(v) > 0:
         if self.clear_old_ephemeris:
           ephems_dict[k] = v
         else:
           ephems_dict[k].extend(v)
+
     if len(new_ephems) != 0:
-      min_epoch, max_epoch = self.get_epoch_range(new_ephems)
+      min_epochs = []
+      max_epochs = []
+      for v in new_ephems.values():
+        if len(v) > 0:
+          min_ephem, max_ephem = self.get_epoch_range(v)
+          min_epochs.append(min_ephem)
+          max_epochs.append(max_ephem)
+      min_epoch = min(min_epochs)
+      max_epoch = max(max_epochs)
       fetched_times.add(min_epoch, max_epoch)
 
   def get_nav_data(self, time):
     def download_and_parse(constellation, parse_rinex_nav_func):
       file_path = download_nav(time, cache_dir=self.cache_dir, constellation=constellation)
-      return parse_rinex_nav_func(file_path) if file_path else []
+      return parse_rinex_nav_func(file_path) if file_path else {}
 
-    fetched_ephems = []
+    fetched_ephems = {}
 
     if 'GPS' in self.valid_const:
-      fetched_ephems += download_and_parse(ConstellationId.GPS, parse_rinex_nav_msg_gps)
+      fetched_ephems = download_and_parse(ConstellationId.GPS, parse_rinex_nav_msg_gps)
     if 'GLONASS' in self.valid_const:
-      fetched_ephems += download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass)
-
+      for k, v in download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass).items():
+        fetched_ephems.setdefault(k, []).extend(v)
     self.add_navs(fetched_ephems)
 
     if len(fetched_ephems) == 0:
@@ -172,7 +174,7 @@ class AstroDog:
       end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
       self.nav_fetched_times.add(begin_day, end_day)
 
-  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> List[PolyEphemeris]:
+  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> Dict[str, List[PolyEphemeris]]:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
@@ -181,10 +183,10 @@ class AstroDog:
       if "GPS" in self.valid_const:
         futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
-      ephems_sp3_other = parse_sp3_orbits([f.result() for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
-      ephems_sp3_us = parse_sp3_orbits([f.result() for f in futures_gps if f.result()], self.valid_const, skip_before_epoch) if futures_gps else []
+      ephems_other = parse_sp3_orbits([f.result() for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
+      ephems_us = parse_sp3_orbits([f.result() for f in futures_gps if f.result()], self.valid_const, skip_before_epoch) if futures_gps else {}
 
-    return ephems_sp3_other + ephems_sp3_us
+    return {k: ephems_other.get(k, []) + ephems_us.get(k, []) for k in set(list(ephems_other.keys()) + list(ephems_us.keys()))}
 
   def download_parse_prediction_orbit(self, gps_time: GPSTime):
     assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
@@ -197,7 +199,7 @@ class AstroDog:
       # Slower fallback. Russia src prediction orbits are published from 2022
       result = [download_orbits_gps(t, self.cache_dir, self.valid_ephem_types) for t in [gps_time - SECS_IN_DAY, gps_time]]
     if result is None:
-      return []
+      return {}
     return parse_sp3_orbits(result, self.valid_const, skip_until_epoch=skip_until_epoch)
 
   def get_orbit_data(self, time: GPSTime, only_predictions=False):
@@ -205,7 +207,7 @@ class AstroDog:
       ephems_sp3 = self.download_parse_prediction_orbit(time)
     else:
       ephems_sp3 = self.download_parse_orbit(time)
-    if len(ephems_sp3) < 5:
+    if sum([len(v) for v in ephems_sp3.values()]) < 5:
       raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
 
     self.add_orbits(ephems_sp3)
