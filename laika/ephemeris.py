@@ -119,16 +119,16 @@ class Ephemeris(ABC):
   def to_json(self):
     if self.__json is None:
       dict = self.__dict__
-      dict['class_name'] = self.__class__.__name__
+      dict['ephemeris_class'] = self.__class__.__name__
       self.__json = {'ephemeris': json.dumps(dict, cls=EphemerisSerializer)}
     return self.__json
 
   @classmethod
-  def from_json(cls, dct):
-    dct = json.loads(dct['ephemeris'], object_hook=ephemeris_deserialize_hook)
-    obj = cls.__new__(globals()[dct['class_name']])
+  def from_json(cls, json_dct):
+    dct = json.loads(json_dct['ephemeris'], object_hook=ephemeris_deserialize_hook)
+    obj = cls.__new__(globals()[dct['ephemeris_class']])
     obj.__dict__.update(dct)
-    obj.to_json()
+    obj.__json = json_dct
     return obj
 
 
@@ -152,7 +152,6 @@ class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
     super().__init__(data['prn'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=25*SECS_IN_MIN)
     self.channel = data['freq_num']
-    self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
     # see the russian doc for this:
@@ -220,7 +219,6 @@ class PolyEphemeris(Ephemeris):
   def __init__(self, prn, data, epoch, ephem_type: EphemerisType, healthy=True, tgd=0):
     super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=SECS_IN_HR)
     self.tgd = tgd
-    self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
     dt = time - self.data['t0']
@@ -240,7 +238,6 @@ class GPSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
     super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=2*SECS_IN_HR)
     self.max_time_diff_tgd = SECS_IN_DAY
-    self.to_json()
 
   def get_tgd(self):
     return self.data['tgd']
