@@ -65,6 +65,9 @@ class TestAstroDog(unittest.TestCase):
 
   def test_ephemeris_parsing(self):
     ublox_ephem = Mock()
+    from laika.ephemeris import Ephemeris
+    # Skip to_json
+    Ephemeris.to_json = Mock()
     ublox_ephem.gpsWeek = 0
     ublox_ephem.svId = 1
     ublox_ephem.toe = 0
