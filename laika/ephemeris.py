@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import IntEnum
@@ -97,6 +98,7 @@ class Ephemeris(ABC):
     self.eph_type = eph_type
     self.healthy = healthy
     self.max_time_diff = max_time_diff
+    self.__json = None
 
   def valid(self, time):
     return abs(time - self.epoch) <= self.max_time_diff
@@ -115,21 +117,42 @@ class Ephemeris(ABC):
     pass
 
   def to_json(self):
-    dict = self.__dict__
-    dict['class_name'] = self.__class__.__name__
-    return dict
+    if self.__json is None:
+      dict = self.__dict__
+      dict['class_name'] = self.__class__.__name__
+      self.__json = {'ephemeris': json.dumps(dict, cls=EphemerisSerializer)}
+    return self.__json
 
   @classmethod
   def from_json(cls, dct):
+    dct = json.loads(dct['ephemeris'], object_hook=ephemeris_deserialize_hook)
     obj = cls.__new__(globals()[dct['class_name']])
     obj.__dict__.update(dct)
+    obj.to_json()
     return obj
+
+
+def ephemeris_deserialize_hook(dct):
+  if 'week' in dct:
+    return GPSTime(dct['week'], dct['tow'])
+  return dct
+
+
+class EphemerisSerializer(json.JSONEncoder):
+
+  def default(self, o):
+    if isinstance(o, GPSTime):
+      return o.__dict__
+    if isinstance(o, np.ndarray):
+      return o.tolist()
+    return json.JSONEncoder.default(self, o)
 
 
 class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
     super().__init__(data['prn'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=25*SECS_IN_MIN)
     self.channel = data['freq_num']
+    self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
     # see the russian doc for this:
@@ -197,6 +220,7 @@ class PolyEphemeris(Ephemeris):
   def __init__(self, prn, data, epoch, ephem_type: EphemerisType, healthy=True, tgd=0):
     super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=SECS_IN_HR)
     self.tgd = tgd
+    self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
     dt = time - self.data['t0']
@@ -216,6 +240,7 @@ class GPSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True):
     super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=2*SECS_IN_HR)
     self.max_time_diff_tgd = SECS_IN_DAY
+    self.to_json()
 
   def get_tgd(self):
     return self.data['tgd']
