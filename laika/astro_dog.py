@@ -169,7 +169,7 @@ class AstroDog:
         fetched_ephems.setdefault(k, []).extend(v)
     self.add_navs(fetched_ephems)
 
-    if sum(len(v)for v in fetched_ephems.values()) == 0:
+    if sum([len(v) for v in fetched_ephems.values()]) == 0:
       begin_day = GPSTime(time.week, SECS_IN_DAY * (time.tow // SECS_IN_DAY))
       end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
       self.nav_fetched_times.add(begin_day, end_day)
