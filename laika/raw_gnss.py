@@ -80,7 +80,6 @@ class GNSSMeasurement:
     self.sat_vel = np.array([np.nan, np.nan, np.nan])
     self.sat_clock_err = np.nan
     self.sat_ephemeris: Optional[Ephemeris] = None
-    self.sat_file_source = ''
 
     self.sat_pos_final = np.array([np.nan, np.nan, np.nan])  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
     self.observables_final: Dict[str, float] = {}
@@ -90,10 +89,7 @@ class GNSSMeasurement:
     sat_info = dog.get_sat_info(self.prn, sat_time)
     if sat_info is None:
       return False
-    self.sat_pos = sat_info[0]
-    self.sat_vel = sat_info[1]
-    self.sat_clock_err = sat_info[2]
-    self.sat_ephemeris = sat_info[4]
+    self.sat_pos, self.sat_vel, self.sat_clock_err, _, self.sat_ephemeris = sat_info
     self.processed = True
     return True
 
