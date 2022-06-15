@@ -143,14 +143,14 @@ class AstroDog:
         else:
           ephems_dict[k].extend(v)
 
-    if len(new_ephems) != 0:
-      min_epochs = []
-      max_epochs = []
-      for v in new_ephems.values():
-        if len(v) > 0:
-          min_ephem, max_ephem = self.get_epoch_range(v)
-          min_epochs.append(min_ephem)
-          max_epochs.append(max_ephem)
+    min_epochs = []
+    max_epochs = []
+    for v in new_ephems.values():
+      if len(v) > 0:
+        min_ephem, max_ephem = self.get_epoch_range(v)
+        min_epochs.append(min_ephem)
+        max_epochs.append(max_ephem)
+    if len(min_epochs) > 0:
       min_epoch = min(min_epochs)
       max_epoch = max(max_epochs)
       fetched_times.add(min_epoch, max_epoch)
