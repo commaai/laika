@@ -93,7 +93,7 @@ class GNSSMeasurement:
     self.sat_pos = sat_info[0]
     self.sat_vel = sat_info[1]
     self.sat_clock_err = sat_info[2]
-    self.sat_ephemeris = sat_info[3]
+    self.sat_ephemeris = sat_info[4]
     self.processed = True
     return True
 
