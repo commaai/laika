@@ -1,7 +1,6 @@
 from math import sqrt
 from typing import Dict, List, Optional, Union
 
-import scipy.optimize as opt
 import numpy as np
 import datetime
 import struct
@@ -295,6 +294,8 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
   0 -> list with positions
   1 -> pseudorange errs
   '''
+  import scipy.optimize as opt  # Only use scipy here
+
   n = len(measurements)
   if n < min_measurements:
     return []
@@ -312,6 +313,8 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   0 -> list with velocities
   1 -> pseudorange_rate errs
   '''
+  import scipy.optimize as opt  # Only use scipy here
+
   n = len(measurements)
   if n < 6:
     return []
