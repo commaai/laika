@@ -50,7 +50,7 @@ class TestAstroDog(unittest.TestCase):
     deg = 16
 
     def get_single_measurement(t):
-      return [EphemerisType.ULTRA_RAPID_ORBIT, GPSTime(week=2177, tow=172800.0 + t), -22481344.405, -14485178.376, -554329.557, 0.000555129133]
+      return [(EphemerisType.ULTRA_RAPID_ORBIT, "filename.filetype"), GPSTime(week=2177, tow=172800.0 + t), -22481344.405, -14485178.376, -554329.557, 0.000555129133]
 
     data = {prn: [get_single_measurement(t * 900) for t in range(deg + 1)]}
     data[prn][0][5] = 0.01
