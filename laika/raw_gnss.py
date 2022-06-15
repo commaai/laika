@@ -1,5 +1,5 @@
 from math import sqrt
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import scipy.optimize as opt
 import numpy as np
@@ -7,6 +7,7 @@ import datetime
 import struct
 
 from . import constants
+from .ephemeris import Ephemeris
 from .lib.coordinates import LocalCoord
 from .gps_time import GPSTime
 from .helpers import ConstellationId, get_constellation_and_sv_id, get_nmea_id_from_constellation_and_svid, \
@@ -78,6 +79,8 @@ class GNSSMeasurement:
     self.sat_pos = np.array([np.nan, np.nan, np.nan])
     self.sat_vel = np.array([np.nan, np.nan, np.nan])
     self.sat_clock_err = np.nan
+    self.sat_ephemeris: Optional[Ephemeris] = None
+    self.sat_file_source = ''
 
     self.sat_pos_final = np.array([np.nan, np.nan, np.nan])  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
     self.observables_final: Dict[str, float] = {}
@@ -90,6 +93,7 @@ class GNSSMeasurement:
     self.sat_pos = sat_info[0]
     self.sat_vel = sat_info[1]
     self.sat_clock_err = sat_info[2]
+    self.sat_ephemeris = sat_info[3]
     self.processed = True
     return True
 
