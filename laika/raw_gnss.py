@@ -1,12 +1,12 @@
 from math import sqrt
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
-import scipy.optimize as opt
 import numpy as np
 import datetime
 import struct
 
 from . import constants
+from .ephemeris import Ephemeris
 from .lib.coordinates import LocalCoord
 from .gps_time import GPSTime
 from .helpers import ConstellationId, get_constellation_and_sv_id, get_nmea_id_from_constellation_and_svid, \
@@ -78,6 +78,7 @@ class GNSSMeasurement:
     self.sat_pos = np.array([np.nan, np.nan, np.nan])
     self.sat_vel = np.array([np.nan, np.nan, np.nan])
     self.sat_clock_err = np.nan
+    self.sat_ephemeris: Optional[Ephemeris] = None
 
     self.sat_pos_final = np.array([np.nan, np.nan, np.nan])  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
     self.observables_final: Dict[str, float] = {}
@@ -87,9 +88,7 @@ class GNSSMeasurement:
     sat_info = dog.get_sat_info(self.prn, sat_time)
     if sat_info is None:
       return False
-    self.sat_pos = sat_info[0]
-    self.sat_vel = sat_info[1]
-    self.sat_clock_err = sat_info[2]
+    self.sat_pos, self.sat_vel, self.sat_clock_err, _, self.sat_ephemeris = sat_info
     self.processed = True
     return True
 
@@ -295,6 +294,8 @@ def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C'
   0 -> list with positions
   1 -> pseudorange errs
   '''
+  import scipy.optimize as opt  # Only use scipy here
+
   n = len(measurements)
   if n < min_measurements:
     return []
@@ -312,6 +313,8 @@ def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal
   0 -> list with velocities
   1 -> pseudorange_rate errs
   '''
+  import scipy.optimize as opt  # Only use scipy here
+
   n = len(measurements)
   if n < 6:
     return []
