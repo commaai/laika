@@ -1,7 +1,6 @@
 import os
 import numpy as np
 from datetime import datetime
-from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 
 from .gps_time import GPSTime
 from .constants import SECS_IN_YEAR
@@ -54,6 +53,8 @@ def download_and_parse_station_postions(cors_station_positions_path, cache_dir):
 
 
 def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gnss/'):
+  from scipy.spatial import cKDTree
+
   cors_station_positions_dict = load_cors_station_positions(cache_dir)
   station_ids = list(cors_station_positions_dict.keys())
   station_positions = []
