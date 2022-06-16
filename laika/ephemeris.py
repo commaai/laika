@@ -92,14 +92,16 @@ class EphemerisType(IntEnum):
 
 class Ephemeris(ABC):
 
-  def __init__(self, prn: str, data, epoch: GPSTime, eph_type: EphemerisType, healthy: bool, max_time_diff: float, file_source=''):
+  def __init__(self, prn: str, data, epoch: GPSTime, eph_type: EphemerisType, healthy: bool, max_time_diff: float,
+               file_epoch: Optional[GPSTime] = None, file_name=None):
     self.prn = prn
     self.data = data
     self.epoch = epoch
     self.eph_type = eph_type
     self.healthy = healthy
     self.max_time_diff = max_time_diff
-    self.file_source = file_source  # File name used to parse the ephemeris. Empty string if no file is used.
+    self.file_epoch = file_epoch
+    self.file_source = '' if file_name is None else file_name.split('/')[-1][:3]  # File source for the ephemeris (e.g. igu, igr, Sta)
     self.__json = None
 
   def valid(self, time):
@@ -154,8 +156,8 @@ class EphemerisSerializer(json.JSONEncoder):
 
 
 class GLONASSEphemeris(Ephemeris):
-  def __init__(self, data, epoch, healthy=True, file_source=''):
-    super().__init__(data['prn'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=25*SECS_IN_MIN, file_source=file_source)
+  def __init__(self, data, epoch, healthy=True, file_name=None):
+    super().__init__(data['prn'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=25*SECS_IN_MIN, file_name=file_name)
     self.channel = data['freq_num']
     self.to_json()
 
@@ -222,8 +224,8 @@ class GLONASSEphemeris(Ephemeris):
 
 
 class PolyEphemeris(Ephemeris):
-  def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType, file_source: str, healthy=True, tgd=0):
-    super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=SECS_IN_HR, file_source=file_source)
+  def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType, file_epoch: GPSTime, file_name: str, healthy=True, tgd=0):
+    super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=SECS_IN_HR, file_epoch=file_epoch, file_name=file_name)
     self.tgd = tgd
     self.to_json()
 
@@ -242,8 +244,8 @@ class PolyEphemeris(Ephemeris):
 
 
 class GPSEphemeris(Ephemeris):
-  def __init__(self, data, epoch, healthy=True, file_source=''):
-    super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=2*SECS_IN_HR, file_source=file_source)
+  def __init__(self, data, epoch, healthy=True, file_name=None):
+    super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=2*SECS_IN_HR, file_name=file_name)
     self.max_time_diff_tgd = SECS_IN_DAY
     self.to_json()
 
@@ -340,6 +342,7 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
       continue
     with open(file_name) as f:
       ephem_type = EphemerisType.from_file_name(file_name)
+      file_epoch = None
       while True:
         line = f.readline()[:-1]
         if not line:
@@ -353,6 +356,8 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
           minute = int(line[17:19])
           second = int(float(line[20:31]))
           epoch = GPSTime.from_datetime(datetime(year, month, day, hour, minute, second))
+          if file_epoch is None:
+            file_epoch = epoch
         # pos line
         elif line[0] == 'P':
           # Skipping data can reduce the time significantly when parsing the ephemeris
@@ -369,7 +374,7 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
             data[prn] = []
           #TODO this is a crappy way to deal with overlapping ultra rapid
           if len(data[prn]) < 1 or epoch - data[prn][-1][1] > 0:
-            parsed = [(ephem_type, file_name),
+            parsed = [(ephem_type, file_epoch, file_name),
                       epoch,
                       1e3 * float(line[4:18]),
                       1e3 * float(line[18:32]),
@@ -406,8 +411,8 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
     poly_data['deg'] = deg
     poly_data['deg_t'] = deg_t
     # It can happen that a mix of orbit ephemeris types are used in the polyfit.
-    ephem_type, file_source = np_data_prn[epoch_index][0]
-    ephems.append(PolyEphemeris(prn, poly_data, epoch, ephem_type, file_source, healthy=True))
+    ephem_type, file_epoch, file_name = np_data_prn[epoch_index][0]
+    ephems.append(PolyEphemeris(prn, poly_data, epoch, ephem_type, file_epoch, file_name, healthy=True))
   return ephems
 
 
@@ -472,7 +477,7 @@ def parse_rinex_nav_msg_gps(file_name):
     e['toe'] = GPSTime(toe_week, toe_tow)
     e['healthy'] = (e['health'] == 0.0)
 
-    ephem = GPSEphemeris(e, epoch, file_name)
+    ephem = GPSEphemeris(e, epoch, file_name=file_name)
     ephems[ephem.prn].append(ephem)
   f.close()
   return ephems
@@ -518,7 +523,7 @@ def parse_rinex_nav_msg_glonass(file_name):
 
     e['healthy'] = (e['health'] == 0.0)
 
-    ephems[prn].append(GLONASSEphemeris(e, epoch, file_source=file_name))
+    ephems[prn].append(GLONASSEphemeris(e, epoch, file_name=file_name))
   f.close()
   return ephems
 
