@@ -389,8 +389,7 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Opt
 
 
 def read_prn_data(data, prn, deg=16, deg_t=1):
-  # TODO Handle this properly
-  np_data_prn = np.array(data[prn])
+  np_data_prn = np.array(data[prn], dtype=object)
   # Currently, don't even bother with satellites that have unhealthy times
   if len(np_data_prn) == 0 or (np_data_prn[:, 5] > .99).any():
     return []
