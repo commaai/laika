@@ -249,7 +249,7 @@ def download_and_cache_file_return_first_success(url_bases, folder_and_file_name
     except IOError as e:
       last_error = e
 
-  if last_error:
+  if last_error and raise_error:
     raise last_error
 
 
