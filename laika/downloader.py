@@ -241,13 +241,16 @@ def download_file(url_base, folder_path, filename_zipped):
 
 
 def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
+  last_error = None
   for folder_path, filename in folder_and_file_names:
     try:
       file = download_and_cache_file(url_bases, folder_path, cache_dir, filename, compression, overwrite)
       return file
-    except IOError:
-      if raise_error:
-        raise
+    except IOError as e:
+      last_error = e
+
+  if last_error:
+    raise last_error
 
 
 def download_and_cache_file(url_base, folder_path, cache_dir, filename, compression='', overwrite=False):
@@ -414,7 +417,7 @@ def download_ionex(time, cache_dir):
   filenames = [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]
 
   folder_file_names = [(folder_path, f) for f in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z', raise_error=True)
 
 
 def download_dcb(time, cache_dir):
