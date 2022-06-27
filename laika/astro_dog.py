@@ -12,7 +12,7 @@ from .trop import saast
 from .iono import IonexMap, parse_ionex
 from .dcb import DCB, parse_dcbs
 from .gps_time import GPSTime
-from .dgps import get_closest_station_names, parse_dgps
+from .dgps import DGPSDelay, get_closest_station_names, parse_dgps
 from . import constants
 
 MAX_DGPS_DISTANCE = 100_000  # in meters, because we're not barbarians
@@ -51,82 +51,59 @@ class AstroDog:
     self.nav_fetched_times = TimeRangeHolder()
     self.dcbs_fetched_times = TimeRangeHolder()
 
-    self.dgps_delays = []
-    self.ionex_maps: List[IonexMap] = []
-    self.orbits: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
-    self.nav: DefaultDict[str, List[Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(list)
-    self.dcbs: DefaultDict[str, List[DCB]] = defaultdict(list)
-
-    self.cached_ionex: Optional[IonexMap] = None
-    self.cached_dgps = None
-    self.cached_orbit: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
-    self.cached_nav: DefaultDict[str, Union[GPSEphemeris, GLONASSEphemeris, None]] = defaultdict(lambda: None)
-    self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
+    self.dgps_delays: Dict[GPSTime, DGPSDelay] = {}
+    self.ionex_maps: Dict[GPSTime, IonexMap] = {}
+    self.orbits: DefaultDict[str, Dict[GPSTime, PolyEphemeris]] = defaultdict(dict)
+    self.nav: DefaultDict[str, Dict[GPSTime, Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(dict)
+    self.dcbs: DefaultDict[str, Dict[GPSTime, DCB]] = defaultdict(dict)
 
   def get_ionex(self, time) -> Optional[IonexMap]:
-    ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
+    ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.get_ionex_data, time)
     if ionex is None:
       if self.auto_update:
         raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
-    else:
-      self.cached_ionex = ionex
     return ionex
 
   def get_nav(self, prn, time):
     skip_download = time in self.nav_fetched_times
-    nav = self._get_latest_valid_data(self.nav[prn], self.cached_nav[prn], self.get_nav_data, time, skip_download)
-    if nav is not None:
-      self.cached_nav[prn] = nav
-    return nav
+    return self._get_latest_valid_data(self.nav[prn], self.get_nav_data, time, skip_download)
 
   @staticmethod
-  def _select_valid_temporal_items(item_dict, time, cache):
+  def _select_valid_temporal_items(item_dict, time):
     '''Returns only valid temporal item for specific time from currently fetched
     data.'''
     result = {}
     for prn, temporal_objects in item_dict.items():
-      cached = cache[prn]
-      if cached is not None and cached.valid(time):
-        obj = cached
-      else:
-        obj = get_closest(time, temporal_objects)
-        if obj is None or not obj.valid(time):
-          continue
-        cache[prn] = obj
+      obj = get_closest(time, temporal_objects)
+      if obj is None or not obj.valid(time):
+        continue
       result[prn] = obj
     return result
 
   def get_navs(self, time):
     if time not in self.nav_fetched_times and self.auto_update:
       self.get_nav_data(time)
-    return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
+    return AstroDog._select_valid_temporal_items(self.nav, time)
 
   def get_orbit(self, prn: str, time: GPSTime):
     skip_download = time in self.orbit_fetched_times
-    orbit = self._get_latest_valid_data(self.orbits[prn], self.cached_orbit[prn], self.get_orbit_data, time, skip_download)
-    if orbit is not None:
-      self.cached_orbit[prn] = orbit
+    orbit = self._get_latest_valid_data(self.orbits[prn], self.get_orbit_data, time, skip_download)
     return orbit
 
   def get_orbits(self, time):
     if time not in self.orbit_fetched_times:
       self.get_orbit_data(time)
-    return AstroDog._select_valid_temporal_items(self.orbits, time, self.cached_orbit)
+    return AstroDog._select_valid_temporal_items(self.orbits, time)
 
   def get_dcb(self, prn, time):
     skip_download = time in self.dcbs_fetched_times
-    dcb = self._get_latest_valid_data(self.dcbs[prn], self.cached_dcb[prn], self.get_dcb_data, time, skip_download)
-    if dcb is not None:
-      self.cached_dcb[prn] = dcb
-    return dcb
+    return self._get_latest_valid_data(self.dcbs[prn], self.get_dcb_data, time, skip_download)
 
   def get_dgps_corrections(self, time, recv_pos):
-    latest_data = self._get_latest_valid_data(self.dgps_delays, self.cached_dgps, self.get_dgps_data, time, recv_pos=recv_pos)
+    latest_data = self._get_latest_valid_data(self.dgps_delays, self.get_dgps_data, time, recv_pos=recv_pos)
     if latest_data is None:
       if self.auto_update:
         raise RuntimeError("Pulled dgps, but still can't get valid for time " + str(time))
-    else:
-      self.cached_dgps = latest_data
     return latest_data
 
   def add_orbits(self, new_ephems: Dict[str, List[Ephemeris]]):
@@ -139,9 +116,9 @@ class AstroDog:
     for k, v in new_ephems.items():
       if len(v) > 0:
         if self.clear_old_ephemeris:
-          ephems_dict[k] = v
-        else:
-          ephems_dict[k].extend(v)
+          ephems_dict[k] = {}
+        for ephem in v:
+          ephems_dict[k][ephem.epoch] = ephem
 
     min_epochs = []
     max_epochs = []
@@ -216,7 +193,7 @@ class AstroDog:
     file_path_dcb = download_dcb(time, cache_dir=self.cache_dir)
     dcbs = parse_dcbs(file_path_dcb, self.valid_const)
     for dcb in dcbs:
-      self.dcbs[dcb.prn].append(dcb)
+      self.dcbs[dcb.prn][dcb.epoch] = dcb
 
     if len(dcbs) != 0:
       min_epoch, max_epoch = self.get_epoch_range(dcbs)
@@ -233,7 +210,7 @@ class AstroDog:
     file_path_ionex = download_ionex(time, cache_dir=self.cache_dir)
     ionex_maps = parse_ionex(file_path_ionex)
     for im in ionex_maps:
-      self.ionex_maps.append(im)
+      self.ionex_maps[im.epoch] = im
 
   def get_dgps_data(self, time, recv_pos):
     station_names = get_closest_station_names(recv_pos, k=8, max_distance=MAX_DGPS_DISTANCE, cache_dir=self.cache_dir)
@@ -244,8 +221,9 @@ class AstroDog:
                           self, max_distance=MAX_DGPS_DISTANCE,
                           required_constellations=self.valid_const)
         if dgps is not None:
-          self.dgps_delays.append(dgps)
+          self.dgps_delays[dgps.epoch] = dgps
           break
+    # todo check this function
 
   def get_tgd_from_nav(self, prn, time):
     if get_constellation(prn) not in self.valid_const:
@@ -342,15 +320,15 @@ class AstroDog:
       return None
     return dgps_corrections.get_delay(prn, time)
 
-  def _get_latest_valid_data(self, data, latest_data, download_data_func, time, skip_download=False, recv_pos=None):
+  def _get_latest_valid_data(self, data, download_data_func, time, skip_download=False, recv_pos=None):
     def is_valid(latest_data):
       if recv_pos is None:
         return latest_data is not None and latest_data.valid(time)
       else:
         return latest_data is not None and latest_data.valid(time, recv_pos)
 
-    if is_valid(latest_data):
-      return latest_data
+    # if is_valid(latest_data):
+    #   return latest_data
 
     latest_data = get_closest(time, data, recv_pos=recv_pos)
     if is_valid(latest_data):

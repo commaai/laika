@@ -2,6 +2,8 @@ from enum import IntEnum
 from typing import Dict
 
 import numpy as np
+
+from laika.gps_time import GPSTime
 from .lib.coordinates import LocalCoord
 
 
@@ -85,12 +87,16 @@ def get_el_az(pos, sat_pos):
 
 def get_closest(time, candidates, recv_pos=None):
   if recv_pos is None:
-    # Takes a list of object that have an epoch(GPSTime) value
-    # and return the one that is closest the given time (GPSTime)
-    return min(candidates, key=lambda candidate: abs(time - candidate.epoch), default=None)
+    # Find closest 15 minute mark (all ephemeris data is saved with steps of 15 minutes)
+    step_15_min = 15 * 60
+    lower_15 = time.tow // step_15_min
+    gps_time_i = GPSTime(time.week, lower_15 * step_15_min)
+    if time.tow - lower_15 >= step_15_min/2:
+      gps_time_i += step_15_min
+    return candidates.get(gps_time_i)
 
   return min(
-    (candidate for candidate in candidates if candidate.valid(time, recv_pos)),
+    (candidate for candidate in candidates.values() if candidate.valid(time, recv_pos)),
     key=lambda candidate: np.linalg.norm(recv_pos - candidate.pos),
     default=None,
   )

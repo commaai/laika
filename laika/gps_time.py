@@ -158,6 +158,8 @@ class GPSTime:
   def __repr__(self):
     return f"GPSTime(week={self.week}, tow={self.tow})"
 
+  def __hash__(self):
+    return hash(f"{self.week},{int(self.tow)}")
 
 class TimeSyncer:
   """

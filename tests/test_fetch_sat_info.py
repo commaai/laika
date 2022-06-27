@@ -44,6 +44,16 @@ class TestFetchSatInfo(unittest.TestCase):
       infos = dog.get_all_sat_info(time)
       self.assertGreater(len(infos), 0, f"No ephemeris found for {kwargs}")
 
+  def test_get_closest(self):
+    constellations = ["GPS"]
+    prn = "G01"
+
+    for i in [0, 2, 15, 45, 59]:
+      available_date = GPSTime.from_datetime(datetime(2020, 5, 1, 12, i))
+      dog = AstroDog(valid_const=constellations)
+      sat_info = dog.get_sat_info(prn, available_date)
+      self.assertIsNotNone(sat_info)
+
 
 if __name__ == '__main__':
   unittest.main()
