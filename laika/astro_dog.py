@@ -51,11 +51,11 @@ class AstroDog:
     self.nav_fetched_times = TimeRangeHolder()
     self.dcbs_fetched_times = TimeRangeHolder()
 
-    self.dgps_delays: Dict[GPSTime, DGPSDelay] = {}
-    self.ionex_maps: Dict[GPSTime, IonexMap] = {}
-    self.orbits: DefaultDict[str, Dict[GPSTime, PolyEphemeris]] = defaultdict(dict)
-    self.nav: DefaultDict[str, Dict[GPSTime, Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(dict)
-    self.dcbs: DefaultDict[str, Dict[GPSTime, DCB]] = defaultdict(dict)
+    self.dgps_delays: Dict[str, DGPSDelay] = {}
+    self.ionex_maps: Dict[str, IonexMap] = {}
+    self.orbits: DefaultDict[str, Dict[str, PolyEphemeris]] = defaultdict(dict)
+    self.nav: DefaultDict[str, Dict[str, Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(dict)
+    self.dcbs: DefaultDict[str, Dict[str, DCB]] = defaultdict(dict)
 
   def get_ionex(self, time) -> Optional[IonexMap]:
     ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.get_ionex_data, time)
@@ -326,9 +326,6 @@ class AstroDog:
         return latest_data is not None and latest_data.valid(time)
       else:
         return latest_data is not None and latest_data.valid(time, recv_pos)
-
-    # if is_valid(latest_data):
-    #   return latest_data
 
     latest_data = get_closest(time, data, recv_pos=recv_pos)
     if is_valid(latest_data):

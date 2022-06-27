@@ -86,6 +86,8 @@ def get_el_az(pos, sat_pos):
 
 
 def get_closest(time, candidates, recv_pos=None):
+  if len(candidates) == 0:
+    return None
   if recv_pos is None:
     # Find closest 15 minute mark (all ephemeris data is saved with steps of 15 minutes)
     step_15_min = 15 * 60
@@ -93,8 +95,17 @@ def get_closest(time, candidates, recv_pos=None):
     gps_time_i = GPSTime(time.week, lower_15 * step_15_min)
     if time.tow - lower_15 >= step_15_min/2:
       gps_time_i += step_15_min
-    return candidates.get(gps_time_i)
 
+    candidate = candidates.get(gps_time_i)
+    if candidate is not None:
+      return candidate
+    # Candidate is not found within the 15-minute step. Iterate over list from the start if the requested time is before earlier than the start
+    first = next(iter(candidates))
+    iter_candidates = iter(candidates.values()) if first > time else reversed(candidates.values())
+    for candidate in iter_candidates:
+      if candidate.valid(time):
+        return candidate
+    return None
   return min(
     (candidate for candidate in candidates.values() if candidate.valid(time, recv_pos)),
     key=lambda candidate: np.linalg.norm(recv_pos - candidate.pos),
