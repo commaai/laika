@@ -263,8 +263,8 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
   filepath_attempt = filepath + '.attempt_time'
 
   if os.path.exists(filepath_attempt):
-    with open(filepath_attempt, 'rb') as rf:
-      last_attempt_time = float(rf.read().decode())
+    with open(filepath_attempt, 'r') as rf:
+      last_attempt_time = float(rf.read())
     if time.time() - last_attempt_time < SECS_IN_HR:
       raise IOError(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
   if not os.path.isfile(filepath) or overwrite:
@@ -272,8 +272,8 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
       data_zipped = download_file(url_base, folder_path, filename_zipped)
     except (IOError, pycurl.error, socket.timeout):
       unix_time = time.time()
-      with atomic_write(filepath_attempt, mode='wb') as wf:
-        wf.write(str.encode(str(unix_time)))
+      with atomic_write(filepath_attempt, mode='w') as wf:
+        wf.write(str(unix_time))
       raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")
 
     os.makedirs(folder_path_abs, exist_ok=True)
