@@ -272,9 +272,7 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
       data_zipped = download_file(url_base, folder_path, filename_zipped)
     except (IOError, pycurl.error, socket.timeout):
       unix_time = time.time()
-      tmp_dir = cache_dir + '/tmp'
-      os.makedirs(tmp_dir, exist_ok=True)
-      with atomic_write(tmp_dir, mode='wb') as wf:
+      with atomic_write(filepath_attempt, mode='wb') as wf:
         wf.write(str.encode(str(unix_time)))
       raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")
 
