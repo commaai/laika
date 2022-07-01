@@ -10,3 +10,4 @@ cffi
 gmplot
 pycurl
 hatanaka
+atomicwrites==1.4.0
