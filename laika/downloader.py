@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
 
-from atomicwrites import AtomicWriter
+from atomicwrites import atomic_write
 
 from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
@@ -259,7 +259,6 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
   filename_zipped = filename + compression
   folder_path_abs = os.path.join(cache_dir, folder_path)
   filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
-  filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
 
   filepath_attempt = filepath + '.attempt_time'
 
@@ -275,14 +274,18 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
       unix_time = time.time()
       tmp_dir = cache_dir + '/tmp'
       os.makedirs(tmp_dir, exist_ok=True)
-      with atomic_write_in_dir(tmp_dir, mode='wb') as wf:
+      with atomic_write(tmp_dir, mode='wb') as wf:
         wf.write(str.encode(str(unix_time)))
       raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")
 
     os.makedirs(folder_path_abs, exist_ok=True)
-    with atomic_write_in_dir(filepath_zipped, mode='wb', overwrite=overwrite) as wf:
-      wf.write(data_zipped)
-    filepath = str(hatanaka.decompress_on_disk(filepath_zipped))
+    ephem_bytes = hatanaka.decompress(data_zipped)
+    try:
+      with atomic_write(filepath, mode='wb', overwrite=overwrite) as f:
+        f.write(ephem_bytes)
+    except FileExistsError:
+      # Only happens when same file is downloaded in parallel by another process.
+      pass
   return filepath
 
 
@@ -451,17 +454,3 @@ def download_cors_station(time, station_name, cache_dir):
   except IOError:
     print("File not downloaded, check availability on server.")
     return None
-
-
-def atomic_write_in_dir(path, **kwargs):
-  """Creates an atomic writer using a temporary file in the same directory
-     as the destination file.
-  """
-  writer = AtomicWriter(path, **kwargs)
-  return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))
-
-
-def _get_fileobject_func(writer, temp_dir):
-  def _get_fileobject():
-    return writer.get_fileobject(dir=temp_dir)
-  return _get_fileobject
