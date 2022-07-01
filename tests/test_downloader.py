@@ -1,0 +1,66 @@
+import os
+import unittest
+from unittest.mock import patch
+
+import laika.downloader
+from laika.downloader import download_and_cache_file
+
+
+class TestDownloader(unittest.TestCase):
+
+  def setUp(self) -> None:
+    self.cache_dir = '/tmp/gnss/'+'cddis_products'
+    self.url_base = (
+      'https://github.com/commaai/gnss-data/raw/master/gnss/products/', 'https://cddis.nasa.gov/archive/gnss/products/', 'ftp://igs.ign.fr/pub/igs/products/')
+    self.folder_path = '2103/'
+    self.filename = 'igu21034_18.sp3'
+
+    folder_path_abs = os.path.join(self.cache_dir, self.folder_path)
+
+    filepath_zipped = os.path.join(folder_path_abs, self.filename + '.Z')
+    filepath = os.path.join(folder_path_abs, self.filename)
+    self.filepath_attempt = filepath + '.attempt_time'
+    for f in [filepath, filepath_zipped, self.filepath_attempt]:
+      if os.path.exists(f):
+        os.remove(f)
+
+  def test_download(self):
+    file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+    self.assertIsNotNone(file)
+
+  def test_download_overwrite(self):
+    file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+    self.assertIsNotNone(file)
+    # Should overwrite file. Check if writer is called.
+    with patch("laika.downloader.atomic_write_in_dir", wraps=laika.downloader.atomic_write_in_dir) as atomic_write_mock:
+      file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
+      self.assertIsNotNone(file)
+      atomic_write_mock.assert_called_once()
+
+  def test_write_attempt_file_on_error(self):
+    self.assertFalse(os.path.exists(self.filepath_attempt))
+
+    with patch("laika.downloader.download_file", side_effect=IOError):
+      with self.assertRaises(IOError):
+        download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+
+      self.assertTrue(os.path.exists(self.filepath_attempt), msg="Attempt file should have been written after exception")
+
+    # Should raise when trying again after failure
+    with self.assertRaises(IOError):
+      download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+
+  def test_wait_after_failure(self):
+    # Verify no failure first.
+    download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+
+    # Verify last download fails due failure waiting time.
+    with patch("laika.downloader.download_file", side_effect=IOError):
+      with self.assertRaises(IOError):
+        download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
+    with self.assertRaises(IOError):
+      download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+
+
+if __name__ == "__main__":
+  unittest.main()

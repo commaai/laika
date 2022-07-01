@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
 
+from atomicwrites import AtomicWriter
+
 from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime
@@ -253,12 +255,12 @@ def download_and_cache_file_return_first_success(url_bases, folder_and_file_name
     raise last_error
 
 
-def download_and_cache_file(url_base, folder_path, cache_dir, filename, compression='', overwrite=False):
-  folder_path_abs = os.path.join(cache_dir, folder_path)
+def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename: str, compression='', overwrite=False):
   filename_zipped = filename + compression
-
+  folder_path_abs = os.path.join(cache_dir, folder_path)
   filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
   filepath_zipped = os.path.join(folder_path_abs, filename_zipped)
+
   filepath_attempt = filepath + '.attempt_time'
 
   if os.path.exists(filepath_attempt):
@@ -266,24 +268,20 @@ def download_and_cache_file(url_base, folder_path, cache_dir, filename, compress
       last_attempt_time = float(rf.read().decode())
     if time.time() - last_attempt_time < SECS_IN_HR:
       raise IOError(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
-
   if not os.path.isfile(filepath) or overwrite:
-    os.makedirs(folder_path_abs, exist_ok=True)
-
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
     except (IOError, pycurl.error, socket.timeout):
       unix_time = time.time()
       tmp_dir = cache_dir + '/tmp'
       os.makedirs(tmp_dir, exist_ok=True)
-      with tempfile.NamedTemporaryFile(delete=False, dir=tmp_dir) as fout:
-        fout.write(str.encode(str(unix_time)))
-      os.replace(fout.name, filepath + '.attempt_time')
+      with atomic_write_in_dir(tmp_dir, mode='wb') as wf:
+        wf.write(str.encode(str(unix_time)))
       raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")
 
-    with open(filepath_zipped, 'wb') as wf:
+    os.makedirs(folder_path_abs, exist_ok=True)
+    with atomic_write_in_dir(filepath_zipped, mode='wb', overwrite=overwrite) as wf:
       wf.write(data_zipped)
-
     filepath = str(hatanaka.decompress_on_disk(filepath_zipped))
   return filepath
 
@@ -303,24 +301,21 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
         'https://github.com/commaai/gnss-data/raw/master/gnss/data/daily/',
         'https://cddis.nasa.gov/archive/gnss/data/daily/',
       )
-      cache_subdir = cache_dir + 'daily_nav/'
       filename = t.strftime(f"brdc%j0.%y{c}")
       folder_path = t.strftime(f'%Y/%j/%y{c}/')
       compression = '.gz' if folder_path >= '2020/335/' else '.Z'
-      return download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression=compression)
+      return download_and_cache_file(url_bases, folder_path, cache_dir+'daily_nav/', filename, compression)
     elif constellation == ConstellationId.GPS:
       url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
-      cache_subdir = cache_dir + 'hourly_nav/'
       filename = t.strftime(f"hour%j0.%y{c}")
       folder_path = t.strftime('%Y/%j/')
       compression = '.gz' if folder_path >= '2020/336/' else '.Z'
-      return download_and_cache_file(url_base, folder_path, cache_subdir, filename, compression=compression, overwrite=True)
+      return download_and_cache_file(url_base, folder_path, cache_dir+'hourly_nav/', filename, compression)
   except IOError:
     pass
 
 
 def download_orbits_gps(time, cache_dir, ephem_types):
-  cache_subdir = cache_dir + 'cddis_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
     'https://cddis.nasa.gov/archive/gnss/products/',
@@ -340,7 +335,7 @@ def download_orbits_gps(time, cache_dir, ephem_types):
                       f"igu{time_str}_06.sp3",
                       f"igu{time_str}_00.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z')
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
 
 
 def download_prediction_orbits_russia_src(gps_time, cache_dir):
@@ -349,7 +344,6 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   # Files exist starting at 29-01-2022
   if t < datetime(2022, 1, 29):
     return None
-  cache_subdir = cache_dir + 'russian_products/'
   url_bases = 'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/'
   folder_path = t.strftime('%y%j/ultra/')
   file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
@@ -376,16 +370,11 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   # Example: Stark_1D_22060100.sp3
   folder_and_file_names = [(folder_path, file_prefix + f"{h:02}.sp3") for h in reversed(current_day)] + \
                           [(folder_path_prev, file_prefix_prev + f"{h:02}.sp3") for h in reversed(prev_day)]
-  file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
-  if file is None: # todo remove this when gnss-alt repo is fixed
-    # Download directly from source if github fails
-    url_bases = 'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/'
-    file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
-  return file
+  return download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir+'russian_products/', raise_error=True)
+
 
 def download_orbits_russia_src(time, cache_dir, ephem_types):
   # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
-  cache_subdir = cache_dir + 'russian_products/'
   url_bases = (
     'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/',
     'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/',
@@ -401,11 +390,10 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
     folder_paths.append(t.strftime('%y%j/ultra/'))
   folder_file_names = [(folder_path, filename) for folder_path in folder_paths]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir)
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'russian_products/')
 
 
 def download_ionex(time, cache_dir):
-  cache_subdir = cache_dir + 'ionex/'
   t = time.as_datetime()
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/ionex/',
@@ -417,11 +405,10 @@ def download_ionex(time, cache_dir):
   filenames = [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]
 
   folder_file_names = [(folder_path, f) for f in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_subdir, compression='.Z', raise_error=True)
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'ionex/', compression='.Z', raise_error=True)
 
 
 def download_dcb(time, cache_dir):
-  cache_subdir = cache_dir + 'dcb/'
   filenames = []
   folder_paths = []
   url_bases = (
@@ -435,7 +422,7 @@ def download_dcb(time, cache_dir):
     folder_paths.append(t.strftime('%Y/'))
     filenames.append(t.strftime("CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX"))
 
-  return download_and_cache_file_return_first_success(url_bases, list(zip(folder_paths, filenames)), cache_subdir, compression='.gz', raise_error=True)
+  return download_and_cache_file_return_first_success(url_bases, list(zip(folder_paths, filenames)), cache_dir+'dcb/', compression='.gz', raise_error=True)
 
 
 def download_cors_coords(cache_dir):
@@ -451,7 +438,6 @@ def download_cors_coords(cache_dir):
 
 
 def download_cors_station(time, station_name, cache_dir):
-  cache_subdir = cache_dir + 'cors_obs/'
   t = time.as_datetime()
   folder_path = t.strftime('%Y/%j/') + station_name + '/'
   filename = station_name + t.strftime("%j0.%yd")
@@ -460,8 +446,22 @@ def download_cors_station(time, station_name, cache_dir):
     'https://alt.ngs.noaa.gov/corsdata/rinex/',
   )
   try:
-    filepath = download_and_cache_file(url_bases, folder_path, cache_subdir, filename, compression='.gz')
+    filepath = download_and_cache_file(url_bases, folder_path, cache_dir+'cors_obs/', filename, compression='.gz')
     return filepath
   except IOError:
     print("File not downloaded, check availability on server.")
     return None
+
+
+def atomic_write_in_dir(path, **kwargs):
+  """Creates an atomic writer using a temporary file in the same directory
+     as the destination file.
+  """
+  writer = AtomicWriter(path, **kwargs)
+  return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))
+
+
+def _get_fileobject_func(writer, temp_dir):
+  def _get_fileobject():
+    return writer.get_fileobject(dir=temp_dir)
+  return _get_fileobject
