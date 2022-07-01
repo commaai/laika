@@ -345,6 +345,7 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   # Files exist starting at 29-01-2022
   if t < datetime(2022, 1, 29):
     return None
+  cache_subdir = cache_dir + 'russian_products/'
   url_bases = 'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/'
   folder_path = t.strftime('%y%j/ultra/')
   file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
@@ -371,8 +372,12 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   # Example: Stark_1D_22060100.sp3
   folder_and_file_names = [(folder_path, file_prefix + f"{h:02}.sp3") for h in reversed(current_day)] + \
                           [(folder_path_prev, file_prefix_prev + f"{h:02}.sp3") for h in reversed(prev_day)]
-  return download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir+'russian_products/', raise_error=True)
-
+  file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
+  if file is None: # todo remove this when gnss-alt repo is fixed
+    # Download directly from source if github fails
+    url_bases = 'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/'
+    file = download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_subdir)
+  return file
 
 def download_orbits_russia_src(time, cache_dir, ephem_types):
   # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
