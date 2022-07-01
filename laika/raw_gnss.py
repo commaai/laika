@@ -96,7 +96,7 @@ class GNSSMeasurement:
     for obs in self.observables:
       if obs[0] == 'C':  # or obs[0] == 'L':
         delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
-        if delay:
+        if delay is not None:
           self.observables_final[obs] = (self.observables[obs] +
                                          self.sat_clock_err*constants.SPEED_OF_LIGHT -
                                          delay)
