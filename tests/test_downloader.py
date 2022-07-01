@@ -2,7 +2,6 @@ import os
 import unittest
 from unittest.mock import patch
 
-import laika.downloader
 from laika.downloader import download_and_cache_file
 
 
@@ -31,11 +30,9 @@ class TestDownloader(unittest.TestCase):
   def test_download_overwrite(self):
     file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
     self.assertIsNotNone(file)
-    # Should overwrite file. Check if writer is called.
-    with patch("laika.downloader.atomic_write_in_dir", wraps=laika.downloader.atomic_write_in_dir) as atomic_write_mock:
-      file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
-      self.assertIsNotNone(file)
-      atomic_write_mock.assert_called_once()
+    # Should overwrite file without error
+    file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
+    self.assertIsNotNone(file)
 
   def test_write_attempt_file_on_error(self):
     self.assertFalse(os.path.exists(self.filepath_attempt))
