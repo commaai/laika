@@ -1,5 +1,4 @@
 import json
-import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import IntEnum
@@ -406,9 +405,7 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
 
     poly_data = {}
     poly_data['t0'] = epoch
-    with warnings.catch_warnings():
-      warnings.simplefilter("ignore")  # Ignores: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
-      poly_data['xyz'] = poly.polyfit(times, measurements[:, 1:].astype(float), deg)
+    poly_data['xyz'] = poly.polyfit(times, measurements[:, 1:].astype(float), deg)
     poly_data['clock'] = [(np_data_prn[epoch_index + 1][5] - np_data_prn[epoch_index - 1][5]) / 1800, np_data_prn[epoch_index][5]]
     poly_data['deg'] = deg
     poly_data['deg_t'] = deg_t
