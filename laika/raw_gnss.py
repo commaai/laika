@@ -100,6 +100,7 @@ class GNSSMeasurement:
           self.observables_final[obs] = (self.observables[obs] +
                                          self.sat_clock_err*constants.SPEED_OF_LIGHT -
                                          delay)
+          print("self.observables_final[obs]", self.observables_final[obs])
       else:
         self.observables_final[obs] = self.observables[obs]
     if 'C1C' in self.observables_final and 'C2P' in self.observables_final:
@@ -231,7 +232,7 @@ def read_raw_ublox(report) -> List[GNSSMeasurement]:
   for i in report.measurements:
     # only add Gps and Glonass fixes
     if i.gnssId in [ConstellationId.GPS, ConstellationId.GLONASS]:
-      if i.svId > 32 or i.pseudorange > 2**32:
+      if i.svId > 32 or i.pseudorange > 1e9:
         continue
       observables = {}
       observables_std = {}
