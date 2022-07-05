@@ -92,11 +92,11 @@ class GNSSMeasurement:
     self.processed = True
     return True
 
-  def correct(self, est_pos, dog, delay_not_zero=True):
+  def correct(self, est_pos, dog, allow_incomplete_delay=False):
     for obs in self.observables:
       if obs[0] == 'C':  # or obs[0] == 'L':
         delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
-        if delay is not None and (delay != 0 or not delay_not_zero):
+        if delay is not None and (delay != 0 or allow_incomplete_delay):
           self.observables_final[obs] = (self.observables[obs] +
                                          self.sat_clock_err*constants.SPEED_OF_LIGHT -
                                          delay)
@@ -147,10 +147,10 @@ def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSM
   return proc_measurements
 
 
-def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog, delay_not_zero=True) -> List[GNSSMeasurement]:
+def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog, allow_incomplete_delay=False) -> List[GNSSMeasurement]:
   corrected_measurements = []
   for meas in measurements:
-    if meas.correct(est_pos, dog, delay_not_zero):
+    if meas.correct(est_pos, dog, allow_incomplete_delay):
       corrected_measurements.append(meas)
   return corrected_measurements
 
