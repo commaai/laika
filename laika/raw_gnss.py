@@ -92,11 +92,11 @@ class GNSSMeasurement:
     self.processed = True
     return True
 
-  def correct(self, est_pos, dog):
+  def correct(self, est_pos, dog, delay_not_zero=True):
     for obs in self.observables:
       if obs[0] == 'C':  # or obs[0] == 'L':
         delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
-        if delay is not None:
+        if delay is not None and (delay != 0 or not delay_not_zero):
           self.observables_final[obs] = (self.observables[obs] +
                                          self.sat_clock_err*constants.SPEED_OF_LIGHT -
                                          delay)
@@ -117,13 +117,19 @@ class GNSSMeasurement:
       return True
     return False
 
-  def as_array(self):
+  def as_array(self, only_corrected=True):
+    observables = self.observables_final
+    sat_pos = self.sat_pos_final
     if not self.corrected:
-      raise NotImplementedError('Only corrected measurements can be put into arrays')
+      if only_corrected:
+        raise NotImplementedError('Only corrected measurements can be put into arrays')
+      else:
+        observables = self.observables
+        sat_pos = self.sat_pos
     ret = np.array([self.get_nmea_id(), self.recv_time_week, self.recv_time_sec, self.glonass_freq,
-                    self.observables_final['C1C'], self.observables_std['C1C'],
-                    self.observables_final['D1C'], self.observables_std['D1C']])
-    return np.concatenate((ret, self.sat_pos_final, self.sat_vel))
+                    observables['C1C'], self.observables_std['C1C'],
+                    observables['D1C'], self.observables_std['D1C']])
+    return np.concatenate((ret, sat_pos, self.sat_vel))
 
   def __repr__(self):
     time = self.recv_time.as_datetime().strftime('%Y-%m-%dT%H:%M:%S.%f')
@@ -141,10 +147,10 @@ def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSM
   return proc_measurements
 
 
-def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog) -> List[GNSSMeasurement]:
+def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog, delay_not_zero=True) -> List[GNSSMeasurement]:
   corrected_measurements = []
   for meas in measurements:
-    if meas.correct(est_pos, dog):
+    if meas.correct(est_pos, dog, delay_not_zero):
       corrected_measurements.append(meas)
   return corrected_measurements
 
