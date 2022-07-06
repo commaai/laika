@@ -231,7 +231,7 @@ def read_raw_ublox(report) -> List[GNSSMeasurement]:
   for i in report.measurements:
     # only add Gps and Glonass fixes
     if i.gnssId in [ConstellationId.GPS, ConstellationId.GLONASS]:
-      if i.svId > 32 or i.pseudorange > 1e8:
+      if i.svId > 32 or i.pseudorange < 1e7 or i.pseudorange > 3e7:
         continue
       observables = {}
       observables_std = {}
