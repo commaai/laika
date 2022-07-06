@@ -117,13 +117,19 @@ class GNSSMeasurement:
       return True
     return False
 
-  def as_array(self):
+  def as_array(self, only_corrected=True):
+    observables = self.observables_final
+    sat_pos = self.sat_pos_final
     if not self.corrected:
-      raise NotImplementedError('Only corrected measurements can be put into arrays')
+      if only_corrected:
+        raise NotImplementedError('Only corrected measurements can be put into arrays')
+      else:
+        observables = self.observables
+        sat_pos = self.sat_pos
     ret = np.array([self.get_nmea_id(), self.recv_time_week, self.recv_time_sec, self.glonass_freq,
-                    self.observables_final['C1C'], self.observables_std['C1C'],
-                    self.observables_final['D1C'], self.observables_std['D1C']])
-    return np.concatenate((ret, self.sat_pos_final, self.sat_vel))
+                    observables['C1C'], self.observables_std['C1C'],
+                    observables['D1C'], self.observables_std['D1C']])
+    return np.concatenate((ret, sat_pos, self.sat_vel))
 
   def __repr__(self):
     time = self.recv_time.as_datetime().strftime('%Y-%m-%dT%H:%M:%S.%f')
