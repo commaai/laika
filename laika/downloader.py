@@ -193,7 +193,7 @@ def https_download_file(url):
       f.flush()
       netrc_path = f.name
     except KeyError:
-      raise DownloadFailed('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in enviroment for urs.earthdata.nasa.gov authentication')
+      raise DownloadFailed('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in environment for urs.earthdata.nasa.gov authentication')
 
   crl = pycurl.Curl()
   crl.setopt(crl.CAINFO, certifi.where())
