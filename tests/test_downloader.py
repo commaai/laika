@@ -2,7 +2,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from laika.downloader import download_and_cache_file
+from laika.downloader import download_and_cache_file, DownloadFailed
 
 
 class TestDownloader(unittest.TestCase):
@@ -37,14 +37,14 @@ class TestDownloader(unittest.TestCase):
   def test_write_attempt_file_on_error(self):
     self.assertFalse(os.path.exists(self.filepath_attempt))
 
-    with patch("laika.downloader.download_file", side_effect=IOError):
-      with self.assertRaises(IOError):
+    with patch("laika.downloader.download_file", side_effect=DownloadFailed):
+      with self.assertRaises(DownloadFailed):
         download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
       self.assertTrue(os.path.exists(self.filepath_attempt), msg="Attempt file should have been written after exception")
 
     # Should raise when trying again after failure
-    with self.assertRaises(IOError):
+    with self.assertRaises(DownloadFailed):
       download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
   def test_wait_after_failure(self):
@@ -52,10 +52,10 @@ class TestDownloader(unittest.TestCase):
     download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
     # Verify last download fails due failure waiting time.
-    with patch("laika.downloader.download_file", side_effect=IOError):
-      with self.assertRaises(IOError):
+    with patch("laika.downloader.download_file", side_effect=DownloadFailed):
+      with self.assertRaises(DownloadFailed):
         download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
-    with self.assertRaises(IOError):
+    with self.assertRaises(DownloadFailed):
       download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
 
