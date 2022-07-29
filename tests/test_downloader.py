@@ -11,6 +11,7 @@ class TestDownloader(unittest.TestCase):
     self.cache_dir = '/tmp/gnss/'+'cddis_products'
     self.url_base = (
       'https://github.com/commaai/gnss-data/raw/master/gnss/products/', 'https://cddis.nasa.gov/archive/gnss/products/', 'ftp://igs.ign.fr/pub/igs/products/')
+    ftp_dir = '/products/'
     self.folder_path = '2103/'
     self.filename = 'igu21034_18.sp3'
 
@@ -24,14 +25,14 @@ class TestDownloader(unittest.TestCase):
         os.remove(f)
 
   def test_download(self):
-    file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+    file = download_and_cache_file(self.url_base, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
     self.assertIsNotNone(file)
 
   def test_download_overwrite(self):
-    file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+    file = download_and_cache_file(self.url_base, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
     self.assertIsNotNone(file)
     # Should overwrite file without error
-    file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
+    file = download_and_cache_file(self.url_base, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
     self.assertIsNotNone(file)
 
   def test_write_attempt_file_on_error(self):
@@ -39,24 +40,24 @@ class TestDownloader(unittest.TestCase):
 
     with patch("laika.downloader.download_file", side_effect=DownloadFailed):
       with self.assertRaises(DownloadFailed):
-        download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+        download_and_cache_file(self.url_base, self.ftp_dir, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
       self.assertTrue(os.path.exists(self.filepath_attempt), msg="Attempt file should have been written after exception")
 
     # Should raise when trying again after failure
     with self.assertRaises(DownloadFailed):
-      download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+      download_and_cache_file(self.url_base, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
   def test_wait_after_failure(self):
     # Verify no failure first.
-    download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+    download_and_cache_file(self.url_base, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
     # Verify last download fails due failure waiting time.
     with patch("laika.downloader.download_file", side_effect=DownloadFailed):
       with self.assertRaises(DownloadFailed):
-        download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
+        download_and_cache_file(self.url_base, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z', overwrite=True)
     with self.assertRaises(DownloadFailed):
-      download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+      download_and_cache_file(self.url_base, self.ftp_dir, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
 
 
 if __name__ == "__main__":
