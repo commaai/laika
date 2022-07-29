@@ -13,6 +13,7 @@ import socket
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
+from ftplib import FTP_TLS
 
 from atomicwrites import atomic_write
 
@@ -228,6 +229,19 @@ def ftp_download_file(url):
   except urllib.error.URLError as e:
     raise DownloadFailed(e)
 
+def ftps_cddis_download_file(folderpath, filename):
+  try:
+    buf = BytesIO()
+    ftps=FTP_TLS('gdc.cddis.eosdis.nasa.gov')
+    ftps.login(user='anonymous', passwd="dfdfd@gmail.com")
+    ftps.prot_p()
+    ftps.cwd('gnss'+folderpath)
+    ftps.retrbinary('RETR ' + filename, buf.write)
+    return buf.getvalue()
+  except:
+    raise DownloadFailed("Could not download cddis using sftp")
+
+
 
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames):
@@ -239,21 +253,24 @@ def download_files(url_base, folder_path, cacheDir, filenames):
 
 
 @retryable
-def download_file(url_base, folder_path, filename_zipped):
-  url = url_base + folder_path + filename_zipped
-  print('Downloading ' + url)
-  if url.startswith('https'):
-    return https_download_file(url)
-  if url.startswith('ftp'):
-    return ftp_download_file(url)
-  raise NotImplementedError('Did find ftp or https preamble')
+def download_file(url_base, ftp_dir, filename_zipped):
+  if url_base.startswith('https'):
+    print('Downloading ' + url_base + filename_zipped)
+    return https_download_file(url_base + filename_zipped)
+  elif url_base.startswith('ftp'):
+    print('Downloading ' + url_base + ftp_dir + filename_zipped)
+    return ftp_download_file(url_base + ftp_dir + filename_zipped)
+  elif url_base.startswith('sftp'):
+    print('Downloading ' + url_base + ftp_dir + filename_zipped)
+    return ftps_cddis_download_file(ftp_dir, filename_zipped)
+  raise NotImplementedError('Did find ftp, sftp or https preamble')
 
 
-def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
+def download_and_cache_file_return_first_success(url_bases, ftp_dir, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
   last_error = None
   for folder_path, filename in folder_and_file_names:
     try:
-      file = download_and_cache_file(url_bases, folder_path, cache_dir, filename, compression, overwrite)
+      file = download_and_cache_file(url_bases, ftp_dir, folder_path, cache_dir, filename, compression, overwrite)
       return file
     except DownloadFailed as e:
       last_error = e
@@ -262,7 +279,7 @@ def download_and_cache_file_return_first_success(url_bases, folder_and_file_name
     raise last_error
 
 
-def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename: str, compression='', overwrite=False):
+def download_and_cache_file(url_base, ftp_dir: str, folder_path: str, cache_dir: str, filename: str, compression='', overwrite=False):
   filename_zipped = filename + compression
   folder_path_abs = os.path.join(cache_dir, folder_path)
   filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
@@ -276,7 +293,7 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
       raise DownloadFailed(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
   if not os.path.isfile(filepath) or overwrite:
     try:
-      data_zipped = download_file(url_base, folder_path, filename_zipped)
+      data_zipped = download_file(url_base, ftp_dir, folder_path + filename_zipped)
     except (DownloadFailed, pycurl.error, socket.timeout):
       unix_time = time.time()
       os.makedirs(folder_path_abs, exist_ok=True)
@@ -309,17 +326,20 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
       url_bases = (
         'https://github.com/commaai/gnss-data/raw/master/gnss/data/daily/',
         'https://cddis.nasa.gov/archive/gnss/data/daily/',
+        'sftp://gdc.cddis.eosdis.nasa.gov',
       )
+      ftp_dir = '/data/daily/'
       filename = t.strftime(f"brdc%j0.%y{c}")
       folder_path = t.strftime(f'%Y/%j/%y{c}/')
       compression = '.gz' if folder_path >= '2020/335/' else '.Z'
-      return download_and_cache_file(url_bases, folder_path, cache_dir+'daily_nav/', filename, compression)
+      return download_and_cache_file(url_bases, ftp_dir, folder_path, cache_dir + 'daily_nav/', filename, compression)
     elif constellation == ConstellationId.GPS:
-      url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
+      url_base = 'sftp://gdc.cddis.eosdis.nasa.gov'
+      ftp_dir = '/data/hourly/'
       filename = t.strftime(f"hour%j0.%y{c}")
       folder_path = t.strftime('%Y/%j/')
       compression = '.gz' if folder_path >= '2020/336/' else '.Z'
-      return download_and_cache_file(url_base, folder_path, cache_dir+'hourly_nav/', filename, compression)
+      return download_and_cache_file(url_base, ftp_dir, folder_path, cache_dir + 'hourly_nav/', filename, compression)
   except DownloadFailed:
     pass
 
@@ -327,9 +347,10 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
-    'https://cddis.nasa.gov/archive/gnss/products/',
-    'ftp://igs.ign.fr/pub/igs/products/',
+    'sftp://gdc.cddis.eosdis.nasa.gov',
+    'ftp://igs.ign.fr/pub/igs',
   )
+  ftp_dir='/products/'
   folder_path = "%i/" % time.week
   filenames = []
   time_str = "%i%i" % (time.week, time.day)
@@ -344,7 +365,7 @@ def download_orbits_gps(time, cache_dir, ephem_types):
                       f"igu{time_str}_06.sp3",
                       f"igu{time_str}_00.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
+  return download_and_cache_file_return_first_success(url_bases, ftp_dir, folder_file_names, cache_dir + 'cddis_products/', compression='.Z')
 
 
 def download_prediction_orbits_russia_src(gps_time, cache_dir):
