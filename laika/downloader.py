@@ -178,24 +178,6 @@ def http_download_files(url_base, folder_path, cacheDir, filenames):
 
 
 def https_download_file(url):
-  if 'nasa.gov/' not in url:
-    netrc_path = None
-    f = None
-  elif os.path.isfile(dir_path + '/.netrc'):
-    netrc_path = dir_path + '/.netrc'
-    f = None
-  else:
-    try:
-      username = os.environ['NASA_USERNAME']
-      password = os.environ['NASA_PASSWORD']
-      f = tempfile.NamedTemporaryFile()
-      netrc = f"machine urs.earthdata.nasa.gov login {username} password {password}"
-      f.write(netrc.encode())
-      f.flush()
-      netrc_path = f.name
-    except KeyError:
-      raise DownloadFailed('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in environment for urs.earthdata.nasa.gov authentication')
-
   crl = pycurl.Curl()
   crl.setopt(crl.CAINFO, certifi.where())
   crl.setopt(crl.URL, url)
@@ -203,17 +185,12 @@ def https_download_file(url):
   crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
   crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
   crl.setopt(pycurl.CONNECTTIMEOUT, 10)
-  if netrc_path is not None:
-    crl.setopt(crl.NETRC_FILE, netrc_path)
-    crl.setopt(crl.NETRC, 2)
-
+  
   buf = BytesIO()
   crl.setopt(crl.WRITEDATA, buf)
   crl.perform()
   response = crl.getinfo(pycurl.RESPONSE_CODE)
   crl.close()
-  if f is not None:
-    f.close()
 
   if response != 200:
     raise DownloadFailed('HTTPS error ' + str(response))
@@ -233,9 +210,9 @@ def ftps_cddis_download_file(folderpath, filename):
   try:
     buf = BytesIO()
     ftps=FTP_TLS('gdc.cddis.eosdis.nasa.gov')
-    ftps.login(user='anonymous', passwd="dfdfd@gmail.com")
+    ftps.login(user='anonymous')
     ftps.prot_p()
-    ftps.cwd('gnss'+folderpath)
+    ftps.cwd('gnss' + folderpath)
     ftps.retrbinary('RETR ' + filename, buf.write)
     return buf.getvalue()
   except:
