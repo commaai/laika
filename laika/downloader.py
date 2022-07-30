@@ -7,7 +7,6 @@ import urllib.error
 import pycurl
 import re
 import time
-import tempfile
 import socket
 
 from datetime import datetime, timedelta
@@ -215,8 +214,8 @@ def ftps_cddis_download_file(directory, filename):
     ftps.cwd(directory)
     ftps.retrbinary('RETR ' + filename, buf.write)
     return buf.getvalue()
-  except:
-    raise DownloadFailed("Could not download cddis using sftp")
+  except ftplib.all_errors as e:
+    raise DownloadFailed(e)
 
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames):
