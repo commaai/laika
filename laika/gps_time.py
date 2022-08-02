@@ -154,7 +154,7 @@ class GPSTime:
     return tow_to_datetime(self.tow, self.week)
 
   def as_unix_timestamp(self):
-    return (self.as_datetime() - datetime.datetime(1970, 1, 1)).total_seconds()
+    return (gpst_to_utc(self).as_datetime() - datetime.datetime(1970, 1, 1)).total_seconds()
 
   @property
   def day(self):
