@@ -11,7 +11,8 @@ from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
 
 from .gps_time import GPSTime, utc_to_gpst
-from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, EARTH_ROTATION_RATE, EARTH_GM
+from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, \
+                       SECS_IN_WEEK, EARTH_ROTATION_RATE, EARTH_GM
 from .helpers import get_constellation
 
 
@@ -530,8 +531,6 @@ def parse_rinex_nav_msg_glonass(file_name):
   return ephems
 
 
-'''
-
 def parse_qcom_ephems(qcom_polys, current_week):
   ephems = []
   for qcom_poly in qcom_polys:
@@ -554,4 +553,3 @@ def parse_qcom_ephems(qcom_polys, current_week):
     poly_data['deg_t'] = 3
     ephems.append(PolyEphemeris(svId, poly_data, epoch, eph_type=EphemerisType.QCOM_POLY))
   return ephems
-'''
