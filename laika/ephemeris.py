@@ -531,25 +531,22 @@ def parse_rinex_nav_msg_glonass(file_name):
   return ephems
 
 
-def parse_qcom_ephems(qcom_polys, current_week):
-  ephems = []
-  for qcom_poly in qcom_polys:
-    svId = qcom_poly.qcomGnss.drSvPoly.svId
-    data = qcom_poly.qcomGnss.drSvPoly
-    t0 = data.t0
-    # fix glonass time
-    if get_constellation(svId) == 'GLONASS':
-      # TODO should handle leap seconds better
-      epoch = GPSTime(current_week, (t0 + 3*SECS_IN_WEEK) % (SECS_IN_WEEK) + 18)
-    else:
-      epoch = GPSTime(current_week, t0)
-    poly_data = {}
-    poly_data['t0'] = epoch
-    poly_data['x'] = [data.xyzN[2], data.xyzN[1], data.xyzN[0], data.xyz0[0]]
-    poly_data['y'] = [data.xyzN[5], data.xyzN[4], data.xyzN[3], data.xyz0[1]]
-    poly_data['z'] = [data.xyzN[8], data.xyzN[7], data.xyzN[6], data.xyz0[2]]
-    poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
-    poly_data['deg'] = 3
-    poly_data['deg_t'] = 3
-    ephems.append(PolyEphemeris(svId, poly_data, epoch, eph_type=EphemerisType.QCOM_POLY))
-  return ephems
+def parse_qcom_ephem(qcom_poly, current_week):
+  svId = qcom_poly.qcomGnss.drSvPoly.svId
+  data = qcom_poly.qcomGnss.drSvPoly
+  t0 = data.t0
+  # fix glonass time
+  if get_constellation(svId) == 'GLONASS':
+    # TODO should handle leap seconds better
+    epoch = GPSTime(current_week, (t0 + 3*SECS_IN_WEEK) % (SECS_IN_WEEK) + 18)
+  else:
+    epoch = GPSTime(current_week, t0)
+  poly_data = {}
+  poly_data['t0'] = epoch
+  poly_data['x'] = [data.xyzN[2], data.xyzN[1], data.xyzN[0], data.xyz0[0]]
+  poly_data['y'] = [data.xyzN[5], data.xyzN[4], data.xyzN[3], data.xyz0[1]]
+  poly_data['z'] = [data.xyzN[8], data.xyzN[7], data.xyzN[6], data.xyz0[2]]
+  poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
+  poly_data['deg'] = 3
+  poly_data['deg_t'] = 3
+  return PolyEphemeris(svId, poly_data, epoch, eph_type=EphemerisType.QCOM_POLY)
