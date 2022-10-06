@@ -532,8 +532,8 @@ def parse_rinex_nav_msg_glonass(file_name):
 
 
 def parse_qcom_ephem(qcom_poly, current_week):
-  svId = qcom_poly.qcomGnss.drSvPoly.svId
-  data = qcom_poly.qcomGnss.drSvPoly
+  svId = qcom_poly.drSvPoly.svId
+  data = qcom_poly.drSvPoly
   t0 = data.t0
   # fix glonass time
   if get_constellation(svId) == 'GLONASS':
