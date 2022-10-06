@@ -32,13 +32,13 @@ class ConstellationId(IntEnum):
   def from_qcom_source(cls, report_source: int):
     if report_source == 0:
       return ConstellationId.GPS
-    if report_source == 6:
-      return ConstellationId.SBAS
     if report_source == 1:
       return ConstellationId.GLONASS
     if report_source == 2:
-     return ConstellationId.BEIDOU
-    raise NotImplementedError('Only GPS (0), BEIDOU (2), SBAS (6) and GLONASS (1) are supported from qcom, not:', {report_source})
+      return ConstellationId.BEIDOU
+    if report_source == 6:
+      return ConstellationId.SBAS
+    raise NotImplementedError('Only GPS (0), GLONASS (1), BEIDOU (2) and SBAS (6) are supported from qcom, not:', {report_source})
 
 
 # From https://gpsd.gitlab.io/gpsd/NMEA.html#_satellite_ids
