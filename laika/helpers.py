@@ -34,9 +34,11 @@ class ConstellationId(IntEnum):
       return ConstellationId.GPS
     if report_source == 6:
       return ConstellationId.SBAS
-    elif report_source == 1:
+    if report_source == 1:
       return ConstellationId.GLONASS
-    raise NotImplementedError('Only GPS (0), SBAS (1) and GLONASS (6) are supported from qcom, not:', {report_source})
+    if report_source == 2:
+     return ConstellationId.BEIDOU
+    raise NotImplementedError('Only GPS (0), BEIDOU (2), SBAS (6) and GLONASS (1) are supported from qcom, not:', {report_source})
 
 
 # From https://gpsd.gitlab.io/gpsd/NMEA.html#_satellite_ids
