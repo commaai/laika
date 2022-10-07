@@ -546,9 +546,9 @@ def parse_qcom_ephem(qcom_poly, current_week):
   poly_data = {}
   poly_data['t0'] = epoch
   poly_data['xyz'] = np.array([
-              [data.xyzN[2], data.xyzN[1], data.xyzN[0], data.xyz0[0]][::-1],    # x
-              [data.xyzN[5], data.xyzN[4], data.xyzN[3], data.xyz0[1]][::-1],    # y
-              [data.xyzN[8], data.xyzN[7], data.xyzN[6], data.xyz0[2]][::-1]]).T # z
+                      [data.xyz0[0], data.xyzN[0], data.xyzN[1], data.xyzN[2]],
+                      [data.xyz0[1], data.xyzN[3], data.xyzN[4], data.xyzN[5]],
+                      [data.xyz0[2], data.xyzN[6], data.xyzN[7], data.xyzN[8]] ]).T
 
   poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
   poly_data['deg'] = 3
