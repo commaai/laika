@@ -1,10 +1,12 @@
 import json
+import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import IntEnum
 from typing import Dict, List, Optional
 
 import numpy as np
+import numpy.polynomial.polynomial as poly
 from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
 
@@ -234,14 +236,10 @@ class PolyEphemeris(Ephemeris):
     dt = time - self.data['t0']
     deg = self.data['deg']
     deg_t = self.data['deg_t']
-
-    sat_pos = np.array([sum((dt**p)*self.data['x'][deg-p] for p in range(deg+1)),
-                        sum((dt**p)*self.data['y'][deg-p] for p in range(deg+1)),
-                        sum((dt**p)*self.data['z'][deg-p] for p in range(deg+1))])
-    sat_vel = np.array([sum(p*(dt**(p-1))*self.data['x'][deg-p] for p in range(1,deg+1)),
-                        sum(p*(dt**(p-1))*self.data['y'][deg-p] for p in range(1,deg+1)),
-                        sum(p*(dt**(p-1))*self.data['z'][deg-p] for p in range(1,deg+1))])
-
+    indices = np.arange(deg+1)[:,np.newaxis]
+    sat_pos = np.sum((dt**indices)*self.data['xyz'], axis=0)
+    indices = indices[1:]
+    sat_vel = np.sum(indices*(dt**(indices-1)*self.data['xyz'][1:]), axis=0)
     time_err = sum((dt**p)*self.data['clock'][deg_t-p] for p in range(deg_t+1))
     time_err_rate = sum(p*(dt**(p-1))*self.data['clock'][deg_t-p] for p in range(1,deg_t+1))
     time_err_with_rel = time_err - 2*np.inner(sat_pos, sat_vel)/SPEED_OF_LIGHT**2
@@ -408,13 +406,11 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
     if (np.diff(times) != 900).any():
       continue
 
-    x, y, z = measurements[:, 1:].astype(float).transpose()
-
     poly_data = {}
     poly_data['t0'] = epoch
-    poly_data['x'] = np.polyfit(times, x, deg)
-    poly_data['y'] = np.polyfit(times, y, deg)
-    poly_data['z'] = np.polyfit(times, z, deg)
+    with warnings.catch_warnings():
+      warnings.simplefilter("ignore")  # Ignores: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
+      poly_data['xyz'] = poly.polyfit(times, measurements[:, 1:].astype(float), deg)
     poly_data['clock'] = [(np_data_prn[epoch_index + 1][5] - np_data_prn[epoch_index - 1][5]) / 1800, np_data_prn[epoch_index][5]]
     poly_data['deg'] = deg
     poly_data['deg_t'] = deg_t
@@ -549,9 +545,11 @@ def parse_qcom_ephem(qcom_poly, current_week):
     epoch = GPSTime(current_week, t0)
   poly_data = {}
   poly_data['t0'] = epoch
-  poly_data['x'] = [data.xyzN[2], data.xyzN[1], data.xyzN[0], data.xyz0[0]]
-  poly_data['y'] = [data.xyzN[5], data.xyzN[4], data.xyzN[3], data.xyz0[1]]
-  poly_data['z'] = [data.xyzN[8], data.xyzN[7], data.xyzN[6], data.xyz0[2]]
+  poly_data['xyz'] = np.array([
+              [data.xyzN[2], data.xyzN[1], data.xyzN[0], data.xyz0[0]][::-1],    # x
+              [data.xyzN[5], data.xyzN[4], data.xyzN[3], data.xyz0[1]][::-1],    # y
+              [data.xyzN[8], data.xyzN[7], data.xyzN[6], data.xyz0[2]][::-1]]).T # z
+
   poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
   poly_data['deg'] = 3
   poly_data['deg_t'] = 3
