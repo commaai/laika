@@ -13,7 +13,7 @@ from math import sin, cos, sqrt, fabs, atan2
 from .gps_time import GPSTime, utc_to_gpst
 from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, \
                        SECS_IN_WEEK, EARTH_ROTATION_RATE, EARTH_GM
-from .helpers import get_constellation
+from .helpers import get_constellation, get_prn_from_nmea_id
 
 
 def read4(f, rinex_ver):
@@ -75,7 +75,7 @@ class EphemerisType(IntEnum):
   FINAL_ORBIT = 1
   RAPID_ORBIT = 2
   ULTRA_RAPID_ORBIT = 3
-  QCOM_POLY = 4  # Currently not supported
+  QCOM_POLY = 4
 
   @staticmethod
   def all_orbits():
@@ -226,7 +226,8 @@ class GLONASSEphemeris(Ephemeris):
 
 
 class PolyEphemeris(Ephemeris):
-  def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType, file_epoch: GPSTime, file_name: str, healthy=True, tgd=0):
+  def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType,
+               file_epoch: GPSTime=None, file_name: str=None, healthy=True, tgd=0):
     super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=SECS_IN_HR, file_epoch=file_epoch, file_name=file_name)
     self.tgd = tgd
     self.to_json()
@@ -536,17 +537,20 @@ def parse_qcom_ephem(qcom_poly, current_week):
   data = qcom_poly
   t0 = data.t0
   # fix glonass time
-  if get_constellation(svId) == 'GLONASS':
+  prn = get_prn_from_nmea_id(svId)
+  if prn == 'GLONASS':
     # TODO should handle leap seconds better
     epoch = GPSTime(current_week, (t0 + 3*SECS_IN_WEEK) % (SECS_IN_WEEK) + 18)
   else:
     epoch = GPSTime(current_week, t0)
   poly_data = {}
   poly_data['t0'] = epoch
-  poly_data['x'] = [data.xyzN[2], data.xyzN[1], data.xyzN[0], data.xyz0[0]]
-  poly_data['y'] = [data.xyzN[5], data.xyzN[4], data.xyzN[3], data.xyz0[1]]
-  poly_data['z'] = [data.xyzN[8], data.xyzN[7], data.xyzN[6], data.xyz0[2]]
+  poly_data['xyz'] = np.array([
+                      [data.xyz0[0], data.xyzN[0], data.xyzN[1], data.xyzN[2]],
+                      [data.xyz0[1], data.xyzN[3], data.xyzN[4], data.xyzN[5]],
+                      [data.xyz0[2], data.xyzN[6], data.xyzN[7], data.xyzN[8]] ]).T
+
   poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
   poly_data['deg'] = 3
   poly_data['deg_t'] = 3
-  return PolyEphemeris(svId, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY)
+  return PolyEphemeris(prn, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY)
