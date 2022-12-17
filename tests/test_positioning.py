@@ -10,6 +10,7 @@ from laika.downloader import download_cors_station
 from laika.rinex_file import RINEXFile
 from laika.dgps import get_station_position
 import laika.raw_gnss as raw
+import laika.opt as opt
 
 
 class TestPositioning(unittest.TestCase):
@@ -50,7 +51,7 @@ class TestPositioning(unittest.TestCase):
     # fixes for every epoch (every 30s) over 24h.
     ests = []
     for corr in tqdm(rinex_corr_grouped):
-      ret = raw.calc_pos_fix(corr)
+      ret = opt.calc_pos_fix(corr)
       if len(ret) > 0:
         fix, _ = ret
         ests.append(fix)
