@@ -6,7 +6,7 @@ from .constants import SECS_IN_DAY, SECS_IN_HR
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import Ephemeris, EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
-from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src
+from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src, DownloadFailed
 from .downloader import download_cors_station
 from .trop import saast
 from .iono import IonexMap, parse_ionex
@@ -192,7 +192,12 @@ class AstroDog:
     assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
     skip_until_epoch = gps_time - 2 * SECS_IN_HR
 
-    result = download_prediction_orbits_russia_src(gps_time, self.cache_dir)
+    try:
+      result = download_prediction_orbits_russia_src(gps_time, self.cache_dir)
+    except DownloadFailed:
+      # TODO: notify user
+      result = None
+
     if result is not None:
       result = [result]
     elif "GPS" in self.valid_const:
