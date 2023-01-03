@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
 
-from atomicwrites import atomic_write
+from atomicwrites import atomic_write, move_atomic
 
 from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
@@ -284,7 +284,9 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
     if time.time() - last_attempt_time < SECS_IN_HR:
       raise DownloadFailed(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
     else:
-      os.remove(filepath_attempt)
+      tmp_file = os.path.join("tmp", os.path.basename(filepath_attempt))
+      move_atomic(filepath_attempt, tmp_file)
+      os.remove(tmp_file)
 
   if not os.path.isfile(filepath) or overwrite:
     try:
