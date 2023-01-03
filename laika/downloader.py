@@ -284,7 +284,7 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
     if time.time() - last_attempt_time < SECS_IN_HR:
       raise DownloadFailed(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
     else:
-      tmp_file = os.path.join("tmp", os.path.basename(filepath_attempt))
+      tmp_file = os.path.join("/tmp", os.path.basename(filepath_attempt))
       move_atomic(filepath_attempt, tmp_file)
       os.remove(tmp_file)
 
