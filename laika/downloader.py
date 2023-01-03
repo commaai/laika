@@ -9,6 +9,8 @@ import re
 import time
 import tempfile
 import socket
+import glob
+import shutil
 
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
@@ -249,6 +251,12 @@ def download_file(url_base, folder_path, filename_zipped):
   raise NotImplementedError('Did find ftp or https preamble')
 
 
+def clean_up_cache(cache_dir, keeps):
+  for p in glob.glob(cache_dir + "/*"):
+    if not any(k in p for k in keeps):
+      shutil.rmtree(p)
+
+
 def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
   last_error = None
   for folder_path, filename in folder_and_file_names:
@@ -268,12 +276,14 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
   filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
 
   filepath_attempt = filepath + '.attempt_time'
-
   if os.path.exists(filepath_attempt):
     with open(filepath_attempt, 'r') as rf:
       last_attempt_time = float(rf.read())
     if time.time() - last_attempt_time < SECS_IN_HR:
       raise DownloadFailed(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
+    else:
+      os.remove(filepath_attempt)
+
   if not os.path.isfile(filepath) or overwrite:
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
@@ -282,7 +292,7 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
       os.makedirs(folder_path_abs, exist_ok=True)
       with atomic_write(filepath_attempt, mode='w', overwrite=True) as wf:
         wf.write(str(unix_time))
-      raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base} ")
+      raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base}")
 
     os.makedirs(folder_path_abs, exist_ok=True)
     ephem_bytes = hatanaka.decompress(data_zipped)
@@ -343,8 +353,12 @@ def download_orbits_gps(time, cache_dir, ephem_types):
                       f"igu{time_str}_12.sp3",
                       f"igu{time_str}_06.sp3",
                       f"igu{time_str}_00.sp3"])
+
+  cache_d = cache_dir+'cddis_products/'
+  clean_up_cache(cache_d, [folder_path[:-1]])
+
   folder_file_names = [(folder_path, filename) for filename in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_d, compression='.Z')
 
 
 def download_prediction_orbits_russia_src(gps_time, cache_dir):
@@ -361,6 +375,9 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   prev_day = (t - timedelta(days=1))
   file_prefix_prev = "Stark_1D_" + prev_day.strftime('%y%m%d')
   folder_path_prev = prev_day.strftime('%y%j/ultra/')
+
+  cache_d = cache_dir+'russian_products/'
+  clean_up_cache(cache_d, [p.split('/')[0] for p in [folder_path, folder_path_prev]])
 
   current_day = GPSTime.from_datetime(datetime(t.year, t.month, t.day))
   # Ultra-Orbit is published in gnss-data-alt every 10th minute past the 5,11,17,23 hour.
@@ -379,7 +396,7 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   # Example: Stark_1D_22060100.sp3
   folder_and_file_names = [(folder_path, file_prefix + f"{h:02}.sp3") for h in reversed(current_day)] + \
                           [(folder_path_prev, file_prefix_prev + f"{h:02}.sp3") for h in reversed(prev_day)]
-  return download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir+'russian_products/', raise_error=True)
+  return download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_d, raise_error=True)
 
 
 def download_orbits_russia_src(time, cache_dir, ephem_types):
