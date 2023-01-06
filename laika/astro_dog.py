@@ -332,6 +332,8 @@ class AstroDog:
     ionex = self.get_ionex(time)
     if not freq and ionex is not None:
       freq = self.get_frequency(prn, time, signal)
+      if freq is None:
+        return
     dcb = self.get_dcb(prn, time)
     # When using internet we expect all data or return None
     if self.auto_update and (ionex is None or dcb is None or freq is None):
