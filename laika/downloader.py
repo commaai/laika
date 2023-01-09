@@ -252,6 +252,8 @@ def download_file(url_base, folder_path, filename_zipped):
 
 
 def clean_up_cache(cache_dir, keeps):
+  if "REPLAY" in os.environ:
+    return
   for p in glob.glob(cache_dir + "/*"):
     if not any(k in p for k in keeps):
       shutil.rmtree(p)
@@ -357,9 +359,8 @@ def download_orbits_gps(time, cache_dir, ephem_types):
                       f"igu{time_str}_12.sp3",
                       f"igu{time_str}_06.sp3",
                       f"igu{time_str}_00.sp3"])
-
   folder_file_names = [(folder_path, filename) for filename in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products', compression='.Z')
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
 
 
 def download_prediction_orbits_russia_src(gps_time, cache_dir):
