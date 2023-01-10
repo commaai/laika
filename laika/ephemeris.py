@@ -248,8 +248,8 @@ class PolyEphemeris(Ephemeris):
 
 
 class GPSEphemeris(Ephemeris):
-  def __init__(self, data, epoch, healthy=True, file_name=None):
-    super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=2*SECS_IN_HR, file_name=file_name)
+  def __init__(self, data, epoch, file_name=None):
+    super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, data['healthy'], max_time_diff=2*SECS_IN_HR, file_name=file_name)
     self.max_time_diff_tgd = SECS_IN_DAY
     self.to_json()
 
