@@ -336,8 +336,7 @@ def download_orbits_gps_cod0(time, cache_dir, ephem_types):
 
   tm = tow_to_datetime(time.tow, time.week).timetuple()
   doy = str(tm.tm_yday).zfill(3)
-  y = tm.tm_year
-  filename = f"COD0OPSULT_{y}{doy}0000_02D_05M_ORB.SP3"
+  filename = f"COD0OPSULT_{tm.tm_year}{doy}0000_02D_05M_ORB.SP3"
   # TODO: add hour management
 
   folder_path = "%i/" % time.week
