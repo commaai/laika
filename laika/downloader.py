@@ -260,7 +260,6 @@ def clean_up_cache(cache_dir, keeps):
 
 
 def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
-  clean_up_cache(cache_dir, set([f[:-1] for f,_ in folder_and_file_names]))
 
   last_error = None
   for folder_path, filename in folder_and_file_names:
