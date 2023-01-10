@@ -305,12 +305,13 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
       folder_path = t.strftime(f'%Y/%j/%y{c}/')
       compression = '.gz' if folder_path >= '2020/335/' else '.Z'
       return download_and_cache_file(url_bases, folder_path, cache_dir+'daily_nav/', filename, compression)
-    elif constellation == ConstellationId.GPS:
+    else:
       url_base = 'sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/hourly/'
       filename = t.strftime(f"hour%j0.%y{c}")
       folder_path = t.strftime('%Y/%j/')
       compression = '.gz' if folder_path >= '2020/336/' else '.Z'
-      return download_and_cache_file(url_base, folder_path, cache_dir+'hourly_nav/', filename, compression)
+      # always overwrite as this file is appended
+      return download_and_cache_file(url_base, folder_path, cache_dir+'hourly_nav/', filename, compression, overwrite=True)
   except DownloadFailed:
     pass
 
