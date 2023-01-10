@@ -87,7 +87,7 @@ class EphemerisType(IntEnum):
       return EphemerisType.FINAL_ORBIT
     if "/rapid" in file_name or "/igr" in file_name:
       return EphemerisType.RAPID_ORBIT
-    if "/ultra" in file_name or "/igu" in file_name:
+    if "/ultra" in file_name or "/igu" in file_name or "COD0OPSULT" in file_name:
       return EphemerisType.ULTRA_RAPID_ORBIT
     raise RuntimeError(f"Ephemeris type not found in filename: {file_name}")
 
@@ -404,7 +404,7 @@ def read_prn_data(data, prn, deg=16, deg_t=1):
     measurements = np_data_prn[i:i + deg + 1, 1:5]
 
     times = (measurements[:, 0] - epoch).astype(float)
-    if (np.diff(times) != 900).any():
+    if not (np.diff(times) != 900).any() and not (np.diff(times) != 300).any():
       continue
 
     poly_data = {}
