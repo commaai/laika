@@ -326,8 +326,8 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
 
 def download_orbits_gps_cod0(time, cache_dir, ephem_types):
   url_bases = (
-    'https://cddis.nasa.gov/archive/gnss/products/',
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
+    'https://cddis.nasa.gov/archive/gnss/products/',
   )
 
   if EphemerisType.ULTRA_RAPID_ORBIT not in ephem_types:
