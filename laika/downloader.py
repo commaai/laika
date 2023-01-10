@@ -18,7 +18,7 @@ from atomicwrites import atomic_write
 
 from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
-from .gps_time import GPSTime
+from .gps_time import GPSTime, tow_to_datetime
 from .helpers import ConstellationId
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -324,6 +324,27 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
     pass
 
 
+def download_orbits_gps_cod0(time, cache_dir, ephem_types):
+  url_bases = (
+    'https://cddis.nasa.gov/archive/gnss/products/',
+    'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
+  )
+
+  if EphemerisType.ULTRA_RAPID_ORBIT not in ephem_types:
+    # TODO: raise error here
+    return None
+
+  tm = tow_to_datetime(time.tow, time.week).timetuple()
+  doy = str(tm.tm_yday).zfill(3)
+  y = tm.tm_year
+  filename = f"COD0OPSULT_{y}{doy}0000_02D_05M_ORB.SP3"
+  # TODO: add hour management
+
+  folder_path = "%i/" % time.week
+  folder_file_names = [(folder_path, filename)]
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.gz')
+
+
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
@@ -344,7 +365,12 @@ def download_orbits_gps(time, cache_dir, ephem_types):
                       f"igu{time_str}_06.sp3",
                       f"igu{time_str}_00.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
+  ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
+  if ret is not None:
+    return ret
+
+  # fallback to COD0 Ultra Rapid Orbits
+  return download_orbits_gps_cod0(time, cache_dir, ephem_types)
 
 
 def download_prediction_orbits_russia_src(gps_time, cache_dir):
