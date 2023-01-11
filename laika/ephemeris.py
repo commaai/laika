@@ -162,7 +162,7 @@ class EphemerisSerializer(json.JSONEncoder):
 
 class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, epoch, healthy=True, file_name=None):
-    super().__init__(data['prn'], data, epoch, EphemerisType.NAV, healthy, max_time_diff=25*SECS_IN_MIN, file_name=file_name)
+    super().__init__(data['prn'], data, epoch, EphemerisType.NAV, data['healthy'], max_time_diff=25*SECS_IN_MIN, file_name=file_name)
     self.channel = data['freq_num']
     self.to_json()
 
@@ -530,7 +530,6 @@ def parse_rinex_nav_msg_glonass(file_name):
     e['z'], e['z_vel'], e['z_acc'], e['age'] = read4(f, rinex_ver)
 
     e['healthy'] = (e['health'] == 0.0)
-
     ephems[prn].append(GLONASSEphemeris(e, epoch, file_name=file_name))
   f.close()
   return ephems
