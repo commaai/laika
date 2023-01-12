@@ -65,8 +65,7 @@ def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
   ephem['omegadot'] = ublox_ephem.omegaDot
   ephem['omega0'] = ublox_ephem.omega0
 
-  # TODO fill in
-  ephem['healthy'] = True
+  ephem['healthy'] = ublox_ephem.svHealth == 0.0
 
   epoch = ephem['toe']
   return GPSEphemeris(ephem, epoch)
