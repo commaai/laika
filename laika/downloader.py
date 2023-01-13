@@ -207,7 +207,6 @@ def ftp_download_file(url):
 
 def ftps_download_file(url):
   parsed = urlparse(url)
-  print(parsed)
   try:
     buf = BytesIO()
     ftps=FTP_TLS(parsed.hostname)
