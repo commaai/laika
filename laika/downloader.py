@@ -309,11 +309,12 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
         'https://github.com/commaai/gnss-data-hourly/raw/master/',
         'sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/hourly/',
       )
-      filename = t.strftime(f"hour%j0.%y{c}")
-      folder_path = t.strftime('%Y/%j/')
-      compression = '.gz' if folder_path >= '2020/336/' else '.Z'
+      times = [t, (t - timedelta(hours=1))]
+      folder_and_filenames = [(t.strftime('%Y/%j/'), t.strftime(f"hour%j0.%y{c}")) for t in times]
+      compression = '.gz' if folder_and_filenames[0][0] >= '2020/336/' else '.Z'
       # always overwrite as this file is appended
-      return download_and_cache_file(url_bases, folder_path, cache_dir+'hourly_nav/', filename, compression, overwrite=True)
+      return download_and_cache_file_return_first_success(url_bases,
+        folder_and_filenames, cache_dir+'hourly_nav/', compression, overwrite=True)
   except DownloadFailed:
     pass
 
