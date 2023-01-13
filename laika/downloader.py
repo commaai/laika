@@ -205,14 +205,15 @@ def ftp_download_file(url):
   except urllib.error.URLError as e:
     raise DownloadFailed(e)
 
-def ftps_cddis_download_file(directory, filename):
+def ftps_download_file(url):
+  parsed = urlparse(url)
+  print(parsed)
   try:
     buf = BytesIO()
-    ftps=FTP_TLS('gdc.cddis.eosdis.nasa.gov')
+    ftps=FTP_TLS(parsed.hostname)
     ftps.login(user='anonymous')
     ftps.prot_p()
-    ftps.cwd(directory)
-    ftps.retrbinary('RETR ' + filename, buf.write)
+    ftps.retrbinary('RETR ' + parsed.path, buf.write)
     return buf.getvalue()
   except ftplib.all_errors as e:
     raise DownloadFailed(e)
@@ -230,13 +231,12 @@ def download_files(url_base, folder_path, cacheDir, filenames):
 def download_file(url_base, folder_path, filename_zipped):
   url = url_base + folder_path + filename_zipped
   print('Downloading ' + url)
-  if url.startswith('https'):
+  if url.startswith('https://'):
     return https_download_file(url)
-  elif url.startswith('ftp'):
+  elif url.startswith('ftp://'):
     return ftp_download_file(url)
-  elif url.startswith('sftp://gdc.cddis.eosdis.nasa.gov'):
-    directory = (url_base + folder_path)[len('sftp://gdc.cddis.eosdis.nasa.gov'):]
-    return ftps_cddis_download_file(directory, filename_zipped)
+  elif url.startswith('sftp://'):
+    return ftps_download_file(url_base, folder_path, filename_zipped)
   raise NotImplementedError('Did find ftp or https preamble')
 
 
@@ -322,7 +322,7 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
 def download_orbits_gps_cod0(time, cache_dir, ephem_types):
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
-    'https://cddis.nasa.gov/archive/gnss/products/',
+    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/',
   )
 
   if EphemerisType.ULTRA_RAPID_ORBIT not in ephem_types:
