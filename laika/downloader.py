@@ -209,10 +209,10 @@ def ftps_download_file(url):
   parsed = urlparse(url)
   try:
     buf = BytesIO()
-    ftps=FTP_TLS(parsed.hostname)
-    ftps.login(user='anonymous')
-    ftps.prot_p()
-    ftps.retrbinary('RETR ' + parsed.path, buf.write)
+    with FTP_TLS(parsed.hostname) as ftps:
+      ftps.login(user='anonymous')
+      ftps.prot_p()
+      ftps.retrbinary('RETR ' + parsed.path, buf.write)
     return buf.getvalue()
   except ftplib.all_errors as e:
     raise DownloadFailed(e)
@@ -235,8 +235,8 @@ def download_file(url_base, folder_path, filename_zipped):
   elif url.startswith('ftp://'):
     return ftp_download_file(url)
   elif url.startswith('sftp://'):
-    return ftps_download_file(url_base, folder_path, filename_zipped)
-  raise NotImplementedError('Did find ftp or https preamble')
+    return ftps_download_file(url)
+  raise NotImplementedError('Did not find supported url scheme')
 
 
 def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
