@@ -341,19 +341,20 @@ class AstroDog:
       return None
     return dgps_corrections.get_delay(prn, time)
 
-  def _get_latest_valid_data(self, data, latest_data, download_data_func, time, skip_download=False, recv_pos=None):
+  def _get_latest_valid_data(self, data, cached_data, download_data_func, time, skip_download=False, recv_pos=None):
     def is_valid(latest_data):
       if recv_pos is None:
         return latest_data is not None and latest_data.valid(time)
       else:
         return latest_data is not None and latest_data.valid(time, recv_pos)
 
-    if is_valid(latest_data):
-      return latest_data
-
     latest_data = get_closest(time, data, recv_pos=recv_pos)
     if is_valid(latest_data):
       return latest_data
+
+    if is_valid(cached_data):
+      return cached_data
+
     if skip_download or not self.auto_update:
       return None
     if recv_pos is not None:
