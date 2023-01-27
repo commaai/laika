@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import numpy.polynomial.polynomial as poly
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import sin, cos, sqrt, fabs, atan2
 
 from .gps_time import GPSTime, utc_to_gpst
@@ -24,7 +24,7 @@ def read4(f, rinex_ver):
   return float(line[4:23]), float(line[23:42]), float(line[42:61]), float(line[61:80])
 
 
-def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
+def convert_ublox_gps_ephem(ublox_ephem, current_time: Optional[datetime] = None):
   # Week time of ephemeris gps msg has a roll-over period of 10 bits (19.6 years)
   # The latest roll-over was on 2019-04-07
   week = ublox_ephem.gpsWeek
@@ -69,6 +69,54 @@ def convert_ublox_ephem(ublox_ephem, current_time: Optional[datetime] = None):
 
   epoch = ephem['toe']
   return GPSEphemeris(ephem, epoch)
+
+
+def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = None):
+
+  ephem = {}
+  ephem['sv_id'] = ublox_ephem.svId
+  ephem['tk'] = ublox_ephem.tk # time elapsed in UTC(SU) day
+  ephem['tb'] = ublox_ephem.tb # [minutes] maximum validity?
+
+  # current day since last leap year, handle leap year
+
+
+  # TODO: get day from ephemeris, might be inacurate otherwise
+  gl_time = datetime.utcnow() + timedelta(hours=3)
+  gl_time.hours = ((ephem['tk']>>7) & 0x1F)
+  gl_time.minutes = ((ephem['tk']>>1) & 0x3F)
+  gl_time.seconds = (ephem['tk'] & 0x1) * 30
+  ephem['toe'] = GPSTime.from_datetime(gl_time)
+
+  ephem['x'] = ublox_ephem.x
+  ephem['x_vel'] = ublox_ephem.xVel
+  ephem['x_acc'] = ublox_ephem.xAccel
+
+  ephem['y'] = ublox_ephem.y
+  ephem['y_vel'] = ublox_ephem.yVel
+  ephem['y_acc'] = ublox_ephem.yAccel
+
+  ephem['z'] = ublox_ephem.z
+  ephem['z_vel'] = ublox_ephem.zVel
+  ephem['z_acc'] = ublox_ephem.zAccel
+
+  ephem['svType'] = ublox_ephem.svType
+  ephem['svURA'] = ublox_ephem.svURA
+  ephem['age'] = ublox_ephem.age # age of information [days]
+
+  ephem['tau_n'] = ublox_ephem.tauN # time correction relative to GLONASS tc
+  ephem['delta_tau_n'] = ublox_ephem.deltaTauN
+  ephem['gamma_n'] = ublox_ephem.gammaN
+
+  ephem['p1'] = ublox_ephem.p1
+  ephem['p2'] = ublox_ephem.p2 # oddness flag for intervals 30 or 60
+
+  ephem['p3'] = ublox_ephem.p3 # number of satellites for which almanac is transmitted
+  ephem['p4'] = ublox_ephem.p4 # 1 == ephemeris paramerters updated
+
+  ephem['healthy'] = ublox_ephem.svHealth == 0.0
+
+  return GLONASSEphemeris(ephem, ephem['toe'], healthy=ephem['healthy'])
 
 
 class EphemerisType(IntEnum):
