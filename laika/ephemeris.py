@@ -82,9 +82,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
                           seconds=(ublox_ephem.tk & 0x1) * 30)
   etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j") + time_in_day
   # glonass time: UTC + 3h
-  etime = etime - timedelta(hours=3)
-
-  ephem['toc'] = GPSTime.from_datetime(etime)
+  ephem['toc'] = GPSTime.from_datetime(etime - timedelta(hours=3))
 
   ephem['x'] = ublox_ephem.x # km
   ephem['x_vel'] = ublox_ephem.xVel # km/s
@@ -108,7 +106,6 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
 
   ephem['p1'] = ublox_ephem.p1
   ephem['p2'] = ublox_ephem.p2 # oddness flag for intervals 30 or 60
-
   ephem['p3'] = ublox_ephem.p3 # number of satellites for which almanac is transmitted
   ephem['p4'] = ublox_ephem.p4 # 1 == ephemeris paramerters updated
 
