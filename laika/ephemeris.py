@@ -72,33 +72,31 @@ def convert_ublox_gps_ephem(ublox_ephem, current_time: Optional[datetime] = None
 
 
 def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = None):
-
   ephem = {}
   ephem['sv_id'] = ublox_ephem.svId
   ephem['tk'] = ublox_ephem.tk # time elapsed in UTC(SU) day
   ephem['tb'] = ublox_ephem.tb # [minutes] maximum validity?
 
-  # current day since last leap year, handle leap year
+  time_in_day = timedelta(hours=(ephem['tk']>>7) & 0x1F,
+                          minutes=(ephem['tk']>>1) & 0x3F,
+                          seconds=(ephem['tk'] & 0x1) * 30)
+  etime = datetime.strptime(f"{ephem['year']}-{ephem['dayInYear']}", "%Y-%j") + time_in_day
+  # glonass time: UTC + 3h
+  etime = etime - timedelta(hours=3)
 
+  ephem['toe'] = GPSTime.from_datetime(etime)
 
-  # TODO: get day from ephemeris, might be inacurate otherwise
-  gl_time = datetime.utcnow() + timedelta(hours=3)
-  gl_time.hours = ((ephem['tk']>>7) & 0x1F)
-  gl_time.minutes = ((ephem['tk']>>1) & 0x3F)
-  gl_time.seconds = (ephem['tk'] & 0x1) * 30
-  ephem['toe'] = GPSTime.from_datetime(gl_time)
+  ephem['x'] = ublox_ephem.x # km
+  ephem['x_vel'] = ublox_ephem.xVel # km/s
+  ephem['x_acc'] = ublox_ephem.xAccel # km/s*s
 
-  ephem['x'] = ublox_ephem.x
-  ephem['x_vel'] = ublox_ephem.xVel
-  ephem['x_acc'] = ublox_ephem.xAccel
+  ephem['y'] = ublox_ephem.y # km
+  ephem['y_vel'] = ublox_ephem.yVel # km/s
+  ephem['y_acc'] = ublox_ephem.yAccel # km/s*s
 
-  ephem['y'] = ublox_ephem.y
-  ephem['y_vel'] = ublox_ephem.yVel
-  ephem['y_acc'] = ublox_ephem.yAccel
-
-  ephem['z'] = ublox_ephem.z
-  ephem['z_vel'] = ublox_ephem.zVel
-  ephem['z_acc'] = ublox_ephem.zAccel
+  ephem['z'] = ublox_ephem.z # km
+  ephem['z_vel'] = ublox_ephem.zVel # km/s
+  ephem['z_acc'] = ublox_ephem.zAccel # km/s*s
 
   ephem['svType'] = ublox_ephem.svType
   ephem['svURA'] = ublox_ephem.svURA
@@ -116,7 +114,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
 
   ephem['healthy'] = ublox_ephem.svHealth == 0.0
 
-  return GLONASSEphemeris(ephem, ephem['toe'], healthy=ephem['healthy'])
+  return GLONASSEphemeris(ephem, ephem['toe'])
 
 
 class EphemerisType(IntEnum):
@@ -208,7 +206,7 @@ class EphemerisSerializer(json.JSONEncoder):
 
 
 class GLONASSEphemeris(Ephemeris):
-  def __init__(self, data, epoch, healthy=True, file_name=None):
+  def __init__(self, data, epoch, file_name=None):
     super().__init__(data['prn'], data, epoch, EphemerisType.NAV, data['healthy'], max_time_diff=25*SECS_IN_MIN, file_name=file_name)
     self.channel = data['freq_num']
     self.to_json()
