@@ -73,18 +73,18 @@ def convert_ublox_gps_ephem(ublox_ephem, current_time: Optional[datetime] = None
 
 def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = None):
   ephem = {}
-  ephem['sv_id'] = ublox_ephem.svId
+  ephem['prn'] = 'R%02i' % ublox_ephem.svId
   ephem['tk'] = ublox_ephem.tk # time elapsed in UTC(SU) day
   ephem['tb'] = ublox_ephem.tb # [minutes] maximum validity?
 
-  time_in_day = timedelta(hours=(ephem['tk']>>7) & 0x1F,
-                          minutes=(ephem['tk']>>1) & 0x3F,
-                          seconds=(ephem['tk'] & 0x1) * 30)
-  etime = datetime.strptime(f"{ephem['year']}-{ephem['dayInYear']}", "%Y-%j") + time_in_day
+  time_in_day = timedelta(hours=(ublox_ephem.tk>>7) & 0x1F,
+                          minutes=(ublox_ephem.tk>>1) & 0x3F,
+                          seconds=(ublox_ephem.tk & 0x1) * 30)
+  etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j") + time_in_day
   # glonass time: UTC + 3h
   etime = etime - timedelta(hours=3)
 
-  ephem['toe'] = GPSTime.from_datetime(etime)
+  ephem['toc'] = GPSTime.from_datetime(etime)
 
   ephem['x'] = ublox_ephem.x # km
   ephem['x_vel'] = ublox_ephem.xVel # km/s
@@ -102,7 +102,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   ephem['svURA'] = ublox_ephem.svURA
   ephem['age'] = ublox_ephem.age # age of information [days]
 
-  ephem['tau_n'] = ublox_ephem.tauN # time correction relative to GLONASS tc
+  ephem['min_tauN'] = ublox_ephem.tauN # time correction relative to GLONASS tc
   ephem['delta_tau_n'] = ublox_ephem.deltaTauN
   ephem['gamma_n'] = ublox_ephem.gammaN
 
@@ -114,7 +114,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
 
   ephem['healthy'] = ublox_ephem.svHealth == 0.0
 
-  return GLONASSEphemeris(ephem, ephem['toe'])
+  return GLONASSEphemeris(ephem, ephem['toc'])
 
 
 class EphemerisType(IntEnum):
