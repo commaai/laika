@@ -74,15 +74,19 @@ def convert_ublox_gps_ephem(ublox_ephem, current_time: Optional[datetime] = None
 def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = None):
   ephem = {}
   ephem['prn'] = 'R%02i' % ublox_ephem.svId
-  ephem['tk'] = ublox_ephem.tk # time elapsed in UTC(SU) day
-  ephem['tb'] = ublox_ephem.tb # [minutes] maximum validity?
 
-  time_in_day = timedelta(hours=(ublox_ephem.tk>>7) & 0x1F,
-                          minutes=(ublox_ephem.tk>>1) & 0x3F,
-                          seconds=(ublox_ephem.tk & 0x1) * 30)
-  etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j") + time_in_day
+  # TODO: convert to seconds in day to have same value as rinex file nav message
+  ephem['tk'] = ublox_ephem.tk # time elapsed in UTC(SU) day
+
+  etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j")
+  time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
   # glonass time: UTC + 3h
-  ephem['toc'] = GPSTime.from_datetime(etime - timedelta(hours=3))
+  ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
+
+  # this seems to only apply if P1 == 0
+  # TODO: check how this works with the time interval
+  ephem['tb'] = ublox_ephem.tb
+  ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=ublox_ephem.tb*15))
 
   ephem['x'] = ublox_ephem.x # km
   ephem['x_vel'] = ublox_ephem.xVel # km/s
@@ -95,6 +99,19 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   ephem['z'] = ublox_ephem.z # km
   ephem['z_vel'] = ublox_ephem.zVel # km/s
   ephem['z_acc'] = ublox_ephem.zAccel # km/s*s
+
+  # Glonass position is received in PZ-90.11 (since 31.12.2013), this needs to
+  # be transformed to WSG-84 using Helmert transformation
+  tm = np.matrix([[1,              0.002*10**-3, 0.042*10**-3],
+                  [-0.002*10**-3,             1, 0.019*10**-3],
+                  [-0.042*10**-3, -0.019*10**-3,            1]])
+  dp = np.array([-0.003, -0.001, 0])
+  p = np.array([ephem['x'], ephem['y'], ephem['z']])
+  new_pos = tm*p + dp
+
+  ephem['x'] = new_pos[0]
+  ephem['y'] = new_pos[1]
+  ephem['z'] = new_pos[2]
 
   ephem['svType'] = ublox_ephem.svType
   ephem['svURA'] = ublox_ephem.svURA
@@ -111,7 +128,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
 
   ephem['healthy'] = ublox_ephem.svHealth == 0.0
 
-  return GLONASSEphemeris(ephem, ephem['toc'])
+  return GLONASSEphemeris(ephem, ephem['toe'])
 
 
 class EphemerisType(IntEnum):
@@ -205,7 +222,7 @@ class EphemerisSerializer(json.JSONEncoder):
 class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, epoch, file_name=None):
     super().__init__(data['prn'], data, epoch, EphemerisType.NAV, data['healthy'], max_time_diff=25*SECS_IN_MIN, file_name=file_name)
-    self.channel = data['freq_num']
+    #self.channel = data['freq_num']
     self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
@@ -565,7 +582,8 @@ def parse_rinex_nav_msg_glonass(file_name):
     e['toc'] = epoch
     e['min_tauN'] = float(line[23:42])
     e['GammaN'] = float(line[42:61])
-    e['tk'] = float(line[61:80])
+    e['tk'] = float(line[61:80]) # different format than from ublox
+    # ephemeris, seconds in day
 
     e['x'], e['x_vel'], e['x_acc'], e['health'] = read4(f, rinex_ver)
     e['y'], e['y_vel'], e['y_acc'], e['freq_num'] = read4(f, rinex_ver)
