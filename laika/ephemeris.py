@@ -119,7 +119,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
 
   ephem['min_tauN'] = ublox_ephem.tauN # time correction relative to GLONASS tc
   ephem['delta_tau_n'] = ublox_ephem.deltaTauN
-  ephem['gamma_n'] = ublox_ephem.gammaN
+  ephem['GammaN'] = ublox_ephem.gammaN
 
   ephem['p1'] = ublox_ephem.p1
   ephem['p2'] = ublox_ephem.p2 # oddness flag for intervals 30 or 60
