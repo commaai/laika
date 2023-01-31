@@ -86,7 +86,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   # this seems to only apply if P1 == 0
   # TODO: check how this works with the time interval
   ephem['tb'] = ublox_ephem.tb
-  ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=ublox_ephem.tb*15))
+  ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
 
   ephem['x'] = ublox_ephem.x # km
   ephem['x_vel'] = ublox_ephem.xVel # km/s
@@ -100,31 +100,11 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   ephem['z_vel'] = ublox_ephem.zVel # km/s
   ephem['z_acc'] = ublox_ephem.zAccel # km/s*s
 
-  # Glonass position is received in PZ-90.11 (since 31.12.2013), this needs to
-  # be transformed to WSG-84 using Helmert transformation
-  tm = np.matrix([[1,              0.002*10**-3, 0.042*10**-3],
-                  [-0.002*10**-3,             1, 0.019*10**-3],
-                  [-0.042*10**-3, -0.019*10**-3,            1]])
-  dp = np.array([-0.003, -0.001, 0])
-  p = np.array([[ephem['x']], [ephem['y']], [ephem['z']]])
-  new_pos = tm*p + dp
-
-  ephem['x'] = new_pos[0]
-  ephem['y'] = new_pos[1]
-  ephem['z'] = new_pos[2]
-
-  ephem['svType'] = ublox_ephem.svType
-  ephem['svURA'] = ublox_ephem.svURA
   ephem['age'] = ublox_ephem.age # age of information [days]
 
-  ephem['min_tauN'] = ublox_ephem.tauN # time correction relative to GLONASS tc
-  ephem['delta_tau_n'] = ublox_ephem.deltaTauN
+  # tauN compared to ephemeris from gdc.cddis.eosdis.nasa.gov is times -1
+  ephem['min_tauN'] = ublox_ephem.tauN * (-1) # time correction relative to GLONASS tc
   ephem['GammaN'] = ublox_ephem.gammaN
-
-  ephem['p1'] = ublox_ephem.p1
-  ephem['p2'] = ublox_ephem.p2 # oddness flag for intervals 30 or 60
-  ephem['p3'] = ublox_ephem.p3 # number of satellites for which almanac is transmitted
-  ephem['p4'] = ublox_ephem.p4 # 1 == ephemeris paramerters updated
 
   ephem['healthy'] = ublox_ephem.svHealth == 0.0
 
