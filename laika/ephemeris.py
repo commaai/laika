@@ -106,7 +106,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
                   [-0.002*10**-3,             1, 0.019*10**-3],
                   [-0.042*10**-3, -0.019*10**-3,            1]])
   dp = np.array([-0.003, -0.001, 0])
-  p = np.array([ephem['x'], ephem['y'], ephem['z']])
+  p = np.array([[ephem['x']], [ephem['y']], [ephem['z']]])
   new_pos = tm*p + dp
 
   ephem['x'] = new_pos[0]
