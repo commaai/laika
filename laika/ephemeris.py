@@ -79,14 +79,13 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   ephem['tk'] = ublox_ephem.tk # time elapsed in UTC(SU) day
 
   etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j")
-  time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
   # glonass time: UTC + 3h
-  ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
+  #time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
+  #ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
 
-  # this seems to only apply if P1 == 0
-  # TODO: check how this works with the time interval
   ephem['tb'] = ublox_ephem.tb
   ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
+  ephem['toc'] = ephem['toe']
 
   ephem['x'] = ublox_ephem.x # km
   ephem['x_vel'] = ublox_ephem.xVel # km/s
