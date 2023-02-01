@@ -75,17 +75,13 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   ephem = {}
   ephem['prn'] = 'R%02i' % ublox_ephem.svId
 
-  # TODO: convert to seconds in day to have same value as rinex file nav message
-  ephem['tk'] = ublox_ephem.tk # time elapsed in UTC(SU) day
-
   etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j")
   # glonass time: UTC + 3h
   #time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
   #ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
 
-  ephem['tb'] = ublox_ephem.tb
-  ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
-  ephem['toc'] = ephem['toe']
+  # this should be toe
+  ephem['toc'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
 
   ephem['x'] = ublox_ephem.x # km
   ephem['x_vel'] = ublox_ephem.xVel # km/s
