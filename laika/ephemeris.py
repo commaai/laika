@@ -107,6 +107,9 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
 
   ephem['healthy'] = ublox_ephem.svHealth == 0.0
 
+  # TODO: channel is in string 7, which is not parsed
+  ephem['freq_num'] = "1"
+
   return GLONASSEphemeris(ephem, ephem['toe'])
 
 
@@ -201,7 +204,7 @@ class EphemerisSerializer(json.JSONEncoder):
 class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, epoch, file_name=None):
     super().__init__(data['prn'], data, epoch, EphemerisType.NAV, data['healthy'], max_time_diff=25*SECS_IN_MIN, file_name=file_name)
-    #self.channel = data['freq_num']
+    self.channel = data['freq_num']
     self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
