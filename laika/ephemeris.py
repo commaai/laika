@@ -93,13 +93,12 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   ephem['z_vel'] = ublox_ephem.zVel # km/s
   ephem['z_acc'] = ublox_ephem.zAccel # km/s*s
 
+  ephem['healthy'] = ublox_ephem.svHealth == 0.0
   ephem['age'] = ublox_ephem.age # age of information [days]
 
   # tauN compared to ephemeris from gdc.cddis.eosdis.nasa.gov is times -1
   ephem['min_tauN'] = ublox_ephem.tauN * (-1) # time correction relative to GLONASS tc
   ephem['GammaN'] = ublox_ephem.gammaN
-
-  ephem['healthy'] = ublox_ephem.svHealth == 0.0
 
   # TODO: channel is in string 7, which is not parsed
   ephem['freq_num'] = "1"
