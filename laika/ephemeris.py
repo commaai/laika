@@ -77,11 +77,9 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
 
   etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j")
   # glonass time: UTC + 3h
-  #time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
-  #ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
-
-  # this should be toe
-  ephem['toc'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
+  time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
+  ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
+  ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
 
   ephem['x'] = ublox_ephem.x # km
   ephem['x_vel'] = ublox_ephem.xVel # km/s
@@ -209,7 +207,7 @@ class GLONASSEphemeris(Ephemeris):
 
     eph = self.data
     # TODO should handle leap seconds better
-    toc_gps_time = utc_to_gpst(eph['toc'])
+    toc_gps_time = utc_to_gpst(eph['toe'])
     tdiff = time - toc_gps_time
 
     # Clock correction (except for general relativity which is applied later)
@@ -557,7 +555,7 @@ def parse_rinex_nav_msg_glonass(file_name):
 
     line = line.replace('D', 'E')  # Handle bizarro float format
     e = {'epoch': epoch, 'prn': prn}
-    e['toc'] = epoch
+    e['toe'] = epoch
     e['min_tauN'] = float(line[23:42])
     e['GammaN'] = float(line[42:61])
     e['tk'] = float(line[61:80]) # different format than from ublox
