@@ -206,9 +206,7 @@ class GLONASSEphemeris(Ephemeris):
     # http://gauss.gge.unb.ca/GLONASS.ICD.pdf
 
     eph = self.data
-    # TODO should handle leap seconds better
-    toc_gps_time = utc_to_gpst(eph['toe'])
-    tdiff = time - toc_gps_time
+    tdiff = time - utc_to_gpst(eph['toe'])
 
     # Clock correction (except for general relativity which is applied later)
     clock_err = eph['min_tauN'] + tdiff * (eph['GammaN'])
