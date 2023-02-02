@@ -103,6 +103,7 @@ def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = 
   # TODO: channel is in string 7, which is not parsed
   ephem['freq_num'] = "1"
 
+  # NOTE: ublox_ephem.tk is in a different format than rinex tk
   return GLONASSEphemeris(ephem, ephem['toe'])
 
 
@@ -555,8 +556,7 @@ def parse_rinex_nav_msg_glonass(file_name):
     e['toe'] = epoch
     e['min_tauN'] = float(line[23:42])
     e['GammaN'] = float(line[42:61])
-    e['tk'] = float(line[61:80]) # different format than from ublox
-    # ephemeris, seconds in day
+    e['tk'] = float(line[61:80])
 
     e['x'], e['x_vel'], e['x_acc'], e['health'] = read4(f, rinex_ver)
     e['y'], e['y_vel'], e['y_acc'], e['freq_num'] = read4(f, rinex_ver)
