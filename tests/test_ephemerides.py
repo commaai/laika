@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import numpy as np
 import unittest
 
-from laika.ephemeris import EphemerisType, convert_ublox_ephem, read_prn_data
+from laika.ephemeris import EphemerisType, convert_ublox_gps_ephem, read_prn_data
 from laika.gps_time import GPSTime
 from laika import AstroDog
 
@@ -71,7 +71,7 @@ class TestAstroDog(unittest.TestCase):
     ublox_ephem.gpsWeek = 0
     ublox_ephem.svId = 1
     ublox_ephem.toe = 0
-    ephemeris = convert_ublox_ephem(ublox_ephem)
+    ephemeris = convert_ublox_gps_ephem(ublox_ephem)
 
     # Should roll-over twice with steps of 1024
     updated_time = GPSTime(ublox_ephem.gpsWeek + 2048, 0)
@@ -79,7 +79,7 @@ class TestAstroDog(unittest.TestCase):
 
     # Check only one roll-over when passing extra argument current_time
     roll_over_time = GPSTime(1024, 0).as_datetime()
-    ephemeris = convert_ublox_ephem(ublox_ephem, roll_over_time)
+    ephemeris = convert_ublox_gps_ephem(ublox_ephem, roll_over_time)
 
     # Should roll-over twice with 1024
     updated_time = GPSTime(ublox_ephem.gpsWeek + 1024, 0)
