@@ -41,7 +41,7 @@ def convert_ublox_gps_ephem(ublox_ephem, current_time: Optional[datetime] = None
   # GPS week refers to current week, the ephemeris can be valid for the next
   # if toe equals 0, this can be verified by the TOW count if it is within the
   # last 2 hours of the week (gps ephemeris valid for 4hours)
-  if ublox_ephem.toe == 0 and ublox_ephem.towCount*6 >=  (SECS_IN_WEEK - 2*SECS_IN_HR):
+  if ublox_ephem.toe == 0 and ublox_ephem.towCount*6 >= (SECS_IN_WEEK - 2*SECS_IN_HR):
     week += 1
 
   ephem = {}
