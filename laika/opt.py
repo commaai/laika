@@ -39,7 +39,10 @@ def calc_pos_fix(measurements, posfix_functions=None, x0=None, no_weight=False, 
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal, no_weight=no_weight, no_nans=True)
   x = gauss_newton(Fx_pos, x0)
-  residual, _ = Fx_pos(x, no_weight=True)
+  residual, J = Fx_pos(x, no_weight=True)
+  meas_cov = np.diag([1/meas.observables_std[signal]**2 for meas in measurements])
+  cov = np.linalg.pinv(J.T.dot(meas_cov).dot(J))
+  x_std = np.sqrt(np.diagonal(cov))
   return x.tolist(), residual.tolist()
 
 
@@ -55,10 +58,13 @@ def calc_vel_fix(measurements, est_pos, velfix_function=None, v0=None, no_weight
 
   if len(measurements) < min_measurements:
     return [], []
-
+  measurements = measurements
   Fx_vel = prr_residual(measurements, est_pos, velfix_function, signal=signal, no_weight=no_weight, no_nans=True)
   v = gauss_newton(Fx_vel, v0)
-  residual, _ = Fx_vel(v, no_weight=True)
+  residual, J = Fx_vel(v, no_weight=True)
+  meas_cov = np.diag([1/meas.observables_std[signal]**2 for meas in measurements])
+  cov = np.linalg.pinv(J.T.dot(meas_cov).dot(J))
+  x_std = np.sqrt(np.diagonal(cov))
   return v.tolist(), residual.tolist()
 
 
