@@ -35,7 +35,7 @@ def calc_pos_fix(measurements, posfix_functions=None, x0=None, no_weight=False, 
     x0 = [0, 0, 0, 0, 0]
 
   if len(measurements) < min_measurements:
-    return [],[]
+    return [],[],[]
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal, no_weight=no_weight, no_nans=True)
   x = gauss_newton(Fx_pos, x0)
@@ -43,7 +43,7 @@ def calc_pos_fix(measurements, posfix_functions=None, x0=None, no_weight=False, 
   meas_cov = np.diag([1/meas.observables_std[signal]**2 for meas in measurements])
   cov = np.linalg.pinv(J.T.dot(meas_cov).dot(J))
   x_std = np.sqrt(np.diagonal(cov))
-  return x.tolist(), residual.tolist()
+  return x.tolist(), residual.tolist(), x_std
 
 
 def calc_vel_fix(measurements, est_pos, velfix_function=None, v0=None, no_weight=False, signal='D1C', min_measurements=6):
@@ -57,15 +57,15 @@ def calc_vel_fix(measurements, est_pos, velfix_function=None, v0=None, no_weight
     v0 = [0, 0, 0, 0]
 
   if len(measurements) < min_measurements:
-    return [], []
-  measurements = measurements
+    return [], [], []
+
   Fx_vel = prr_residual(measurements, est_pos, velfix_function, signal=signal, no_weight=no_weight, no_nans=True)
   v = gauss_newton(Fx_vel, v0)
   residual, J = Fx_vel(v, no_weight=True)
   meas_cov = np.diag([1/meas.observables_std[signal]**2 for meas in measurements])
   cov = np.linalg.pinv(J.T.dot(meas_cov).dot(J))
   x_std = np.sqrt(np.diagonal(cov))
-  return v.tolist(), residual.tolist()
+  return v.tolist(), residual.tolist(), x_std
 
 
 def get_posfix_sympy_fun(constellation):
