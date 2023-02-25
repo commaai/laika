@@ -7,19 +7,25 @@ from .helpers import ConstellationId
 from .raw_gnss import GNSSMeasurement
 
 
-def gauss_newton(fun, b, W, xtol=1e-8, max_n=25):
+def gauss_newton(fun, b, M, xtol=1e-8, max_n=25):
+
+  W = np.linalg.inv(M)
   for _ in range(max_n):
     # Compute function and jacobian on current estimate
     r, J = fun(b)
 
-    # Update estimate
+    # Update estimate, WLS https://en.wikipedia.org/wiki/Weighted_least_squares
     delta = np.linalg.pinv(J.T.dot(W).dot(J)).dot(J.T).dot(W) @ r
     b -= delta
 
     # Check step size for stopping condition
     if np.linalg.norm(delta) < xtol:
       break
-  return b
+
+  r, J = fun(b)
+  Mb = np.linalg.pinv(J.T.dot(W).dot(J))
+  x_std = np.sqrt(np.diagonal(Mb))
+  return b, r, x_std
 
 
 def calc_pos_fix(measurements, posfix_functions=None, x0=None, signal='C1C', min_measurements=5):
@@ -38,13 +44,9 @@ def calc_pos_fix(measurements, posfix_functions=None, x0=None, signal='C1C', min
     return [],[],[]
 
   Fx_pos = pr_residual(measurements, posfix_functions, signal=signal, no_nans=True)
-  meas_cov = np.diag([1/meas.observables_std[signal]**2 for meas in measurements])
+  meas_cov = np.diag([meas.observables_std[signal]**2 for meas in measurements])
 
-  x = gauss_newton(Fx_pos, x0, meas_cov)
-  residual, J = Fx_pos(x)
-
-  cov = np.linalg.pinv(J.T.dot(meas_cov).dot(J))
-  x_std = np.sqrt(np.diagonal(cov))
+  x, residual, x_std = gauss_newton(Fx_pos, x0, meas_cov)
   return x.tolist(), residual.tolist(), x_std
 
 
@@ -62,12 +64,9 @@ def calc_vel_fix(measurements, est_pos, velfix_function=None, v0=None, signal='D
     return [], [], []
 
   Fx_vel = prr_residual(measurements, est_pos, velfix_function, signal=signal, no_nans=True)
-  meas_cov = np.diag([1/meas.observables_std[signal]**2 for meas in measurements])
+  meas_cov = np.diag([meas.observables_std[signal]**2 for meas in measurements])
 
-  v = gauss_newton(Fx_vel, v0, meas_cov)
-  residual, J = Fx_vel(v)
-  cov = np.linalg.pinv(J.T.dot(meas_cov).dot(J))
-  x_std = np.sqrt(np.diagonal(cov))
+  v, residual, x_std = gauss_newton(Fx_vel, v0, meas_cov)
   return v.tolist(), residual.tolist(), x_std
 
 
