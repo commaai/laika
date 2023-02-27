@@ -11,7 +11,7 @@
 
 import datetime
 import numpy as np
-
+import logging
 
 def floatornan(x):
   if x == '' or x[-1] == ' ':
@@ -49,9 +49,11 @@ class RINEXFile:
         self._read_header(f)
         self._read_data(f)
     except TypeError:
+      logging.exception("TypeError, file likely not downloaded.")
       print("TypeError, file likely not downloaded.")
       raise DownloadError("file download failure")
     except FileNotFoundError:
+      logging.exception("File not found in directory.")
       print("File not found in directory.")
       raise DownloadError("file missing in download cache")
   def _read_header(self, f):
