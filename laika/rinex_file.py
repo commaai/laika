@@ -50,11 +50,9 @@ class RINEXFile:
         self._read_data(f)
     except TypeError:
       logging.exception("TypeError, file likely not downloaded.")
-      print("TypeError, file likely not downloaded.")
       raise DownloadError("file download failure")
     except FileNotFoundError:
       logging.exception("File not found in directory.")
-      print("File not found in directory.")
       raise DownloadError("file missing in download cache")
   def _read_header(self, f):
     version_line = padline(f.readline(), 80)
