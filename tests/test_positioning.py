@@ -53,7 +53,7 @@ class TestPositioning(unittest.TestCase):
     for corr in tqdm(rinex_corr_grouped):
       ret = opt.calc_pos_fix(corr)
       if len(ret) > 0:
-        fix, _ = ret
+        fix, _, _ = ret
         ests.append(fix)
     ests = np.array(ests)
 
