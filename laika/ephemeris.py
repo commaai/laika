@@ -121,10 +121,12 @@ class Ephemeris(ABC):
 
 
 class GLONASSEphemeris(Ephemeris):
-  def __init__(self, data, epoch, file_name=None):
-    super().__init__(data['prn'], epoch, EphemerisType.NAV, data['healthy'], max_time_diff=25*SECS_IN_MIN, file_name=file_name)
+  def __init__(self, data, file_name=None):
+    print(data.n4, data.nt, data.tb*15*SECS_IN_MIN)
+    self.epoch = GPSTime.from_glonass(data.n4, data.nt, data.tb*15*SECS_IN_MIN)
+    super().__init__('R%02i' % data.svId, self.epoch, EphemerisType.NAV, data.svHealth==0, max_time_diff=25*SECS_IN_MIN, file_name=file_name)
     self.data = data
-    self.channel = data['freq_num']
+    self.channel = data.freqNum
 
   def _get_sat_info(self, time: GPSTime):
     # see the russian doc for this:
@@ -134,7 +136,7 @@ class GLONASSEphemeris(Ephemeris):
     tdiff = time - utc_to_gpst(eph['toe'])
 
     # Clock correction (except for general relativity which is applied later)
-    clock_err = eph['min_tauN'] + tdiff * (eph['GammaN'])
+    clock_err = -eph['tauN'] + tdiff * (eph['GammaN'])
     clock_rate_err = eph['GammaN']
 
     def glonass_diff_eq(state, acc):
@@ -210,13 +212,6 @@ class PolyEphemeris(Ephemeris):
 
 class GPSEphemeris(Ephemeris):
   def __init__(self, data, file_name=None):
-    # week = data.gpsWeek
-    # TODO from sources gpsWeek is 10bit
-    # if week < 1877:
-    #   week += 1024
-    # TODO what is this
-    # if data.toe == 0 and data.towCount*6 >= (SECS_IN_WEEK - 2*SECS_IN_HR):
-    #   week += 1
     self.toe = GPSTime(data.toeWeek, data.toe)
     self.toc = GPSTime(data.tocWeek, data.toc)
     self.epoch = self.toc
@@ -483,26 +478,31 @@ def parse_rinex_nav_msg_glonass(file_name):
         got_header = True
       continue
     if rinex_ver == 3:
-      prn = line[:3]
+      sv_id = int(line[1:3])
       epoch = GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S"))
     elif rinex_ver == 2:
-      prn = 'R%02i' % int(line[0:2])
+      sv_id = int(line[0:2])
       epoch = GPSTime.from_datetime(datetime.strptime(line[3:20], "%y %m %d %H %M %S"))
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format
-    e = {'epoch': epoch, 'prn': prn}
-    e['toe'] = epoch
-    e['min_tauN'] = float(line[23:42])
-    e['GammaN'] = float(line[42:61])
-    e['tk'] = float(line[61:80])
+    e = {'svId': sv_id}
+    e['n4'], e['nt'], toe_seconds = utc_to_gpst(epoch).as_glonass()
+    print(toe_seconds, epoch.as_datetime())
+    #e['tb'] = toe_seconds / (15 * SECS_IN_MIN)
 
-    e['x'], e['x_vel'], e['x_acc'], e['health'] = read4(f, rinex_ver)
-    e['y'], e['y_vel'], e['y_acc'], e['freq_num'] = read4(f, rinex_ver)
-    e['z'], e['z_vel'], e['z_acc'], e['age'] = read4(f, rinex_ver)
+    e['tauN'] = -float(line[23:42])
+    e['gammaN'] = float(line[42:61])
+    e['tkSeconds'] = float(line[61:80])
 
-    e['healthy'] = (e['health'] == 0.0)
-    ephems[prn].append(GLONASSEphemeris(e, epoch, file_name=file_name))
+    e['x'], e['xVel'], e['xAccel'], e['svHealth'] = read4(f, rinex_ver)
+    e['y'], e['yVel'], e['yAccel'], e['freqNum'] = read4(f, rinex_ver)
+    e['z'], e['zVel'], e['zAccel'], e['age'] = read4(f, rinex_ver)
+    
+    data_struct = ephemeris_structs.GlonassEphemeris.new_message(**e)
+    ephem = GLONASSEphemeris(data_struct, file_name=file_name)
+
+    ephems[ephem.prn].append(ephem)
   f.close()
   return ephems
 

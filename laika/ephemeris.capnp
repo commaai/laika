@@ -80,7 +80,7 @@ struct GlonassEphemeris {
   age @17 :UInt8;
 
   svHealth @18 :UInt8;
-  tk @19 :UInt16;
+  tkDEPRECATED @19 :UInt16;
   tb @20 :UInt16;
 
   tauN @21 :Float64;
@@ -92,5 +92,12 @@ struct GlonassEphemeris {
   p3 @26 :UInt8;
   p4 @27 :UInt8;
 
-  freqNum @28 :UInt32;
+  freqNumDEPRECATED @28 :UInt32;
+
+  n4 @29 :UInt8;
+  nt @30 :UInt16;
+  freqNum @31 :Int16;
+  tkSeconds @32 :UInt32;
+
+
 }

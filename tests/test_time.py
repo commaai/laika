@@ -100,6 +100,20 @@ class TestTime(unittest.TestCase):
     np.testing.assert_allclose((gps_times[5] - utc_to_gpst(gpst_to_utc(gps_times[5]))), 0, rtol=0, atol=1e-3)
     np.testing.assert_allclose((gps_times[6] - utc_to_gpst(gpst_to_utc(gps_times[6]))), 0, rtol=0, atol=1e-3)
 
+    
+  def test_glonass_converter(self):
+    datetimes_strings = ['2008-04-27 22:22:06',
+                         '2012-05-13 08:52:57',
+                         '2012-09-17 12:50:05',
+                         '2016-04-08 12:28:19',
+                         '2017-10-23 06:42:34',
+                         '2018-01-18 03:16:27',
+                         '2023-01-01 00:00:05']
+    gps_times = [GPSTime.from_datetime(datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')) for dt_str in datetimes_strings]
+    for t in gps_times:
+      np.testing.assert_allclose(t - GPSTime.from_glonass(*t.as_glonass()), 0, rtol=0, atol=1e-3)
+
+    
 
 if __name__ == "__main__":
   unittest.main()
