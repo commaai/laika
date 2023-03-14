@@ -1,4 +1,3 @@
-import json
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -100,7 +99,6 @@ class Ephemeris(ABC):
     self.max_time_diff = max_time_diff
     self.file_epoch = file_epoch
     self.file_source = '' if file_name is None else file_name.split('/')[-1][:3]  # File source for the ephemeris (e.g. igu, igr, Sta)
-    self.__json = None
 
   def valid(self, time):
     return abs(time - self.epoch) <= self.max_time_diff
@@ -194,7 +192,6 @@ class PolyEphemeris(Ephemeris):
                max_time_diff: int=SECS_IN_HR):
     super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
     self.tgd = tgd
-    self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
     dt = time - self.data['t0']
