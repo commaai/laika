@@ -16,6 +16,12 @@ from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, \
 from .helpers import get_constellation, get_prn_from_nmea_id
 from cereal.messaging import log
 
+import capnp
+import os
+capnp.remove_import_hook()
+capnp_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "ephemeris.capnp"))
+ephemeris_structs = capnp.load(capnp_path)
+
 
 def read4(f, rinex_ver):
   line = f.readline()[:-1]
@@ -452,7 +458,7 @@ def parse_rinex_nav_msg_gps(file_name):
     e['svAcc'], e['svHealth'], e['tgd'], e['iodc'] = read4(f, rinex_ver)
     f.readline()  # Discard last row
 
-    data_struct = log.UbloxGnss.Ephemeris.new_message(**e)
+    data_struct = ephemeris_structs.Ephemeris.new_message(**e)
 
 
     print(data_struct.gpsWeek)
