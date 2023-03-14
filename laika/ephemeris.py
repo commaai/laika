@@ -14,7 +14,6 @@ from .gps_time import GPSTime, utc_to_gpst
 from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, \
                        SECS_IN_WEEK, EARTH_ROTATION_RATE, EARTH_GM
 from .helpers import get_constellation, get_prn_from_nmea_id
-from cereal.messaging import log
 
 import capnp
 import os
