@@ -35,7 +35,7 @@ struct Ephemeris {
 
   iDot @26 :Float64;
   codesL2 @27 :Float64;
-  gpsWeek @28 :Float64;
+  gpsWeekDEPRECATED @28 :Float64;
   l2 @29 :Float64;
 
   svAcc @30 :Float64;
@@ -53,6 +53,8 @@ struct Ephemeris {
   ionoBeta @39 :List(Float64);
 
   towCount @40 :UInt32;
+  toeWeek @41 :UInt16;
+  tocWeek @42 :UInt16;
 }
 
 struct GlonassEphemeris {

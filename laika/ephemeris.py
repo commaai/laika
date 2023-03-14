@@ -190,7 +190,8 @@ class PolyEphemeris(Ephemeris):
   def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType,
                file_epoch: GPSTime=None, file_name: str=None, healthy=True, tgd=0,
                max_time_diff: int=SECS_IN_HR):
-    super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
+    super().__init__(prn, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
+    self.data = data
     self.tgd = tgd
 
   def _get_sat_info(self, time: GPSTime):
@@ -209,19 +210,18 @@ class PolyEphemeris(Ephemeris):
 
 class GPSEphemeris(Ephemeris):
   def __init__(self, data, file_name=None):
-    week = data.gpsWeek
+    # week = data.gpsWeek
     # TODO from sources gpsWeek is 10bit
-    if week < 1877:
-      week += 1024
+    # if week < 1877:
+    #   week += 1024
     # TODO what is this
-    if data.toe == 0 and data.towCount*6 >= (SECS_IN_WEEK - 2*SECS_IN_HR):
-      week += 1
-    epoch = GPSTime(week, data.toe)
-    self.toe = epoch
-    self.toc = GPSTime(week, data.toc)
-    self.epoch = epoch
+    # if data.toe == 0 and data.towCount*6 >= (SECS_IN_WEEK - 2*SECS_IN_HR):
+    #   week += 1
+    self.toe = GPSTime(data.toeWeek, data.toe)
+    self.toc = GPSTime(data.tocWeek, data.toc)
+    self.epoch = self.toc
 
-    super().__init__('G%02i' % data.svId, epoch, EphemerisType.NAV, data.svHealth==0, max_time_diff=2*SECS_IN_HR, file_name=file_name)
+    super().__init__('G%02i' % data.svId, self.epoch, EphemerisType.NAV, data.svHealth==0, max_time_diff=2*SECS_IN_HR, file_name=file_name)
     self.max_time_diff_tgd = SECS_IN_DAY
     self.data = data
     self.sqrta = np.sqrt(data.a)
@@ -439,8 +439,9 @@ def parse_rinex_nav_msg_gps(file_name):
 
     line = line.replace('D', 'E')  # Handle bizarro float format
     e = {'svId': sv_id}
+    # TODO are TOC and TOE the same?
     e['toc'] = epoch.tow
-    e['gpsWeek'] = epoch.week
+    e['tocWeek'] = epoch.week
     e['af0'] = float(line[23:42])
     e['af1'] = float(line[42:61])
     e['af2'] = float(line[61:80])
@@ -448,16 +449,14 @@ def parse_rinex_nav_msg_gps(file_name):
     e['iode'], e['crs'], e['deltaN'], e['m0'] = read4(f, rinex_ver)
     e['cuc'], e['ecc'], e['cus'], sqrta = read4(f, rinex_ver)
     e['a'] = sqrta ** 2
-    toe_tow, e['cic'], e['omega0'], e['cis'] = read4(f, rinex_ver)
+    e['toe'], e['cic'], e['omega0'], e['cis'] = read4(f, rinex_ver)
     e['i0'], e['crc'], e['omega'], e['omegaDot'] = read4(f, rinex_ver)
-    e['iDot'], e['codesL2'], toe_week, l2_pflag = read4(f, rinex_ver)
+    e['iDot'], e['codesL2'], e['toeWeek'], l2_pflag = read4(f, rinex_ver)
     e['svAcc'], e['svHealth'], e['tgd'], e['iodc'] = read4(f, rinex_ver)
     f.readline()  # Discard last row
 
     data_struct = ephemeris_structs.Ephemeris.new_message(**e)
 
-
-    print(data_struct.gpsWeek)
     ephem = GPSEphemeris(data_struct, file_name=file_name)
     ephems[ephem.prn].append(ephem)
   f.close()
