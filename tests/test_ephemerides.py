@@ -1,9 +1,7 @@
-from unittest.mock import Mock
-
 import numpy as np
 import unittest
 
-from laika.ephemeris import EphemerisType, GPSEphemeris, read_prn_data
+from laika.ephemeris import EphemerisType, read_prn_data
 from laika.gps_time import GPSTime
 from laika import AstroDog
 
