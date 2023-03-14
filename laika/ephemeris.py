@@ -122,10 +122,10 @@ class Ephemeris(ABC):
 
 class GLONASSEphemeris(Ephemeris):
   def __init__(self, data, file_name=None):
-    print(data.n4, data.nt, data.tb*15*SECS_IN_MIN)
     self.epoch = GPSTime.from_glonass(data.n4, data.nt, data.tb*15*SECS_IN_MIN)
     super().__init__('R%02i' % data.svId, self.epoch, EphemerisType.NAV, data.svHealth==0, max_time_diff=25*SECS_IN_MIN, file_name=file_name)
     self.data = data
+    self.epoch =  GPSTime.from_glonass(data.n4, data.nt, data.tb*15 * SECS_IN_MIN)
     self.channel = data.freqNum
 
   def _get_sat_info(self, time: GPSTime):
@@ -133,11 +133,10 @@ class GLONASSEphemeris(Ephemeris):
     # http://gauss.gge.unb.ca/GLONASS.ICD.pdf
 
     eph = self.data
-    tdiff = time - utc_to_gpst(eph['toe'])
-
+    tdiff = time - self.epoch
     # Clock correction (except for general relativity which is applied later)
-    clock_err = -eph['tauN'] + tdiff * (eph['GammaN'])
-    clock_rate_err = eph['GammaN']
+    clock_err = -eph.tauN + tdiff * eph.gammaN
+    clock_rate_err = eph.gammaN
 
     def glonass_diff_eq(state, acc):
       J2 = 1.0826257e-3
@@ -159,14 +158,14 @@ class GLONASSEphemeris(Ephemeris):
       return ders
 
     init_state = np.empty(6)
-    init_state[0] = eph['x']
-    init_state[1] = eph['y']
-    init_state[2] = eph['z']
-    init_state[3] = eph['x_vel']
-    init_state[4] = eph['y_vel']
-    init_state[5] = eph['z_vel']
+    init_state[0] = eph.x
+    init_state[1] = eph.y
+    init_state[2] = eph.z
+    init_state[3] = eph.xVel
+    init_state[4] = eph.yVel
+    init_state[5] = eph.zVel
     init_state = 1000*init_state
-    acc = 1000*np.array([eph['x_acc'], eph['y_acc'], eph['z_acc']])
+    acc = 1000*np.array([eph.xAccel, eph.yAccel, eph.zAccel])
     state = init_state
     tstep = 90
     if tdiff < 0:
@@ -479,17 +478,20 @@ def parse_rinex_nav_msg_glonass(file_name):
       continue
     if rinex_ver == 3:
       sv_id = int(line[1:3])
-      epoch = GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S"))
+
+      epoch = utc_to_gpst(GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S")))
     elif rinex_ver == 2:
       sv_id = int(line[0:2])
-      epoch = GPSTime.from_datetime(datetime.strptime(line[3:20], "%y %m %d %H %M %S"))
+      epoch = utc_to_gpst(GPSTime.from_datetime(datetime.strptime(line[3:20], "%y %m %d %H %M %S")))
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format
     e = {'svId': sv_id}
-    e['n4'], e['nt'], toe_seconds = utc_to_gpst(epoch).as_glonass()
-    print(toe_seconds, epoch.as_datetime())
-    #e['tb'] = toe_seconds / (15 * SECS_IN_MIN)
+    e['n4'], e['nt'], toe_seconds = epoch.as_glonass()
+    tb = toe_seconds / (15 * SECS_IN_MIN)
+
+  
+    e['tb'] = tb
 
     e['tauN'] = -float(line[23:42])
     e['gammaN'] = float(line[42:61])
@@ -498,6 +500,11 @@ def parse_rinex_nav_msg_glonass(file_name):
     e['x'], e['xVel'], e['xAccel'], e['svHealth'] = read4(f, rinex_ver)
     e['y'], e['yVel'], e['yAccel'], e['freqNum'] = read4(f, rinex_ver)
     e['z'], e['zVel'], e['zAccel'], e['age'] = read4(f, rinex_ver)
+    
+    # TODO unclear why glonass sometimes has nav messages 3s after correct one
+    if abs(tb - int(tb)) > 1e-3:
+      continue
+
     
     data_struct = ephemeris_structs.GlonassEphemeris.new_message(**e)
     ephem = GLONASSEphemeris(data_struct, file_name=file_name)
