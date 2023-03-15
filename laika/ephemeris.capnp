@@ -98,6 +98,9 @@ struct GlonassEphemeris {
   nt @30 :UInt16;
   freqNum @31 :Int16;
   tkSeconds @32 :UInt32;
+}
 
-
+struct EphemerisCache {
+  gpsEphemerides @0 :List(Ephemeris);
+  glonassEphemerides @1 :List(GlonassEphemeris);
 }
