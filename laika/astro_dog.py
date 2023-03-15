@@ -114,7 +114,7 @@ class AstroDog:
   def get_qcom_poly(self, prn: str, time: GPSTime):
     poly = self._get_latest_valid_data(self.qcom_polys[prn], self.cached_qcom_polys[prn], None, time, True)
     if poly is not None:
-      self.cached_orbit[prn] = poly
+      self.cached_qcom_polys[prn] = poly
     return poly
 
   def get_orbits(self, time):
