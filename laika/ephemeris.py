@@ -29,42 +29,6 @@ def read4(f, rinex_ver):
   return float(line[4:23]), float(line[23:42]), float(line[42:61]), float(line[61:80])
 
 
-def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = None):
-  ephem = {}
-  ephem['prn'] = 'R%02i' % ublox_ephem.svId
-
-  etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j")
-  # glonass time: UTC + 3h
-  time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
-  ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
-  ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
-
-  ephem['x'] = ublox_ephem.x # km
-  ephem['x_vel'] = ublox_ephem.xVel # km/s
-  ephem['x_acc'] = ublox_ephem.xAccel # km/s*s
-
-  ephem['y'] = ublox_ephem.y # km
-  ephem['y_vel'] = ublox_ephem.yVel # km/s
-  ephem['y_acc'] = ublox_ephem.yAccel # km/s*s
-
-  ephem['z'] = ublox_ephem.z # km
-  ephem['z_vel'] = ublox_ephem.zVel # km/s
-  ephem['z_acc'] = ublox_ephem.zAccel # km/s*s
-
-  ephem['healthy'] = ublox_ephem.svHealth == 0.0
-  ephem['age'] = ublox_ephem.age # age of information [days]
-
-  # tauN compared to ephemeris from gdc.cddis.eosdis.nasa.gov is times -1
-  ephem['min_tauN'] = ublox_ephem.tauN * (-1) # time correction relative to GLONASS tc
-  ephem['GammaN'] = ublox_ephem.gammaN
-
-  # TODO: channel is in string 7, which is not parsed
-  ephem['freq_num'] = "1"
-
-  # NOTE: ublox_ephem.tk is in a different format than rinex tk
-  return GLONASSEphemeris(ephem, ephem['toe'])
-
-
 class EphemerisType(IntEnum):
   # Matches the enum in log.capnp
   NAV = 0
