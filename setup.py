@@ -25,7 +25,7 @@ setup(
     'pycapnp',
   ],
   ext_modules=[],
- # package_data={'': ['*.capnp']},
+  package_data={'': ['*.capnp']},
   description="GNSS library for use with the comma.ai ecosystem",
   long_description='See https://github.com/commaai/laika',
   classifiers=[
