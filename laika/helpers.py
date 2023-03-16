@@ -105,6 +105,8 @@ def get_constellation(prn: str):
     return constellation.name
   return None
 
+def get_sv_id(prn: str):
+  return int(prn[1:])
 
 def get_constellation_and_sv_id(nmea_id):
   for c, ranges in CONSTELLATION_TO_NMEA_RANGES.items():

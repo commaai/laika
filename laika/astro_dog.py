@@ -99,6 +99,9 @@ class AstroDog:
       result[prn] = obj
     return result
 
+  def get_all_ephem_prns(self):
+    return set(self.orbits.keys()).union(set(self.navs.keys())).union(set(self.qcom_polys.keys()))
+
   def get_navs(self, time):
     if time not in self.navs_fetched_times:
       self.get_nav_data(time)
@@ -270,7 +273,7 @@ class AstroDog:
       return eph.get_tgd()
     return None
 
-  def get_sat_info(self, prn, time):
+  def get_eph(self, prn, time):
     if get_constellation(prn) not in self.valid_const:
       return None
     eph = None
@@ -280,6 +283,10 @@ class AstroDog:
       eph = self.get_nav(prn, time)
     if not eph and self.use_qcom_poly:
       eph = self.get_qcom_poly(prn, time)
+    return eph
+
+  def get_sat_info(self, prn, time):
+    eph = self.get_eph(prn, time)
     if eph:
       return eph.get_sat_info(time)
     return None
