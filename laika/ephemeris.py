@@ -62,6 +62,7 @@ class Ephemeris(ABC):
     self.healthy = healthy
     self.max_time_diff = max_time_diff
     self.file_epoch = file_epoch
+    self.file_name = file_name
     self.file_source = '' if file_name is None else file_name.split('/')[-1][:3]  # File source for the ephemeris (e.g. igu, igr, Sta)
 
   def valid(self, time):
