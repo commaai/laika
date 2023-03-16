@@ -97,7 +97,6 @@ def get_closest(time, candidates, recv_pos=None):
     default=None,
   )
 
-
 def get_constellation(prn: str):
   identifier = prn[0]
   constellation = ConstellationId.from_rinex_char(identifier)
