@@ -9,6 +9,13 @@ from .gps_time import GPSTime
 # Altitude of Ionospheric-pierce-point
 IPP_ALT = 6821000
 
+def get_slant_delay(self, rcv_pos, az, el, sat_pos, time, freq, vertical_delay):
+    geocentric_alt = np.linalg.norm(rcv_pos)
+    alpha = np.pi/2 + el
+    beta = np.arcsin(geocentric_alt*np.sin(alpha)/IPP_ALT)
+    slant_delay = vertical_delay * ((1 - ((EARTH_RADIUS * np.sin(beta)) /
+                                          (EARTH_RADIUS + 3.5e5))**2)**(-0.5))
+    return slant_delay
 
 def closest_in_list(lst, val, num=2):
   """
@@ -144,8 +151,7 @@ class IonexMap:
     ipp_geo = conv.ned2geodetic(ipp_ned)
     factor = 40.30E16 / (freq**2) * 10**(self.exp)
     vertical_delay = self.get_TEC(ipp_geo, time) * factor
-    slant_delay = vertical_delay * ((1 - ((EARTH_RADIUS * np.sin(beta)) /
-                                          (EARTH_RADIUS + 3.5e5))**2)**(-0.5))
+    slant_delay = get_slant_delay(rcv_pos, az, el, sat_pos, time, freq, vertical_delay)
     return slant_delay
 
   @staticmethod

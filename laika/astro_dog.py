@@ -9,7 +9,7 @@ from .ephemeris import Ephemeris, EphemerisType, GLONASSEphemeris, GPSEphemeris,
 from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src
 from .downloader import download_cors_station
 from .trop import saast
-from .iono import IonexMap, parse_ionex
+from .iono import IonexMap, parse_ionex, get_slant_delay
 from .dcb import DCB, parse_dcbs
 from .gps_time import GPSTime
 from .dgps import get_closest_station_names, parse_dgps
@@ -345,7 +345,11 @@ class AstroDog:
     # When using internet we expect all data or return None
     if self.auto_update and (ionex is None or dcb is None or freq is None):
       return None
-    iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq) if ionex is not None else 0.
+    if ionex is not None:
+      iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq)
+    else:
+      # 5m vertical delay is a good default
+      iono_delay = get_slant_delay(rcv_pos, az, el, sat_pos, time, freq, vertical_delay=5.0)
     trop_delay = saast(rcv_pos, el)
     code_bias = dcb.get_delay(signal) if dcb is not None else 0.
     return iono_delay + trop_delay + code_bias
