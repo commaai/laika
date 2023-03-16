@@ -148,6 +148,7 @@ class IonexMap:
     alpha, beta = get_alpha_beta(rcv_pos, el)
     conv = LocalCoord.from_ecef(rcv_pos)
     gamma = np.pi - alpha - beta
+    geocentric_alt = np.linalg.norm(rcv_pos)
     ipp_dist = geocentric_alt*np.sin(gamma)/np.sin(beta)
     ipp_ned = conv.ecef2ned(sat_pos)*(ipp_dist)/np.linalg.norm(sat_pos)
     ipp_geo = conv.ned2geodetic(ipp_ned)
