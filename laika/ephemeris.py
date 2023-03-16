@@ -62,6 +62,7 @@ class Ephemeris(ABC):
     self.healthy = healthy
     self.max_time_diff = max_time_diff
     self.file_epoch = file_epoch
+    self.file_name = file_name
     self.file_source = '' if file_name is None else file_name.split('/')[-1][:3]  # File source for the ephemeris (e.g. igu, igr, Sta)
 
   def valid(self, time):
@@ -499,4 +500,4 @@ def parse_qcom_ephem(qcom_poly, current_week):
   poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
   poly_data['deg'] = 3
   poly_data['deg_t'] = 3
-  return PolyEphemeris(prn, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY, max_time_diff=180)
+  return PolyEphemeris(prn, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY, max_time_diff=180, file_name='qcom')
