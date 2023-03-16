@@ -16,12 +16,13 @@ jobs:
         sudo apt install libcurl4-openssl-dev libssl-dev
         pip install -r requirements_examples.txt pytest-cov pytest
     - name: Run unittests
-      run: py.test --cov .
       env:
         NASA_USERNAME: ${{ secrets.NASA_USERNAME }}
         NASA_PASSWORD: ${{ secrets.NASA_PASSWORD }}
     - name: Test install
-      run: python setup.py install
+      run: |
+        python setup.py install
+        cd / && python -c 'import laika'
   lint:
     runs-on: ubuntu-20.04
     steps:
