@@ -9,7 +9,7 @@ from .gps_time import GPSTime
 # Altitude of Ionospheric-pierce-point
 IPP_ALT = 6821000
 
-def get_slant_delay(self, rcv_pos, az, el, sat_pos, time, freq, vertical_delay):
+def get_slant_delay(rcv_pos, az, el, sat_pos, time, freq, vertical_delay):
     geocentric_alt = np.linalg.norm(rcv_pos)
     alpha = np.pi/2 + el
     beta = np.arcsin(geocentric_alt*np.sin(alpha)/IPP_ALT)
