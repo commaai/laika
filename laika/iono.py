@@ -9,10 +9,14 @@ from .gps_time import GPSTime
 # Altitude of Ionospheric-pierce-point
 IPP_ALT = 6821000
 
-def get_slant_delay(rcv_pos, az, el, sat_pos, time, freq, vertical_delay):
+def get_alpha_beta(rcv_pos, el):
     geocentric_alt = np.linalg.norm(rcv_pos)
     alpha = np.pi/2 + el
     beta = np.arcsin(geocentric_alt*np.sin(alpha)/IPP_ALT)
+    return alpha, beta
+
+def get_slant_delay(rcv_pos, az, el, sat_pos, time, freq, vertical_delay):
+    alpha, beta = get_alpha_beta(rcv_pos, el)
     slant_delay = vertical_delay * ((1 - ((EARTH_RADIUS * np.sin(beta)) /
                                           (EARTH_RADIUS + 3.5e5))**2)**(-0.5))
     return slant_delay
@@ -141,10 +145,8 @@ class IonexMap:
     # To get a delay from a TEC map, we need to calculate
     # the ionospheric pierce point, geometry described here
     # https://en.wikipedia.org/wiki/Ionospheric_pierce_point
+    alpha, beta = get_alpha_beta(rcv_pos, el)
     conv = LocalCoord.from_ecef(rcv_pos)
-    geocentric_alt = np.linalg.norm(rcv_pos)
-    alpha = np.pi/2 + el
-    beta = np.arcsin(geocentric_alt*np.sin(alpha)/IPP_ALT)
     gamma = np.pi - alpha - beta
     ipp_dist = geocentric_alt*np.sin(gamma)/np.sin(beta)
     ipp_ned = conv.ecef2ned(sat_pos)*(ipp_dist)/np.linalg.norm(sat_pos)
