@@ -21,7 +21,9 @@ jobs:
         NASA_USERNAME: ${{ secrets.NASA_USERNAME }}
         NASA_PASSWORD: ${{ secrets.NASA_PASSWORD }}
     - name: Test install
-      run: python setup.py install
+      run: |
+        python setup.py install
+        cd / && python -c 'import laika'
   lint:
     runs-on: ubuntu-20.04
     steps:
