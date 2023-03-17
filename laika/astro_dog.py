@@ -33,7 +33,7 @@ class AstroDog:
   def __init__(self, auto_update=True,
                cache_dir='/tmp/gnss/',
                dgps=False,
-               valid_const=('GPS', 'GLONASS'),
+               valid_const=(ConstellationId.GPS, ConstellationId.GLONASS),
                valid_ephem_types=EphemerisType.all_orbits(),
                clear_old_ephemeris=False):
     self.auto_update = auto_update
@@ -307,7 +307,7 @@ class AstroDog:
     return None
 
   def get_frequency(self, prn, time, signal='C1C'):
-    if get_constellation(prn) == 'GPS':
+    if get_constellation(prn) == ConstellationId.GPS:
       switch = {'1': constants.GPS_L1,
                 '2': constants.GPS_L2,
                 '5': constants.GPS_L5,
@@ -318,7 +318,7 @@ class AstroDog:
       if freq:
         return freq
       raise NotImplementedError("Dont know this GPS frequency: ", signal, prn)
-    elif get_constellation(prn) == 'GLONASS':
+    elif get_constellation(prn) == ConstellationId.GLONASS:
       n = self.get_glonass_channel(prn, time)
       if n is None:
         return None
