@@ -4,6 +4,7 @@ import unittest
 from laika import AstroDog
 from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
+from laika.helpers import ConstellationId
 
 
 class TestFetchSatInfo(unittest.TestCase):
@@ -18,7 +19,7 @@ class TestFetchSatInfo(unittest.TestCase):
     then you should get correct result'''
 
     prn = "C03"
-    constellations = ["GPS", "BEIDOU"]
+    constellations = [ConstellationId.GPS, ConstellationId.BEIDOU]
     available_date = GPSTime.from_datetime(datetime(2020, 5, 1, 12, 0))
     not_available_date = GPSTime.from_datetime(datetime(2000, 1, 1))
 
@@ -32,11 +33,11 @@ class TestFetchSatInfo(unittest.TestCase):
     time = GPSTime.from_datetime(datetime(2020, 5, 1, 12, 0, 0))
     all_ephem_types = (EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT, EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)
     kwargs_list = [
-      *[{"valid_const": ["GPS"], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
-      *[{"valid_const": ["GLONASS"], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
-      *[{"valid_const": ["BEIDOU"], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
-      *[{"valid_const": ["GALILEO"], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
-      *[{"valid_const": ["QZNSS"], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
+      *[{"valid_const": [ConstellationId.GPS], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
+      *[{"valid_const": [ConstellationId.GLONASS], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
+      *[{"valid_const": [ConstellationId.BEIDOU], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
+      *[{"valid_const": [ConstellationId.GALILEO], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
+      *[{"valid_const": [ConstellationId.QZNSS], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
     ]
 
     for kwargs in kwargs_list:

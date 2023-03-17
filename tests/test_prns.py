@@ -1,7 +1,7 @@
 import unittest
 
 from laika.helpers import get_constellation, get_nmea_id_from_prn, get_prn_from_nmea_id
-
+from laika.helpers import ConstellationId
 
 MAIN_CONSTELLATIONS = [
     ['G01', 1],
@@ -46,25 +46,25 @@ MAIN_CONSTELLATIONS = [
 class TestConstellationPRN(unittest.TestCase):
     def test_constellation_from_valid_prn(self):
         data = [
-            ['G01', 'GPS'],
-            ['G10', 'GPS'],
-            ['G32', 'GPS'],
-            ['R01', 'GLONASS'],
-            ['R10', 'GLONASS'],
-            ['R23', 'GLONASS'],
-            ['R24', 'GLONASS'],
-            ['R25', 'GLONASS'],
-            ['R32', 'GLONASS'],
-            ['E01', 'GALILEO'],
-            ['E02', 'GALILEO'],
-            ['E36', 'GALILEO'],
-            ['C01', 'BEIDOU'],
-            ['C02', 'BEIDOU'],
-            ['C29', 'BEIDOU'],
-            ['J01', 'QZNSS'],
-            ['J04', 'QZNSS'],
-            ['S01', 'SBAS'],
-            ['I01', 'IRNSS']
+            ['G01', ConstellationId.GPS],
+            ['G10', ConstellationId.GPS],
+            ['G32', ConstellationId.GPS],
+            ['R01', ConstellationId.GLONASS],
+            ['R10', ConstellationId.GLONASS],
+            ['R23', ConstellationId.GLONASS],
+            ['R24', ConstellationId.GLONASS],
+            ['R25', ConstellationId.GLONASS],
+            ['R32', ConstellationId.GLONASS],
+            ['E01', ConstellationId.GALILEO],
+            ['E02', ConstellationId.GALILEO],
+            ['E36', ConstellationId.GALILEO],
+            ['C01', ConstellationId.BEIDOU],
+            ['C02', ConstellationId.BEIDOU],
+            ['C29', ConstellationId.BEIDOU],
+            ['J01', ConstellationId.QZNSS],
+            ['J04', ConstellationId.QZNSS],
+            ['S01', ConstellationId.SBAS],
+            ['I01', ConstellationId.IRNSS]
         ]
 
         for prn, expected_constellation in data:
@@ -74,7 +74,7 @@ class TestConstellationPRN(unittest.TestCase):
     def test_constellation_from_prn_outside_range(self):
         prn = 'G99'
         constellation = get_constellation(prn)
-        self.assertEqual('GPS', constellation)
+        self.assertEqual(ConstellationId.GPS, constellation)
 
     def test_prn_from_nmea_id_for_main_constellations(self):
         data = MAIN_CONSTELLATIONS
@@ -115,3 +115,7 @@ class TestConstellationPRN(unittest.TestCase):
       self.assertRaises(ValueError, get_prn_from_nmea_id, 367)
       self.assertRaises(ValueError, get_prn_from_nmea_id, 400)
       self.assertRaises(ValueError, get_prn_from_nmea_id, 438)
+
+if __name__ == "__main__":
+  unittest.main()
+
