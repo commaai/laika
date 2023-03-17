@@ -115,3 +115,7 @@ class TestConstellationPRN(unittest.TestCase):
       self.assertRaises(ValueError, get_prn_from_nmea_id, 367)
       self.assertRaises(ValueError, get_prn_from_nmea_id, 400)
       self.assertRaises(ValueError, get_prn_from_nmea_id, 438)
+
+if __name__ == "__main__":
+  unittest.main()
+

@@ -26,7 +26,7 @@ class ConstellationId(IntEnum):
     if c in RINEX_ID_TO_CONSTELLATION:
       return RINEX_ID_TO_CONSTELLATION[c]
     else:
-      raise NotImplementedError("Unknown rinex constellation id: ", c)
+      raise ValueError("Unknown rinex constellation id: ", c)
 
   @classmethod
   def from_qcom_source(cls, report_source: int):
@@ -122,7 +122,7 @@ def get_prn_from_nmea_id(nmea_id: int):
 def get_nmea_id_from_prn(prn: str):
   constellation = get_constellation(prn)
   sv_id = int(prn[1:])  # satellite id
-  return get_nmea_id_from_constellation_and_svid(ConstellationId[constellation], sv_id)
+  return get_nmea_id_from_constellation_and_svid(constellation, sv_id)
 
 
 def get_nmea_id_from_constellation_and_svid(constellation: ConstellationId, sv_id: int):
