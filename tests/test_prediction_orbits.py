@@ -11,7 +11,7 @@ class TestPredictionOrbits(unittest.TestCase):
 
   def test_gps(self):
     available_date = GPSTime.from_datetime(datetime(2020, 5, 1, 12))
-    dog = AstroDog(valid_const=ConstellationId.GPS, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
+    dog = AstroDog(valid_const=(ConstellationId.GPS,), valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
     dog.get_orbit_data(available_date, only_predictions=True)
     self.assertGreater(len(dog.orbits.keys()), 0)
     self.assertTrue(available_date in dog.orbit_fetched_times)
