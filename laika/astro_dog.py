@@ -216,7 +216,7 @@ class AstroDog:
     result = download_prediction_orbits_russia_src(gps_time, self.cache_dir)
     if result is not None:
       result = [result]
-    elif "GPS" in self.valid_const:
+    elif ConstellationId.GPS in self.valid_const:
       # Slower fallback. Russia src prediction orbits are published from 2022
       result = [download_orbits_gps(t, self.cache_dir, self.valid_ephem_types) for t in [gps_time - SECS_IN_DAY, gps_time]]
     if result is None:
