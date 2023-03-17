@@ -36,6 +36,11 @@ class AstroDog:
                valid_const=(ConstellationId.GPS, ConstellationId.GLONASS),
                valid_ephem_types=EphemerisType.all_orbits(),
                clear_old_ephemeris=False):
+
+    for const in valid_const:
+      if not isinstance(const, ConstellationId):
+        raise TypeError(f"valid_const must be a list of ConstellationId, got {const}")
+  
     self.auto_update = auto_update
     self.cache_dir = cache_dir
     self.clear_old_ephemeris = clear_old_ephemeris
@@ -178,9 +183,9 @@ class AstroDog:
 
     fetched_ephems = {}
 
-    if 'GPS' in self.valid_const:
+    if ConstellationId.GPS in self.valid_const:
       fetched_ephems = download_and_parse(ConstellationId.GPS, parse_rinex_nav_msg_gps)
-    if 'GLONASS' in self.valid_const:
+    if ConstellationId.GLONASS in self.valid_const:
       for k, v in download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass).items():
         fetched_ephems.setdefault(k, []).extend(v)
     self.add_navs(fetched_ephems)
@@ -196,7 +201,7 @@ class AstroDog:
     with ThreadPoolExecutor() as executor:
       futures_other = [executor.submit(download_orbits_russia_src, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
       futures_gps = None
-      if "GPS" in self.valid_const:
+      if ConstellationId.GPS in self.valid_const:
         futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
       ephems_other = parse_sp3_orbits([f.result() for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
