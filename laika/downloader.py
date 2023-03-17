@@ -43,7 +43,7 @@ def retryable(f):
       try:
         return f(url_base, *args, **kwargs)
       except DownloadFailed as e:
-        logging.exception(e)
+        logging.warning(e)
     # none of them succeeded
     raise DownloadFailed("Multiple URL failures attempting to pull file(s)")
   return wrapped
@@ -479,5 +479,5 @@ def download_cors_station(time, station_name, cache_dir):
     filepath = download_and_cache_file(url_bases, folder_path, cache_dir+'cors_obs/', filename, compression='.gz')
     return filepath
   except DownloadFailed:
-    logging.exception("File not downloaded, check availability on server.")
+    logging.warning("File not downloaded, check availability on server.")
     return None
