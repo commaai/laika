@@ -22,7 +22,7 @@ class TestPredictionOrbits(unittest.TestCase):
     for t in range(0, 24, 3):
       check_date = available_date + t * SECS_IN_HR
       for const in [ConstellationId.GPS, ConstellationId.GLONASS]:
-        dog = AstroDog(valid_const=const, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
+        dog = AstroDog(valid_const=(const,), valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)
         dog.get_orbit_data(check_date, only_predictions=True)
         self.assertGreater(len(dog.orbits.keys()), 0)
         self.assertTrue(check_date in dog.orbit_fetched_times)
