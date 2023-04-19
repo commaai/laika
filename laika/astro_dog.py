@@ -346,7 +346,6 @@ class AstroDog:
     el, az = get_el_az(rcv_pos, sat_pos)
     if el < 0.2:
       return None
-
     if self.dgps and not no_dgps:
       return self._get_delay_dgps(prn, rcv_pos, time)
 
