@@ -1,5 +1,5 @@
 from math import sqrt
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import datetime
@@ -54,7 +54,7 @@ class GNSSMeasurement:
   SAT_VEL = slice(11, 14)
 
   def __init__(self, constellation_id: ConstellationId, sv_id: int, recv_time_week: int, recv_time_sec: float, observables: Dict[str, float], observables_std: Dict[str, float],
-               glonass_freq: int | float | None = None):
+               glonass_freq: Union[int, float, None] = None):
     # Metadata
     # prn: unique satellite id
     self.prn = "%s%02d" % (constellation_id.to_rinex_char(), sv_id)  # satellite ID in rinex convention
