@@ -154,7 +154,7 @@ class GLONASSEphemeris(Ephemeris):
 
 class PolyEphemeris(Ephemeris):
   def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType,
-               file_epoch: GPSTime=None, file_name: str=None, healthy=True, tgd=0,
+               file_epoch: Optional[GPSTime] = None, file_name: Optional[str] = None, healthy=True, tgd=0,
                max_time_diff: int=SECS_IN_HR):
     super().__init__(prn, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
     self.data = data
