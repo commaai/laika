@@ -2,7 +2,7 @@ import logging
 import os
 
 from .astro_dog import AstroDog
-assert AstroDog # type: ignore
+assert AstroDog is not None
 
 # setup logging
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
