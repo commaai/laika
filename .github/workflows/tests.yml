@@ -34,5 +34,5 @@ jobs:
       - name: Run static analysis
         run: |
           sudo apt update && sudo apt-get install cppcheck
-          pip install pre-commit==3.3.3 pylint==2.17.4
+          pip install pre-commit==3.3.3 ruff
           pre-commit run --all
