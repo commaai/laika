@@ -53,8 +53,8 @@ class GNSSMeasurement:
   SAT_POS = slice(8, 11)
   SAT_VEL = slice(11, 14)
 
-  def __init__(self, constellation_id: ConstellationId, sv_id: int, recv_time_week: int, recv_time_sec: float, observables: Dict[str, float], observables_std: Dict[str, float],
-               glonass_freq: Union[int, float, None] = None):
+  def __init__(self, constellation_id: ConstellationId, sv_id: int, recv_time_week: int, recv_time_sec: float, observables: Dict[str, float],
+               observables_std: Dict[str, float], glonass_freq: Union[int, float, None] = None):
     # Metadata
     # prn: unique satellite id
     self.prn = "%s%02d" % (constellation_id.to_rinex_char(), sv_id)  # satellite ID in rinex convention
@@ -201,7 +201,8 @@ def read_raw_qcom(report):
   # logging.debug(recv_time, report.source, time_bias_ms, dr)
   measurements = []
   for i in report.sv:
-    nmea_id = i.svId  # todo change svId to nmea_id in cereal message. Or better: change the publisher to publish correct svId's, since constellation id is also given
+    # todo change svId to nmea_id in cereal message. Or better: change the publisher to publish correct svId's, since constellation id is also given
+    nmea_id = i.svId
     if nmea_id == 255:
       # TODO nmea_id is not valid. Fix publisher
       continue

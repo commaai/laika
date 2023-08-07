@@ -157,7 +157,8 @@ class CarKalman():
     x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
-    self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, maha_test_kinds=self.maha_test_kinds, global_vars=self.global_vars)
+    self.filter = EKF_sym(self.name, self.Q, self.x_initial, self.P_initial, self.dim_state, self.dim_state, \
+                                            maha_test_kinds=self.maha_test_kinds, global_vars=self.global_vars)
 
   @property
   def x(self):
