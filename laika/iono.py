@@ -183,7 +183,7 @@ def parse_ionex(ionex_file):
     elif "END OF TEC MAP" in line:
       map_end_idx += [j]
   if maps_count != len(map_start_idx):
-    raise LookupError("Parsing error: the number of maps in the header "
+    raise LookupError("Parsing error: the number of maps in the header " +
                       "is not equal to the number of maps in the body.")
   if len(map_start_idx) != len(map_end_idx):
     raise IndexError("Starts end ends numbers are not equal.")
