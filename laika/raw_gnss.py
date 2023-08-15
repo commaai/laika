@@ -207,7 +207,7 @@ def read_raw_qcom(report):
       # TODO nmea_id is not valid. Fix publisher
       continue
     _, sv_id = get_constellation_and_sv_id(nmea_id)
-    if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
+    if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown and i.measurementStatus.freshMeasurementIndicator and i.filteredSpeed == i.unfilteredSpeed:
       sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + time_bias_ms) / 1000
       observables, observables_std = {}, {}
       observables['C1C'] = (recv_tow - sat_tow)*constants.SPEED_OF_LIGHT
