@@ -215,12 +215,12 @@ def read_raw_qcom(report):
       if i.measurementStatus.fineOrCoarseVelocity:
         # about 10x better, perhaps filtered with carrier phase?
         observables['D1C'] = i.fineSpeed
-        observables_std['D1C'] = i.unfilteredSpeedUncertainty #min(0.1, i.fineSpeedUncertainty)
+        observables_std['D1C'] = i.fineSpeedUncertainty
       else:
         if dr and i.unfilteredSpeed != i.filteredSpeed:
           continue
         observables['D1C'] = i.unfilteredSpeed
-        observables_std['D1C'] = i.unfilteredSpeedUncertainty
+        observables_std['D1C'] = 10 * i.unfilteredSpeedUncertainty
       observables['S1C'] = (i.carrierNoise/100.) if i.carrierNoise != 0 else np.nan
       observables['L1C'] = np.nan
       # logging.debug("  %.5f %3d %10.2f %7.2f %7.2f %.2f %d" % (recv_time.tow, nmea_id,
