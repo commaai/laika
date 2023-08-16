@@ -208,16 +208,20 @@ def read_raw_qcom(report):
       continue
     _, sv_id = get_constellation_and_sv_id(nmea_id)
     if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown and i.measurementStatus.freshMeasurementIndicator:
-      sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + time_bias_ms) / 1000
       observables, observables_std = {}, {}
+      if dr: 
+        sat_tow = (i.filteredMeasurementIntegral + i.filteredMeasurementFraction + i.latency + time_bias_ms) / 1000
+      else:
+        sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + time_bias_ms) / 1000
       observables['C1C'] = (recv_tow - sat_tow)*constants.SPEED_OF_LIGHT
-      observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT
+      observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT # always use unfiltered std, filtered std is bigger?
       if i.measurementStatus.fineOrCoarseVelocity:
         # about 10x better, perhaps filtered with carrier phase?
         observables['D1C'] = i.fineSpeed
-        observables_std['D1C'] = sqrt(i.fineSpeedUncertainty)
+        observables_std['D1C'] = sqrt(i.fineSpeedUncertainty) # sqrt empirically makes performance much better, might be wrong
       else:
         if dr and i.unfilteredSpeed != i.filteredSpeed:
+          # This appears to be a signal that correlates to very bad measurements
           continue
         observables['D1C'] = i.unfilteredSpeed
         observables_std['D1C'] = i.unfilteredSpeedUncertainty
