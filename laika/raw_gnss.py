@@ -220,9 +220,6 @@ def read_raw_qcom(report):
         observables['D1C'] = i.fineSpeed
         observables_std['D1C'] = sqrt(i.fineSpeedUncertainty) # sqrt empirically makes performance much better, might be wrong
       else:
-        if dr and i.unfilteredSpeed != i.filteredSpeed:
-          # This appears to be a signal that correlates to very bad measurements
-          continue
         observables['D1C'] = i.unfilteredSpeed
         observables_std['D1C'] = i.unfilteredSpeedUncertainty
       observables['S1C'] = (i.carrierNoise/100.) if i.carrierNoise != 0 else np.nan
