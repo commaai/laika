@@ -249,7 +249,7 @@ def read_raw_qcom(report):
     _, sv_id = get_constellation_and_sv_id(nmea_id)
     if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown and i.measurementStatus.freshMeasurementIndicator:
       observables, observables_std = {}, {}
-      if dr: 
+      if dr:
         sat_tow = (i.filteredMeasurementIntegral + i.filteredMeasurementFraction + i.latency + time_bias_ms) / 1000
       else:
         sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + time_bias_ms) / 1000
