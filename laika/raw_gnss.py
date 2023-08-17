@@ -174,6 +174,45 @@ def group_measurements_by_sat(measurements):
     measurements_by_sat[sat] = [m for m in measurements if m.prn == sat]
   return measurements_by_sat
 
+def gps_time_from_qcom_report(self, gnss_msg):
+  if gnss_msg.which() == 'measurementReport':
+    report = gnss_msg.measurementReport
+    constellation = ConstellationId.from_qcom_source(report.source)
+    if constellation in [ConstellationId.GPS, ConstellationId.SBAS]:
+      report_time = GPSTime(report.gpsWeek, report.milliseconds / 1000.0)
+    elif constellation == ConstellationId.GLONASS:
+      report_time = GPSTime.from_glonass(report.glonassCycleNumber,
+                                            report.glonassNumberOfDays,
+                                            report.milliseconds / 1000.0)
+    else:
+      raise NotImplementedError(f'Unknownconstellation {report.source}')
+  else:
+    report = gnss_msg.drMeasurementReport
+    if ConstellationId.from_qcom_source(report.source) in [ConstellationId.GPS, ConstellationId.SBAS]:
+      report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+    elif constellation == ConstellationId.GLONASS:
+      report_time = GPSTime.from_glonass(report.glonassYear,
+                                            report.glonassDay,
+                                            report.glonassMilliseconds / 1000.0)
+    else:
+      raise NotImplementedError(f'Unknownconstellation {report.source}')
+  return report_time
+
+def get_measurements_from_qcom_reports(reports):
+  new_meas = []
+  new_meas_finespeed = []
+  for gnss_msg in reports:
+    if gnss_msg.which() == 'drMeasurementReport':
+      new_meas.extend(read_raw_qcom(gnss_msg.drMeasurementReport))
+    else:
+      new_meas_finespeed.extend(read_raw_qcom(gnss_msg.measurementReport))
+  sat_dict = {meas.prn: meas for meas in new_meas}
+  for meas in new_meas_finespeed:
+    if meas.prn in sat_dict:
+      sat_dict[meas.prn].observables['D1C'] = meas.observables['D1C']
+      sat_dict[meas.prn].observables_std['D1C'] = meas.observables_std['D1C']
+  new_meas = list(sat_dict.values())
+  return new_meas
 
 def read_raw_qcom(report):
   dr = 'DrMeasurementReport' in str(report.schema)
