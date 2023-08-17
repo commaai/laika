@@ -174,7 +174,7 @@ def group_measurements_by_sat(measurements):
     measurements_by_sat[sat] = [m for m in measurements if m.prn == sat]
   return measurements_by_sat
 
-def gps_time_from_qcom_report(self, gnss_msg):
+def gps_time_from_qcom_report(gnss_msg):
   if gnss_msg.which() == 'measurementReport':
     report = gnss_msg.measurementReport
     constellation = ConstellationId.from_qcom_source(report.source)
@@ -188,6 +188,7 @@ def gps_time_from_qcom_report(self, gnss_msg):
       raise NotImplementedError(f'Unknownconstellation {report.source}')
   else:
     report = gnss_msg.drMeasurementReport
+    constellation = ConstellationId.from_qcom_source(report.source)
     if ConstellationId.from_qcom_source(report.source) in [ConstellationId.GPS, ConstellationId.SBAS]:
       report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
     elif constellation == ConstellationId.GLONASS:
