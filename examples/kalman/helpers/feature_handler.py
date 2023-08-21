@@ -5,9 +5,9 @@ import os
 import numpy as np
 
 import laika.lib.orientation as orient
-from selfdrive.locationd.kalman.helpers import (TEMPLATE_DIR, load_code,
+from openpilot.selfdrive.locationd.kalman.helpers import (TEMPLATE_DIR, load_code,
                                                 write_code)
-from selfdrive.locationd.kalman.helpers.sympy_helpers import quat_matrix_l
+from openpilot.selfdrive.locationd.kalman.helpers.sympy_helpers import quat_matrix_l
 
 
 def sane(track):
@@ -118,7 +118,7 @@ class FeatureHandler():
 
 def generate_orient_error_jac(K):
   import sympy as sp
-  from selfdrive.locationd.kalman.helpers.sympy_helpers import quat_rotate
+  from openpilot.selfdrive.locationd.kalman.helpers.sympy_helpers import quat_rotate
 
   x_sym = sp.MatrixSymbol('abr', 3, 1)
   dtheta = sp.MatrixSymbol('dtheta', 3, 1)
