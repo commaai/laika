@@ -174,6 +174,46 @@ def group_measurements_by_sat(measurements):
     measurements_by_sat[sat] = [m for m in measurements if m.prn == sat]
   return measurements_by_sat
 
+def gps_time_from_qcom_report(gnss_msg):
+  if gnss_msg.which() == 'measurementReport':
+    report = gnss_msg.measurementReport
+    constellation = ConstellationId.from_qcom_source(report.source)
+    if constellation in [ConstellationId.GPS, ConstellationId.SBAS]:
+      report_time = GPSTime(report.gpsWeek, report.milliseconds / 1000.0)
+    elif constellation == ConstellationId.GLONASS:
+      report_time = GPSTime.from_glonass(report.glonassCycleNumber,
+                                            report.glonassNumberOfDays,
+                                            report.milliseconds / 1000.0)
+    else:
+      raise NotImplementedError(f'Unknownconstellation {report.source}')
+  else:
+    report = gnss_msg.drMeasurementReport
+    constellation = ConstellationId.from_qcom_source(report.source)
+    if ConstellationId.from_qcom_source(report.source) in [ConstellationId.GPS, ConstellationId.SBAS]:
+      report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+    elif constellation == ConstellationId.GLONASS:
+      report_time = GPSTime.from_glonass(report.glonassYear,
+                                            report.glonassDay,
+                                            report.glonassMilliseconds / 1000.0)
+    else:
+      raise NotImplementedError(f'Unknownconstellation {report.source}')
+  return report_time
+
+def get_measurements_from_qcom_reports(reports):
+  new_meas = []
+  new_meas_finespeed = []
+  for gnss_msg in reports:
+    if gnss_msg.which() == 'drMeasurementReport':
+      new_meas.extend(read_raw_qcom(gnss_msg.drMeasurementReport))
+    else:
+      new_meas_finespeed.extend(read_raw_qcom(gnss_msg.measurementReport))
+  sat_dict = {meas.prn: meas for meas in new_meas}
+  for meas in new_meas_finespeed:
+    if meas.prn in sat_dict:
+      sat_dict[meas.prn].observables['D1C'] = meas.observables['D1C']
+      sat_dict[meas.prn].observables_std['D1C'] = meas.observables_std['D1C']
+  new_meas = list(sat_dict.values())
+  return new_meas
 
 def read_raw_qcom(report):
   dr = 'DrMeasurementReport' in str(report.schema)
@@ -207,15 +247,18 @@ def read_raw_qcom(report):
       # TODO nmea_id is not valid. Fix publisher
       continue
     _, sv_id = get_constellation_and_sv_id(nmea_id)
-    if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
-      sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + time_bias_ms) / 1000
+    if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown and i.measurementStatus.freshMeasurementIndicator:
       observables, observables_std = {}, {}
+      if dr:
+        sat_tow = (i.filteredMeasurementIntegral + i.filteredMeasurementFraction + i.latency + time_bias_ms) / 1000
+      else:
+        sat_tow = (i.unfilteredMeasurementIntegral + i.unfilteredMeasurementFraction + i.latency + time_bias_ms) / 1000
       observables['C1C'] = (recv_tow - sat_tow)*constants.SPEED_OF_LIGHT
-      observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT
+      observables_std['C1C'] = i.unfilteredTimeUncertainty * 1e-3 * constants.SPEED_OF_LIGHT # always use unfiltered std, filtered std is bigger?
       if i.measurementStatus.fineOrCoarseVelocity:
         # about 10x better, perhaps filtered with carrier phase?
         observables['D1C'] = i.fineSpeed
-        observables_std['D1C'] = i.fineSpeedUncertainty
+        observables_std['D1C'] = sqrt(i.fineSpeedUncertainty) # sqrt empirically makes performance much better, might be wrong
       else:
         observables['D1C'] = i.unfilteredSpeed
         observables_std['D1C'] = i.unfilteredSpeedUncertainty
