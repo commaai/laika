@@ -198,13 +198,16 @@ def https_download_file(url):
 
 
 def ftp_download_file(url):
+  urlf = None
   try:
     urlf = urllib.request.urlopen(url, timeout=10)
     data_zipped = urlf.read()
-    urlf.close()
     return data_zipped
   except urllib.error.URLError as e:
     raise DownloadFailed(e)
+  finally:
+    if urlf is not None:
+      urlf.close()
 
 def ftps_download_file(url):
   parsed = urlparse(url)
