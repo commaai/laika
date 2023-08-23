@@ -213,9 +213,9 @@ def get_measurements_from_qcom_reports(reports):
     if meas.prn in sat_dict_dr:
       # Sometimes DR measurements are complete garbage, in those cases non-DR measurements are still sane, so cross-check
       if abs(meas.observables['C1C'] - sat_dict_dr[meas.prn].observables['C1C']) < 1000:
-        #meas.observables['C1C'] = sat_dict_dr[meas.prn].observables['C1C']
-        #meas.observables_std['C1C'] = sat_dict_dr[meas.prn].observables_std['C1C']
-        out_meas.append(meas)
+        meas.observables['C1C'] = sat_dict_dr[meas.prn].observables['C1C']
+        meas.observables_std['C1C'] = sat_dict_dr[meas.prn].observables_std['C1C']
+      out_meas.append(meas)
   return out_meas
 
 def read_raw_qcom(report):
