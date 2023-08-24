@@ -200,20 +200,23 @@ def gps_time_from_qcom_report(gnss_msg):
   return report_time
 
 def get_measurements_from_qcom_reports(reports):
+  new_meas_dr = []
   new_meas = []
-  new_meas_finespeed = []
   for gnss_msg in reports:
     if gnss_msg.which() == 'drMeasurementReport':
-      new_meas.extend(read_raw_qcom(gnss_msg.drMeasurementReport))
+      new_meas_dr.extend(read_raw_qcom(gnss_msg.drMeasurementReport))
     else:
-      new_meas_finespeed.extend(read_raw_qcom(gnss_msg.measurementReport))
-  sat_dict = {meas.prn: meas for meas in new_meas}
-  for meas in new_meas_finespeed:
-    if meas.prn in sat_dict:
-      sat_dict[meas.prn].observables['D1C'] = meas.observables['D1C']
-      sat_dict[meas.prn].observables_std['D1C'] = meas.observables_std['D1C']
-  new_meas = list(sat_dict.values())
-  return new_meas
+      new_meas.extend(read_raw_qcom(gnss_msg.measurementReport))
+  sat_dict_dr = {meas.prn: meas for meas in new_meas_dr}
+  out_meas = []
+  for meas in new_meas:
+    if meas.prn in sat_dict_dr:
+      # Sometimes DR measurements are complete garbage, in those cases non-DR measurements are still sane, so cross-check
+      if abs(meas.observables['C1C'] - sat_dict_dr[meas.prn].observables['C1C']) < 1000:
+        meas.observables['C1C'] = sat_dict_dr[meas.prn].observables['C1C']
+        meas.observables_std['C1C'] = sat_dict_dr[meas.prn].observables_std['C1C']
+      out_meas.append(meas)
+  return out_meas
 
 def read_raw_qcom(report):
   dr = 'DrMeasurementReport' in str(report.schema)
