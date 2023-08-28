@@ -2,8 +2,6 @@ import certifi
 import ftplib
 import hatanaka
 import os
-import urllib.request
-import urllib.error
 import pycurl
 import re
 import time
@@ -13,7 +11,7 @@ import logging
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
-from ftplib import FTP_TLS
+from ftplib import FTP_TLS, FTP
 
 from atomicwrites import atomic_write
 
@@ -198,12 +196,13 @@ def https_download_file(url):
 
 
 def ftp_download_file(url):
+  parsed = urlparse(url)
   try:
-    urlf = urllib.request.urlopen(url, timeout=10)
-    data_zipped = urlf.read()
-    urlf.close()
-    return data_zipped
-  except urllib.error.URLError as e:
+    buf = BytesIO()
+    with FTP(parsed.hostname) as ftps:
+      ftps.retrbinary('RETR ' + parsed.path, buf.write)
+    return buf.getvalue()
+  except ftplib.all_errors as e:
     raise DownloadFailed(e)
 
 def ftps_download_file(url):
