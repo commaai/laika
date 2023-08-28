@@ -199,8 +199,9 @@ def ftp_download_file(url):
   parsed = urlparse(url)
   try:
     buf = BytesIO()
-    with FTP(parsed.hostname) as ftps:
-      ftps.retrbinary('RETR ' + parsed.path, buf.write)
+    with FTP(parsed.hostname) as ftp:
+      ftp.login(user='anonymous')
+      ftp.retrbinary('RETR ' + parsed.path, buf.write)
     return buf.getvalue()
   except ftplib.all_errors as e:
     raise DownloadFailed(e)
