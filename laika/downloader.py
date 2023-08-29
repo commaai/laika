@@ -197,26 +197,18 @@ def https_download_file(url):
 
 def ftp_download_file(url):
   parsed = urlparse(url)
+  is_sftp = "sftp://" in url
   try:
     buf = BytesIO()
-    with FTP(parsed.hostname) as ftp:
+    with FTP_TLS(parsed.hostname) if is_sftp else FTP(parsed.hostname) as ftp:
       ftp.login(user='anonymous')
+      if is_sftp:
+        ftp.prot_p()
       ftp.retrbinary('RETR ' + parsed.path, buf.write)
     return buf.getvalue()
   except ftplib.all_errors as e:
     raise DownloadFailed(e)
 
-def ftps_download_file(url):
-  parsed = urlparse(url)
-  try:
-    buf = BytesIO()
-    with FTP_TLS(parsed.hostname) as ftps:
-      ftps.login(user='anonymous')
-      ftps.prot_p()
-      ftps.retrbinary('RETR ' + parsed.path, buf.write)
-    return buf.getvalue()
-  except ftplib.all_errors as e:
-    raise DownloadFailed(e)
 
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames):
@@ -233,10 +225,8 @@ def download_file(url_base, folder_path, filename_zipped):
   logging.debug('Downloading ' + url)
   if url.startswith('https://'):
     return https_download_file(url)
-  elif url.startswith('ftp://'):
+  elif url.startswith(("ftp://", "sftp://")):
     return ftp_download_file(url)
-  elif url.startswith('sftp://'):
-    return ftps_download_file(url)
   raise NotImplementedError('Did not find supported url scheme')
 
 
