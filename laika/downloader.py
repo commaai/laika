@@ -197,7 +197,7 @@ def https_download_file(url):
 
 def ftp_download_file(url):
   parsed = urlparse(url)
-  is_sftp = "sftp://" in url
+  is_sftp = parsed.scheme == "sftp"
   try:
     buf = BytesIO()
     with FTP_TLS(parsed.hostname) if is_sftp else FTP(parsed.hostname) as ftp:
