@@ -225,7 +225,7 @@ def download_file(url_base, folder_path, filename_zipped):
   logging.debug('Downloading ' + url)
   if url.startswith('https://'):
     return https_download_file(url)
-  elif url.startswith(("ftp://", "sftp://")):
+  elif url.startswith(('ftp://', 'sftp://')):
     return ftp_download_file(url)
   raise NotImplementedError('Did not find supported url scheme')
 
