@@ -36,6 +36,8 @@ class ConstellationId(IntEnum):
       return ConstellationId.GLONASS
     if report_source == 2:
       return ConstellationId.BEIDOU
+    if report_source == 3:
+      return ConstellationId.GALILEO
     if report_source == 6:
       return ConstellationId.SBAS
     raise NotImplementedError('Only GPS (0), GLONASS (1), BEIDOU (2) and SBAS (6) are supported from qcom, not:', {report_source})
