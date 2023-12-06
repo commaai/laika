@@ -16,6 +16,7 @@ from .dgps import get_closest_station_names, parse_dgps
 from . import constants
 
 MAX_DGPS_DISTANCE = 100_000  # in meters, because we're not barbarians
+MAX_FETCH = 3
 
 
 class AstroDog:
@@ -70,6 +71,15 @@ class AstroDog:
     self.cached_qcom_polys: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
     self.cached_nav: DefaultDict[str, Union[GPSEphemeris, GLONASSEphemeris, None]] = defaultdict(lambda: None)
     self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
+
+    self.fetch_counts: DefaultDict[str,int] = defaultdict(int)
+
+  def fetch_count(self, download_result):
+    if download_result is not None:
+      self.fetch_counts[download_result] += 1
+      if self.fetch_counts[download_result] > MAX_FETCH:
+        raise RuntimeError(f'Fetched the same file : {download_result} more than {MAX_FETCH} times.')
+    return download_result
 
   def get_ionex(self, time) -> Optional[IonexMap]:
     ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
@@ -178,7 +188,7 @@ class AstroDog:
 
   def get_nav_data(self, time):
     def download_and_parse(constellation, parse_rinex_nav_func):
-      file_path = download_nav(time, cache_dir=self.cache_dir, constellation=constellation)
+      file_path = self.fetch_count(download_nav(time, cache_dir=self.cache_dir, constellation=constellation))
       return parse_rinex_nav_func(file_path) if file_path else {}
 
     fetched_ephems = {}
@@ -204,8 +214,8 @@ class AstroDog:
       if ConstellationId.GPS in self.valid_const:
         futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
-      ephems_other = parse_sp3_orbits([f.result() for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
-      ephems_us = parse_sp3_orbits([f.result() for f in futures_gps if f.result()], self.valid_const, skip_before_epoch) if futures_gps else {}
+      ephems_other = parse_sp3_orbits([self.fetch_count(f.result()) for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
+      ephems_us = parse_sp3_orbits([self.fetch_count(f.result()) for f in futures_gps if f.result()], self.valid_const, skip_before_epoch) if futures_gps else {}
 
     return {k: ephems_other.get(k, []) + ephems_us.get(k, []) for k in set(list(ephems_other.keys()) + list(ephems_us.keys()))}
 
@@ -213,12 +223,12 @@ class AstroDog:
     assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
     skip_until_epoch = gps_time - 2 * SECS_IN_HR
 
-    result = download_prediction_orbits_russia_src(gps_time, self.cache_dir)
+    result = self.fetch_count(download_prediction_orbits_russia_src(gps_time, self.cache_dir))
     if result is not None:
       result = [result]
     elif ConstellationId.GPS in self.valid_const:
       # Slower fallback. Russia src prediction orbits are published from 2022
-      result = [download_orbits_gps(t, self.cache_dir, self.valid_ephem_types) for t in [gps_time - SECS_IN_DAY, gps_time]]
+      result = [self.fetch_count(download_orbits_gps(t, self.cache_dir, self.valid_ephem_types)) for t in [gps_time - SECS_IN_DAY, gps_time]]
     if result is None:
       return {}
     return parse_sp3_orbits(result, self.valid_const, skip_until_epoch=skip_until_epoch)
@@ -234,7 +244,7 @@ class AstroDog:
     self.add_orbits(ephems_sp3)
 
   def get_dcb_data(self, time):
-    file_path_dcb = download_dcb(time, cache_dir=self.cache_dir)
+    file_path_dcb = self.fetch_count(download_dcb(time, cache_dir=self.cache_dir))
     dcbs = parse_dcbs(file_path_dcb, self.valid_const)
     for dcb in dcbs:
       self.dcbs[dcb.prn].append(dcb)
@@ -251,7 +261,7 @@ class AstroDog:
     return min_epoch, max_epoch
 
   def get_ionex_data(self, time):
-    file_path_ionex = download_ionex(time, cache_dir=self.cache_dir)
+    file_path_ionex = self.fetch_count(download_ionex(time, cache_dir=self.cache_dir))
     ionex_maps = parse_ionex(file_path_ionex)
     for im in ionex_maps:
       self.ionex_maps.append(im)
@@ -259,7 +269,7 @@ class AstroDog:
   def get_dgps_data(self, time, recv_pos):
     station_names = get_closest_station_names(recv_pos, k=8, max_distance=MAX_DGPS_DISTANCE, cache_dir=self.cache_dir)
     for station_name in station_names:
-      file_path_station = download_cors_station(time, station_name, cache_dir=self.cache_dir)
+      file_path_station = self.fetch_count(download_cors_station(time, station_name, cache_dir=self.cache_dir))
       if file_path_station:
         dgps = parse_dgps(station_name, file_path_station,
                           self, max_distance=MAX_DGPS_DISTANCE,
