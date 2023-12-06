@@ -222,8 +222,6 @@ def download_files(url_base, folder_path, cacheDir, filenames):
 @retryable
 def download_file(url_base, folder_path, filename_zipped):
   url = url_base + folder_path + filename_zipped
-  print(f'downloading {url}')
-
   logging.debug('Downloading ' + url)
   if url.startswith('https://'):
     return https_download_file(url)
@@ -249,7 +247,6 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
   filename_zipped = filename + compression
   folder_path_abs = os.path.join(cache_dir, folder_path)
   filepath = str(hatanaka.get_decompressed_path(os.path.join(folder_path_abs, filename)))
-  print(f'Downloading and caching {filepath}')
 
   filepath_attempt = filepath + '.attempt_time'
 
