@@ -214,8 +214,10 @@ class AstroDog:
       if ConstellationId.GPS in self.valid_const:
         futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
-      ephems_other = parse_sp3_orbits([self.fetch_count(f.result()) for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
-      ephems_us = parse_sp3_orbits([self.fetch_count(f.result()) for f in futures_gps if f.result()], self.valid_const, skip_before_epoch) if futures_gps else {}
+      files_other = [self.fetch_count(f.result()) for f in futures_other if f.result()]
+      ephems_other = parse_sp3_orbits(files_other, self.valid_const, skip_before_epoch)
+      files_gps = [self.fetch_count(f.result()) for f in futures_gps if f.result()] if futures_gps else []
+      ephems_us = parse_sp3_orbits(files_gps, self.valid_const, skip_before_epoch)
 
     return {k: ephems_other.get(k, []) + ephems_us.get(k, []) for k in set(list(ephems_other.keys()) + list(ephems_us.keys()))}
 
