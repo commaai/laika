@@ -418,14 +418,21 @@ def download_ionex(time, cache_dir):
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/ionex/',
     'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/ionex/',
-    'ftp://igs.ensg.ign.fr/pub/igs/products/ionosphere/',
-    'ftp://gssc.esa.int/gnss/products/ionex/',
   )
   folder_path = t.strftime('%Y/%j/')
-  filenames = [t.strftime("codg%j0.%yi"), t.strftime("c1pg%j0.%yi"), t.strftime("c2pg%j0.%yi")]
+  # Format date change
+  if time >= GPSTime(2238, 0.0):
+    filenames = [t.strftime('COD0OPSFIN_%Y%j0000_01D_01H_GIM.INX'),
+                 t.strftime('COD0OPSRAP_%Y%j0000_01D_01H_GIM.INX')]
+    compression = '.gz'
+  else:
+    filenames = [t.strftime("codg%j0.%yi"),
+                 t.strftime("c1pg%j0.%yi"),
+                 t.strftime("c2pg%j0.%yi")]
+    compression = '.Z'
 
   folder_file_names = [(folder_path, f) for f in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'ionex/', compression='.Z', raise_error=True)
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'ionex/', compression=compression, raise_error=True)
 
 
 def download_dcb(time, cache_dir):
