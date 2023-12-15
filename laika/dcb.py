@@ -71,6 +71,8 @@ def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
     prn = line_components[2]
     if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
       continue
+    if len(line_components) < 10:  # Handle invalid formatting in estimated_value
+      continue
     dcb_type = line_components[3] + '_' + line_components[4]
     epoch = GPSTime.from_datetime(datetime.strptime(line_components[5], '%Y:%j:%f')) + 12*SECS_IN_HR
     if prn not in dcbs_dict:
