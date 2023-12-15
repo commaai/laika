@@ -71,7 +71,10 @@ def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
     prn = line_components[2]
     if get_constellation(prn) not in SUPPORTED_CONSTELLATIONS:
       continue
-    if len(line_components) < 10:  # Handle invalid formatting in estimated_value
+    # The lines may be formatted incorrectly with no whitespace between the
+    # estimated_value and std_dev columns, e.g. CAS0MGXRAP_20232340000_01D_01D_DCB.BSX.
+    # We ignore these lines since they can't be parsed.
+    if len(line_components) < 10:
       continue
     dcb_type = line_components[3] + '_' + line_components[4]
     epoch = GPSTime.from_datetime(datetime.strptime(line_components[5], '%Y:%j:%f')) + 12*SECS_IN_HR
