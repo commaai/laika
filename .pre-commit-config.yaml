@@ -35,8 +35,3 @@ repos:
         - --quiet
         - --force
         - -j8
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.1
-    hooks:
-    -   id: pyupgrade
-        args: [--py311-plus]
