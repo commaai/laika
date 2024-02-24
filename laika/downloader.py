@@ -5,7 +5,6 @@ import os
 import pycurl
 import re
 import time
-import socket
 import logging
 
 from datetime import datetime, timedelta

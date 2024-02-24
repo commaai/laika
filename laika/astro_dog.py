@@ -1,6 +1,6 @@
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import DefaultDict, Dict, List, Optional, Union
+from typing import DefaultDict
 from collections.abc import Iterable
 
 from .constants import SECS_IN_DAY, SECS_IN_HR

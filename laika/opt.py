@@ -1,6 +1,5 @@
 import sympy
 import numpy as np
-from typing import List
 
 from .constants import EARTH_ROTATION_RATE, SPEED_OF_LIGHT
 from .helpers import ConstellationId

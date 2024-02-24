@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import math
-from typing import List
 
 import numpy as np
 import sympy as sp

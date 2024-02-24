@@ -1,5 +1,4 @@
 from enum import IntEnum
-from typing import Dict
 
 import numpy as np
 from .lib.coordinates import LocalCoord
