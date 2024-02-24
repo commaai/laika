@@ -77,7 +77,7 @@ class CarKalman():
     ObservationKind.STIFFNESS: np.atleast_2d(50.0**2),
   }
 
-  maha_test_kinds:List[int] = []  # [ObservationKind.ROAD_FRAME_YAW_RATE, ObservationKind.ROAD_FRAME_XY_SPEED]
+  maha_test_kinds:list[int] = []  # [ObservationKind.ROAD_FRAME_YAW_RATE, ObservationKind.ROAD_FRAME_XY_SPEED]
   global_vars = [
     sp.Symbol('mass'),
     sp.Symbol('rotational_inertia'),

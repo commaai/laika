@@ -53,8 +53,8 @@ class GNSSMeasurement:
   SAT_POS = slice(8, 11)
   SAT_VEL = slice(11, 14)
 
-  def __init__(self, constellation_id: ConstellationId, sv_id: int, recv_time_week: int, recv_time_sec: float, observables: Dict[str, float],
-               observables_std: Dict[str, float], glonass_freq: Union[int, float, None] = None):
+  def __init__(self, constellation_id: ConstellationId, sv_id: int, recv_time_week: int, recv_time_sec: float, observables: dict[str, float],
+               observables_std: dict[str, float], glonass_freq: int | float | None = None):
     # Metadata
     # prn: unique satellite id
     self.prn = "%s%02d" % (constellation_id.to_rinex_char(), sv_id)  # satellite ID in rinex convention
@@ -78,10 +78,10 @@ class GNSSMeasurement:
     self.sat_pos = np.array([np.nan, np.nan, np.nan])
     self.sat_vel = np.array([np.nan, np.nan, np.nan])
     self.sat_clock_err = np.nan
-    self.sat_ephemeris: Optional[Ephemeris] = None
+    self.sat_ephemeris: Ephemeris | None = None
 
     self.sat_pos_final = np.array([np.nan, np.nan, np.nan])  # sat_pos in receiver time's ECEF frame instead of satellite time's ECEF frame
-    self.observables_final: Dict[str, float] = {}
+    self.observables_final: dict[str, float] = {}
 
   def process(self, dog):
     sat_time = self.recv_time - self.observables['C1C']/constants.SPEED_OF_LIGHT
@@ -142,7 +142,7 @@ class GNSSMeasurement:
     return get_nmea_id_from_constellation_and_svid(self.constellation_id, self.sv_id)
 
 
-def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSMeasurement]:
+def process_measurements(measurements: list[GNSSMeasurement], dog) -> list[GNSSMeasurement]:
   proc_measurements = []
   for meas in measurements:
     if meas.process(dog):
@@ -150,7 +150,7 @@ def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSM
   return proc_measurements
 
 
-def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog, correct_delay=True) -> List[GNSSMeasurement]:
+def correct_measurements(measurements: list[GNSSMeasurement], est_pos, dog, correct_delay=True) -> list[GNSSMeasurement]:
   corrected_measurements = []
   for meas in measurements:
     if meas.correct(est_pos, dog, correct_delay=correct_delay):
@@ -280,7 +280,7 @@ def read_raw_qcom(report):
   return measurements
 
 
-def read_raw_ublox(report) -> List[GNSSMeasurement]:
+def read_raw_ublox(report) -> list[GNSSMeasurement]:
   recv_tow = report.rcvTow  # seconds
   recv_week = report.gpsWeek
   measurements = []
@@ -314,8 +314,8 @@ def read_raw_ublox(report) -> List[GNSSMeasurement]:
   return measurements
 
 
-def read_rinex_obs(obsdata) -> List[List[GNSSMeasurement]]:
-  measurements: List[List[GNSSMeasurement]] = []
+def read_rinex_obs(obsdata) -> list[list[GNSSMeasurement]]:
+  measurements: list[list[GNSSMeasurement]] = []
   obsdata_keys = list(obsdata.data.keys())
   first_sat = obsdata_keys[0]
   n = len(obsdata.data[first_sat]['Epochs'])

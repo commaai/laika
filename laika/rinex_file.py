@@ -1,4 +1,3 @@
-
 # Copyright (C) 2014 Swift Navigation Inc.
 #
 # This source is subject to the license found in the file 'LICENSE' which must

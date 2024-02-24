@@ -132,7 +132,7 @@ def get_velfix_sympy_func():
     res, modules=["numpy"])
 
 
-def pr_residual(measurements: List[GNSSMeasurement], posfix_functions=None, signal='C1C', no_nans=False):
+def pr_residual(measurements: list[GNSSMeasurement], posfix_functions=None, signal='C1C', no_nans=False):
 
   if posfix_functions is None:
     posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
@@ -163,7 +163,7 @@ def pr_residual(measurements: List[GNSSMeasurement], posfix_functions=None, sign
   return Fx_pos
 
 
-def prr_residual(measurements: List[GNSSMeasurement], est_pos, velfix_function=None, signal='D1C', no_nans=False):
+def prr_residual(measurements: list[GNSSMeasurement], est_pos, velfix_function=None, signal='D1C', no_nans=False):
 
   if velfix_function is None:
     velfix_function = get_velfix_sympy_func()

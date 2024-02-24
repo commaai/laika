@@ -55,7 +55,7 @@ class EphemerisType(IntEnum):
 class Ephemeris(ABC):
 
   def __init__(self, prn: str, epoch: GPSTime, eph_type: EphemerisType, healthy: bool, max_time_diff: float,
-               file_epoch: Optional[GPSTime] = None, file_name=None):
+               file_epoch: GPSTime | None = None, file_name=None):
     self.prn = prn
     self.epoch = epoch
     self.eph_type = eph_type
@@ -154,7 +154,7 @@ class GLONASSEphemeris(Ephemeris):
 
 class PolyEphemeris(Ephemeris):
   def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType,
-               file_epoch: Optional[GPSTime] = None, file_name: Optional[str] = None, healthy=True, tgd=0,
+               file_epoch: GPSTime | None = None, file_name: str | None = None, healthy=True, tgd=0,
                max_time_diff: int=SECS_IN_HR):
     super().__init__(prn, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
     self.data = data
@@ -269,10 +269,10 @@ class GPSEphemeris(Ephemeris):
     return pos, vel, clock_err, clock_rate_err
 
 
-def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: Optional[GPSTime] = None) -> Dict[str, List[PolyEphemeris]]:
+def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: GPSTime | None = None) -> dict[str, list[PolyEphemeris]]:
   if skip_until_epoch is None:
     skip_until_epoch = GPSTime(0, 0)
-  data: Dict[str, List] = {}
+  data: dict[str, list] = {}
   for file_name in file_names:
     if file_name is None:
       continue
