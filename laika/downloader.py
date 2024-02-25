@@ -5,7 +5,6 @@ import os
 import pycurl
 import re
 import time
-import socket
 import logging
 
 from datetime import datetime, timedelta
@@ -105,7 +104,7 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames):
         ftp.retrbinary('RETR ' + filename, open(filepath, 'wb').write)
       except (ftplib.error_perm):
         raise DownloadFailed("Could not download file from: " + url_base + folder_path + filename)
-      except (socket.timeout):
+      except (TimeoutError):
         raise DownloadFailed("Read timed out from: " + url_base + folder_path + filename)
       filepaths.append(filepath)
     else:
@@ -251,14 +250,14 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
   filepath_attempt = filepath + '.attempt_time'
 
   if os.path.exists(filepath_attempt):
-    with open(filepath_attempt, 'r') as rf:
+    with open(filepath_attempt) as rf:
       last_attempt_time = float(rf.read())
     if time.time() - last_attempt_time < SECS_IN_HR:
       raise DownloadFailed(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
   if not os.path.isfile(filepath) or overwrite:
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
-    except (DownloadFailed, pycurl.error, socket.timeout):
+    except (DownloadFailed, pycurl.error, TimeoutError):
       unix_time = time.time()
       os.makedirs(folder_path_abs, exist_ok=True)
       with atomic_write(filepath_attempt, mode='w', overwrite=True) as wf:

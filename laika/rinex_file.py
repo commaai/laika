@@ -1,4 +1,3 @@
-
 # Copyright (C) 2014 Swift Navigation Inc.
 #
 # This source is subject to the license found in the file 'LICENSE' which must
@@ -98,10 +97,10 @@ class RINEXFile:
           pass
 
         if n_obs <= 9:
-          for i in range(0, n_obs):
+          for i in range(n_obs):
             self.obs_types.append(line[10 + 6 * i:12 + 6 * i])
         if n_obs > 9:
-          for i in range(0, 9):
+          for i in range(9):
             self.obs_types.append(line[10 + 6 * i:12 + 6 * i])
           n_obs -= 9
 
@@ -150,7 +149,7 @@ class RINEXFile:
       return None
 
     sats = []
-    for i in range(0, n_sats):
+    for i in range(n_sats):
       if ((i % 12) == 0) and (i > 0):
         epoch_hdr = f.readline()
       sats.append(epoch_hdr[(32 + (i % 12) * 3):(35 + (i % 12) * 3)])

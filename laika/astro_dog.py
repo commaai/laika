@@ -1,6 +1,7 @@
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import DefaultDict, Dict, Iterable, List, Optional, Union
+from typing import DefaultDict
+from collections.abc import Iterable
 
 from .constants import SECS_IN_DAY, SECS_IN_HR
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
@@ -59,18 +60,18 @@ class AstroDog:
     self.dcbs_fetched_times = TimeRangeHolder()
 
     self.dgps_delays = []
-    self.ionex_maps: List[IonexMap] = []
-    self.orbits: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
-    self.qcom_polys: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
-    self.navs: DefaultDict[str, List[Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(list)
-    self.dcbs: DefaultDict[str, List[DCB]] = defaultdict(list)
+    self.ionex_maps: list[IonexMap] = []
+    self.orbits: DefaultDict[str, list[PolyEphemeris]] = defaultdict(list)
+    self.qcom_polys: DefaultDict[str, list[PolyEphemeris]] = defaultdict(list)
+    self.navs: DefaultDict[str, list[GPSEphemeris | GLONASSEphemeris]] = defaultdict(list)
+    self.dcbs: DefaultDict[str, list[DCB]] = defaultdict(list)
 
-    self.cached_ionex: Optional[IonexMap] = None
+    self.cached_ionex: IonexMap | None = None
     self.cached_dgps = None
-    self.cached_orbit: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
-    self.cached_qcom_polys: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
-    self.cached_nav: DefaultDict[str, Union[GPSEphemeris, GLONASSEphemeris, None]] = defaultdict(lambda: None)
-    self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
+    self.cached_orbit: DefaultDict[str, PolyEphemeris | None] = defaultdict(lambda: None)
+    self.cached_qcom_polys: DefaultDict[str, PolyEphemeris | None] = defaultdict(lambda: None)
+    self.cached_nav: DefaultDict[str, GPSEphemeris | GLONASSEphemeris | None] = defaultdict(lambda: None)
+    self.cached_dcb: DefaultDict[str, DCB | None] = defaultdict(lambda: None)
 
     self.fetch_counts: DefaultDict[str,int] = defaultdict(int)
 
@@ -81,8 +82,8 @@ class AstroDog:
         raise RuntimeError(f'Fetched the same file : {download_result} more than {MAX_FETCH} times.')
     return download_result
 
-  def get_ionex(self, time) -> Optional[IonexMap]:
-    ionex: Optional[IonexMap] = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
+  def get_ionex(self, time) -> IonexMap | None:
+    ionex: IonexMap | None = self._get_latest_valid_data(self.ionex_maps, self.cached_ionex, self.get_ionex_data, time)
     if ionex is None:
       if self.auto_update:
         raise RuntimeError("Pulled ionex, but still can't get valid for time " + str(time))
@@ -156,16 +157,16 @@ class AstroDog:
       self.cached_dgps = latest_data
     return latest_data
 
-  def add_qcom_polys(self, new_ephems: Dict[str, List[Ephemeris]]):
+  def add_qcom_polys(self, new_ephems: dict[str, list[Ephemeris]]):
     self._add_ephems(new_ephems, self.qcom_polys)
 
-  def add_orbits(self, new_ephems: Dict[str, List[Ephemeris]]):
+  def add_orbits(self, new_ephems: dict[str, list[Ephemeris]]):
     self._add_ephems(new_ephems, self.orbits)
 
-  def add_navs(self, new_ephems: Dict[str, List[Ephemeris]]):
+  def add_navs(self, new_ephems: dict[str, list[Ephemeris]]):
     self._add_ephems(new_ephems, self.navs)
 
-  def _add_ephems(self, new_ephems: Dict[str, List[Ephemeris]], ephems_dict):
+  def _add_ephems(self, new_ephems: dict[str, list[Ephemeris]], ephems_dict):
     for k, v in new_ephems.items():
       if len(v) > 0:
         if self.clear_old_ephemeris:
@@ -205,7 +206,7 @@ class AstroDog:
       end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
       self.navs_fetched_times.add(begin_day, end_day)
 
-  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> Dict[str, List[PolyEphemeris]]:
+  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> dict[str, list[PolyEphemeris]]:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
