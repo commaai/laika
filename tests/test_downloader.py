@@ -10,7 +10,7 @@ class TestDownloader(unittest.TestCase):
   def setUp(self) -> None:
     self.cache_dir = '/tmp/gnss/'+'cddis_products'
     self.url_base = (
-      'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
+      'https://raw.githubusercontent.com/commaai/gnss-data/master/gnss/products/',
       'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/',
       'ftp://igs.ign.fr/pub/igs/products/',
     )
@@ -32,8 +32,12 @@ class TestDownloader(unittest.TestCase):
       dat = download_file(url_base, self.folder_path, self.filename_zipped)
       self.assertTrue(dat and len(dat) == 197513, f"{url_base + self.folder_path + self.filename_zipped} is incorrect size: {0 if not dat else len(dat)}")
 
-  def test_download(self):
+  def test_download_list(self):
     file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+    self.assertIsNotNone(file)
+
+  def test_download_list_with_none(self):
+    file = download_and_cache_file((None, self.url_base[0]), self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
     self.assertIsNotNone(file)
 
   def test_download_overwrite(self):

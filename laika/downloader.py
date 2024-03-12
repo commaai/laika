@@ -280,7 +280,7 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
       os.makedirs(folder_path_abs, exist_ok=True)
       with atomic_write(filepath_attempt, mode='w', overwrite=True) as wf:
         wf.write(str(unix_time))
-      raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base} ")
+      raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base}")
 
     os.makedirs(folder_path_abs, exist_ok=True)
     ephem_bytes = hatanaka.decompress(data_zipped)
