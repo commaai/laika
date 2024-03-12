@@ -21,6 +21,19 @@ from .helpers import ConstellationId
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
+# mirror of sftp://gdc.cddis.eosdis.nasa.gov
+CDDIS_BASE_URL = os.getenv("CDDIS_BASE_URL", "https://raw.githubusercontent.com/commaai/gnss-data/master")
+
+# mirror of sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/hourly
+CDDIS_HOURLY_BASE_URL = os.getenv("CDDIS_HOURLY_BASE_URL", "https://raw.githubusercontent.com/commaai/gnss-data-hourly/master")
+
+# mirror of ftp://ftp.glonass-iac.ru
+GLONAS_IAC_BASE_URL = os.getenv("GLONAS_IAC_BASE_URL", "https://raw.githubusercontent.com/commaai/gnss-data-alt/master")
+
+# no mirror
+IGN_BASE_URL = os.getenv("IGN_BASE_URL", "ftp://igs.ign.fr/pub")
+
+
 class DownloadFailed(Exception):
   pass
 
@@ -36,7 +49,7 @@ def retryable(f):
       return f(url_bases, *args, **kwargs)
 
     # not a string, must be a list of url_bases
-    for url_base in url_bases:
+    for url_base in (url for url in url_bases if url):
       try:
         return f(url_base, *args, **kwargs)
       except DownloadFailed as e:
@@ -44,6 +57,11 @@ def retryable(f):
     # none of them succeeded
     raise DownloadFailed("Multiple URL failures attempting to pull file(s)")
   return wrapped
+
+
+def mirror_url(base, path):
+  # None means disabled
+  return base + path if base else None
 
 
 def ftp_connect(url):
@@ -222,7 +240,7 @@ def download_files(url_base, folder_path, cacheDir, filenames):
 def download_file(url_base, folder_path, filename_zipped):
   url = url_base + folder_path + filename_zipped
   logging.debug('Downloading ' + url)
-  if url.startswith('https://'):
+  if url.startswith(('http://', 'https://')):
     return https_download_file(url)
   elif url.startswith(('ftp://', 'sftp://')):
     return ftp_download_file(url)
@@ -281,38 +299,32 @@ CONSTELLATION_NASA_CHAR = {ConstellationId.GPS: 'n', ConstellationId.GLONASS: 'g
 
 def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
   t = time.as_datetime()
-  try:
-    if constellation not in CONSTELLATION_NASA_CHAR:
-      return None
-    c = CONSTELLATION_NASA_CHAR[constellation]
-    if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
-      url_bases = (
-        'https://github.com/commaai/gnss-data/raw/master/gnss/data/daily/',
-        'sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/daily/',
-      )
-      filename = t.strftime(f"brdc%j0.%y{c}")
-      folder_path = t.strftime(f'%Y/%j/%y{c}/')
-      compression = '.gz' if folder_path >= '2020/335/' else '.Z'
-      return download_and_cache_file(url_bases, folder_path, cache_dir+'daily_nav/', filename, compression)
-    else:
-      url_bases = (
-        'https://github.com/commaai/gnss-data-hourly/raw/master/',
-        'sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/hourly/',
-      )
-      times = [t, (t - timedelta(hours=1))]
-      folder_and_filenames = [(t.strftime('%Y/%j/'), t.strftime(f"hour%j0.%y{c}")) for t in times]
-      compression = '.gz' if folder_and_filenames[0][0] >= '2020/336/' else '.Z'
-      # always overwrite as this file is appended
-      return download_and_cache_file_return_first_success(url_bases,
-        folder_and_filenames, cache_dir+'hourly_nav/', compression, overwrite=True)
-  except DownloadFailed:
-    pass
+  if constellation not in CONSTELLATION_NASA_CHAR:
+    return None
+  c = CONSTELLATION_NASA_CHAR[constellation]
+  if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
+    url_bases = (
+      mirror_url(CDDIS_BASE_URL, '/gnss/data/daily/'),
+    )
+    filename = t.strftime(f"brdc%j0.%y{c}")
+    folder_path = t.strftime(f'%Y/%j/%y{c}/')
+    compression = '.gz' if folder_path >= '2020/335/' else '.Z'
+    return download_and_cache_file(url_bases, folder_path, cache_dir+'daily_nav/', filename, compression)
+  else:
+    url_bases = (
+      mirror_url(CDDIS_HOURLY_BASE_URL, '/'),
+    )
+    times = [t, (t - timedelta(hours=1))]
+    folder_and_filenames = [(t.strftime('%Y/%j/'), t.strftime(f"hour%j0.%y{c}")) for t in times]
+    compression = '.gz' if folder_and_filenames[0][0] >= '2020/336/' else '.Z'
+    # always overwrite as this file is appended
+    return download_and_cache_file_return_first_success(url_bases,
+      folder_and_filenames, cache_dir+'hourly_nav/', compression, overwrite=True)
 
 
 def download_orbits_gps_cod0(time, cache_dir, ephem_types):
   url_bases = (
-    'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
-    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/',
+    mirror_url(CDDIS_BASE_URL, '/gnss/products/'),
   )
 
   if EphemerisType.ULTRA_RAPID_ORBIT not in ephem_types:
@@ -331,9 +343,8 @@ def download_orbits_gps_cod0(time, cache_dir, ephem_types):
 
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
-    'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
-    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/',
-    'ftp://igs.ign.fr/pub/igs/products/',
+    mirror_url(CDDIS_BASE_URL, '/gnss/products/'),
+    mirror_url(IGN_BASE_URL, '/igs/products/'),
   )
   folder_path = "%i/" % time.week
   filenames = []
@@ -363,7 +374,9 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
   # Files exist starting at 29-01-2022
   if t < datetime(2022, 1, 29):
     return None
-  url_bases = 'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/'
+  url_bases = (
+    mirror_url(GLONAS_IAC_BASE_URL, '/MCC/PRODUCTS/'),
+  )
   folder_path = t.strftime('%y%j/ultra/')
   file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
 
@@ -395,8 +408,7 @@ def download_prediction_orbits_russia_src(gps_time, cache_dir):
 def download_orbits_russia_src(time, cache_dir, ephem_types):
   # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
   url_bases = (
-    'https://github.com/commaai/gnss-data-alt/raw/master/MCC/PRODUCTS/',
-    'ftp://ftp.glonass-iac.ru/MCC/PRODUCTS/',
+    mirror_url(GLONAS_IAC_BASE_URL, '/MCC/PRODUCTS/'),
   )
   t = time.as_datetime()
   folder_paths = []
@@ -415,8 +427,7 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
 def download_ionex(time, cache_dir):
   t = time.as_datetime()
   url_bases = (
-    'https://github.com/commaai/gnss-data/raw/master/gnss/products/ionex/',
-    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/ionex/',
+    mirror_url(CDDIS_BASE_URL, '/gnss/products/ionex/'),
   )
   folder_path = t.strftime('%Y/%j/')
   # Format date change
@@ -438,9 +449,8 @@ def download_dcb(time, cache_dir):
   filenames = []
   folder_paths = []
   url_bases = (
-    'https://github.com/commaai/gnss-data/raw/master/gnss/products/bias/',
-    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/bias/',
-    'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/',
+    mirror_url(CDDIS_BASE_URL, '/gnss/products/bias/'),
+    mirror_url(IGN_BASE_URL, '/igs/products/mgex/dcb/'),
   )
   # seem to be a lot of data missing, so try many days
   for time_step in [time - i * SECS_IN_DAY for i in range(14)]:
