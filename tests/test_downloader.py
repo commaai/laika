@@ -36,8 +36,8 @@ class TestDownloader(unittest.TestCase):
     file = download_and_cache_file(self.url_base, self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
     self.assertIsNotNone(file)
 
-  def test_download_list_with_none(self):
-    file = download_and_cache_file((None, self.url_base[0]), self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
+  def test_download_list_with_disabled_mirror(self):
+    file = download_and_cache_file((None, "", self.url_base[0]), self.folder_path, cache_dir=self.cache_dir, filename=self.filename, compression='.Z')
     self.assertIsNotNone(file)
 
   def test_download_overwrite(self):
