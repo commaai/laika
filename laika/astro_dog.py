@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import DefaultDict
@@ -33,7 +34,7 @@ class AstroDog:
   '''
 
   def __init__(self, auto_update=True,
-               cache_dir='/tmp/gnss/',
+               cache_dir=None,
                dgps=False,
                valid_const=(ConstellationId.GPS, ConstellationId.GLONASS),
                valid_ephem_types=EphemerisType.all_orbits(),
@@ -44,7 +45,7 @@ class AstroDog:
         raise TypeError(f"valid_const must be a list of ConstellationId, got {const}")
 
     self.auto_update = auto_update
-    self.cache_dir = cache_dir
+    self.cache_dir = cache_dir or os.getenv('GNSS_CACHE_DIR', '/tmp/gnss/')
     self.clear_old_ephemeris = clear_old_ephemeris
     self.dgps = dgps
     if not isinstance(valid_ephem_types, Iterable):
