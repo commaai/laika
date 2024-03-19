@@ -447,6 +447,8 @@ def download_ionex(time, cache_dir):
 
 def download_dcb(time, cache_dir):
   filenames = []
+  formats = ['CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX',
+             'CAS0OPSRAP_%Y%j0000_01D_01D_DCB.BIA']
   folder_paths = []
   url_bases = (
     mirror_url(CDDIS_BASE_URL, '/gnss/products/bias/'),
@@ -454,10 +456,10 @@ def download_dcb(time, cache_dir):
   )
   # seem to be a lot of data missing, so try many days
   for time_step in [time - i * SECS_IN_DAY for i in range(14)]:
-    t = time_step.as_datetime()
-    folder_paths.append(t.strftime('%Y/'))
-    filenames.append(t.strftime("CAS0MGXRAP_%Y%j0000_01D_01D_DCB.BSX"))
-
+    for file_format in formats:
+      t = time_step.as_datetime()
+      folder_paths.append(t.strftime('%Y/'))
+      filenames.append(t.strftime(file_format))
   return download_and_cache_file_return_first_success(url_bases, list(zip(folder_paths, filenames)), cache_dir+'dcb/', compression='.gz', raise_error=True)
 
 
