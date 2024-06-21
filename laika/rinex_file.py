@@ -13,7 +13,7 @@ import logging
 
 def floatornan(x):
   if x == '' or x[-1] == ' ':
-    return np.NaN
+    return np.nan
   return float(x)
 
 
@@ -157,7 +157,7 @@ class RINEXFile:
     return epoch, flag, sats
 
   def _read_obs(self, f, n_sat, sat_map):
-    obs = np.empty((TOTAL_SATS, len(self.obs_types)), dtype=np.float64) * np.NaN
+    obs = np.empty((TOTAL_SATS, len(self.obs_types)), dtype=np.float64) * np.nan
     lli = np.zeros((TOTAL_SATS, len(self.obs_types)), dtype=np.uint8)
     signal_strength = np.zeros((TOTAL_SATS, len(self.obs_types)), dtype=np.uint8)
 
@@ -180,7 +180,7 @@ class RINEXFile:
 
   def _read_data_chunk(self, f, CHUNK_SIZE=10000):
     obss = np.empty(
-      (CHUNK_SIZE, TOTAL_SATS, len(self.obs_types)), dtype=np.float64) * np.NaN
+      (CHUNK_SIZE, TOTAL_SATS, len(self.obs_types)), dtype=np.float64) * np.nan
     llis = np.zeros((CHUNK_SIZE, TOTAL_SATS, len(self.obs_types)), dtype=np.uint8)
     signal_strengths = np.zeros(
       (CHUNK_SIZE, TOTAL_SATS, len(self.obs_types)), dtype=np.uint8)
