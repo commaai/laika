@@ -245,7 +245,7 @@ def read_raw_qcom(report):
   for i in report.sv:
     # todo change svId to nmea_id in cereal message. Or better: change the publisher to publish correct svId's, since constellation id is also given
     nmea_id = i.svId
-    if nmea_id == 255:
+    if nmea_id == 255 or nmea_id == 0:
       # TODO nmea_id is not valid. Fix publisher
       continue
     _, sv_id = get_constellation_and_sv_id(nmea_id)
