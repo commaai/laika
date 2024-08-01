@@ -432,7 +432,7 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
   t = time.as_datetime()
   folder_paths = []
   current_gps_time = GPSTime.from_datetime(datetime.utcnow())
-  filename = "Sta%i%i.sp3" % (time.week, time.day)
+  filename = "Sta%i%i.sp3" % (time.week, time.dow)
   if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
     folder_paths.append(t.strftime('%y%j/final/'))
   if EphemerisType.RAPID_ORBIT in ephem_types:
