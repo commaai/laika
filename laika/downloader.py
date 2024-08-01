@@ -341,6 +341,27 @@ def download_orbits_gps_cod0(time, cache_dir, ephem_types):
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.gz')
 
 
+def time_to_product_names(time: GPSTime, ephem_type: EphemerisType) -> set[str]:
+  # example: igs${GPS_WEEK}${DOW}.sp3 , IGS${V}OPSFIN_${YYYY}${DOY}0000_01D_15M_ORB.SP3
+  # example: igr${GPS_WEEK}${DOW}.sp3 ,   IGS${V}OPSRAP_${YYYY}${DOY}0000_01D_15M_ORB.SP3
+  # example: igu${GPS_WEEK}${DOW}_${HH}.sp3 ,   IGS${V}OPSULT_${YYYY}${DOY}0000_02D_15M_ORB.SP3
+  if time.week < 2238:
+    ephem_str = {
+      EphemerisType.FINAL_ORBIT: 'igs{wwww}{dow}.sp3',
+      EphemerisType.RAPID_ORBIT: 'igr{wwww}{dow}.sp3',
+      EphemerisType.ULTRA_RAPID_ORBIT: 'igu{wwww}{dow}_{hh}.sp3'
+    }[ephem_type]
+    return {ephem_str.format(wwww=time.week, dow=time.dow, hh=hour) for hour in ('18', '12', '06', '00')}
+
+  else:
+    # TODO deal with version number
+    ephem_str = {
+      EphemerisType.FINAL_ORBIT: 'IGS0OPSFIN_{yyyy}{doy}0000_01D_15M_ORB.SP3',
+      EphemerisType.RAPID_ORBIT: 'IGS0OPSFIN_{yyyy}{doy}0000_01D_15M_ORB.SP3',
+      EphemerisType.ULTRA_RAPID_ORBIT: 'IGS0OPSFIN_{yyyy}{doy}0000_02D_15M_ORB.SP3',
+    }[ephem_type]
+    return {ephem_str.format(yyyy=time.year, doy=time.doy)}
+
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
     mirror_url(CDDIS_BASE_URL, '/gnss/products/'),
@@ -348,17 +369,15 @@ def download_orbits_gps(time, cache_dir, ephem_types):
   )
   folder_path = "%i/" % time.week
   filenames = []
-  time_str = "%i%i" % (time.week, time.day)
+
   # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
   if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
-    filenames.append(f"igs{time_str}.sp3")
+    filenames.extend(time_to_product_names(time, EphemerisType.FINAL_ORBIT))
   if EphemerisType.RAPID_ORBIT in ephem_types:
-    filenames.append(f"igr{time_str}.sp3")
+    filenames.extend(time_to_product_names(time, EphemerisType.RAPID_ORBIT))
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    filenames.extend([f"igu{time_str}_18.sp3",
-                      f"igu{time_str}_12.sp3",
-                      f"igu{time_str}_06.sp3",
-                      f"igu{time_str}_00.sp3"])
+    filenames.extend(time_to_product_names(time, EphemerisType.ULTRA_RAPID_ORBIT))
+
   folder_file_names = [(folder_path, filename) for filename in filenames]
   ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
   if ret is not None:
