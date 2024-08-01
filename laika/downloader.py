@@ -341,26 +341,24 @@ def download_orbits_gps_cod0(time, cache_dir, ephem_types):
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.gz')
 
 
-def time_to_product_names(time: GPSTime, ephem_type: EphemerisType) -> set[str]:
+def time_to_product_names(time: GPSTime, ephem_type: EphemerisType) -> list[str]:
   # example: igs${GPS_WEEK}${DOW}.sp3 , IGS${V}OPSFIN_${YYYY}${DOY}0000_01D_15M_ORB.SP3
   # example: igr${GPS_WEEK}${DOW}.sp3 ,   IGS${V}OPSRAP_${YYYY}${DOY}0000_01D_15M_ORB.SP3
   # example: igu${GPS_WEEK}${DOW}_${HH}.sp3 ,   IGS${V}OPSULT_${YYYY}${DOY}0000_02D_15M_ORB.SP3
   if time.week < 2238:
-    ephem_str = {
-      EphemerisType.FINAL_ORBIT: 'igs{wwww}{dow}.sp3',
-      EphemerisType.RAPID_ORBIT: 'igr{wwww}{dow}.sp3',
-      EphemerisType.ULTRA_RAPID_ORBIT: 'igu{wwww}{dow}_{hh}.sp3'
+    return {
+      EphemerisType.FINAL_ORBIT: ['igs{wwww}{dow}.sp3'],
+      EphemerisType.RAPID_ORBIT: ['igr{wwww}{dow}.sp3'],
+      EphemerisType.ULTRA_RAPID_ORBIT: ['igu{wwww}{dow}_{hh}.sp3'.format(wwww=time.week, dow=time.dow, hh=hour) for hour in ['18', '12', '06', '00']]
     }[ephem_type]
-    return {ephem_str.format(wwww=time.week, dow=time.dow, hh=hour) for hour in ('18', '12', '06', '00')}
 
   else:
     # TODO deal with version number
-    ephem_str = {
-      EphemerisType.FINAL_ORBIT: 'IGS0OPSFIN_{yyyy}{doy}0000_01D_15M_ORB.SP3',
-      EphemerisType.RAPID_ORBIT: 'IGS0OPSFIN_{yyyy}{doy}0000_01D_15M_ORB.SP3',
-      EphemerisType.ULTRA_RAPID_ORBIT: 'IGS0OPSFIN_{yyyy}{doy}0000_02D_15M_ORB.SP3',
+    return {
+      EphemerisType.FINAL_ORBIT: ['IGS0OPSFIN_{yyyy}{doy}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.RAPID_ORBIT: ['IGS0OPSFIN_{yyyy}{doy}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.ULTRA_RAPID_ORBIT: ['IGS0OPSFIN_{yyyy}{doy}0000_02D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
     }[ephem_type]
-    return {ephem_str.format(yyyy=time.year, doy=time.doy)}
 
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
