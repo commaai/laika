@@ -167,13 +167,16 @@ class GPSTime:
     return (gpst_to_utc(self).as_datetime() - datetime.datetime(1970, 1, 1)).total_seconds()
 
   @property
+  def year(self):
+    return self.as_datetime().year
+
+  @property
   def dow(self):
     return int(self.tow/(24*3600))
 
   @property
   def doy(self):
-    t = tow_to_datetime(self.tow, self.week)
-    return t.timetuple().tm_yday
+    return self.as_datetime().timetuple().tm_yday
 
   def __repr__(self):
     return f"GPSTime(week={self.week}, tow={self.tow})"
