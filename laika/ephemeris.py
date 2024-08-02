@@ -42,11 +42,11 @@ class EphemerisType(IntEnum):
 
   @classmethod
   def from_file_name(cls, file_name: str):
-    if "/final" in file_name or "/igs" in file_name:
+    if "/final" in file_name or "/igs" in file_name or 'OPSFIN' in file_name:
       return EphemerisType.FINAL_ORBIT
-    if "/rapid" in file_name or "/igr" in file_name:
+    if "/rapid" in file_name or "/igr" in file_name or 'OPSRAP' in file_name:
       return EphemerisType.RAPID_ORBIT
-    if "/ultra" in file_name or "/igu" in file_name or "COD0OPSULT" in file_name:
+    if "/ultra" in file_name or "/igu" in file_name or "COD0OPSULT" in file_name or 'OPSULT' in file_name:
       return EphemerisType.ULTRA_RAPID_ORBIT
     raise RuntimeError(f"Ephemeris type not found in filename: {file_name}")
 
