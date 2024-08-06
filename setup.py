@@ -35,5 +35,5 @@ setup(
     "Topic :: System :: Hardware",
   ],
   python_requires='>= 3.6',
-  tests_require=['pytest'],
+  tests_require=['pytest', 'parameterized'],
 )

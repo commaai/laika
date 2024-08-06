@@ -340,27 +340,42 @@ def download_orbits_gps_cod0(time, cache_dir, ephem_types):
   folder_file_names = [(folder_path, filename)]
   return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.gz')
 
-
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
     mirror_url(CDDIS_BASE_URL, '/gnss/products/'),
     mirror_url(IGN_BASE_URL, '/igs/products/'),
   )
+
+  if time.week < 2238:
+    compression = '.Z'
+    ephem_strs = {
+      EphemerisType.FINAL_ORBIT: ['igs{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)],
+      EphemerisType.RAPID_ORBIT: ['igr{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)],
+      EphemerisType.ULTRA_RAPID_ORBIT: ['igu{wwww}{dow}_{hh}.sp3'.format(wwww=time.week, dow=time.dow, hh=hour) for hour in ['18', '12', '06', '00']]
+    }
+  else:
+    # TODO deal with version number
+    compression = '.gz'
+    ephem_strs =  {
+      EphemerisType.FINAL_ORBIT: ['IGS0OPSFIN_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.RAPID_ORBIT: ['IGS0OPSRAP_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.ULTRA_RAPID_ORBIT: ['IGS0OPSULT_{yyyy}{doy:03d}{hh}00_02D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
+        for hour in ['18', '12', '06', '00']],
+    }
+
   folder_path = "%i/" % time.week
   filenames = []
-  time_str = "%i%i" % (time.week, time.day)
+
   # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
   if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
-    filenames.append(f"igs{time_str}.sp3")
+    filenames.extend(ephem_strs[EphemerisType.FINAL_ORBIT])
   if EphemerisType.RAPID_ORBIT in ephem_types:
-    filenames.append(f"igr{time_str}.sp3")
+    filenames.extend(ephem_strs[EphemerisType.RAPID_ORBIT])
   if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    filenames.extend([f"igu{time_str}_18.sp3",
-                      f"igu{time_str}_12.sp3",
-                      f"igu{time_str}_06.sp3",
-                      f"igu{time_str}_00.sp3"])
+    filenames.extend(ephem_strs[EphemerisType.ULTRA_RAPID_ORBIT])
+
   folder_file_names = [(folder_path, filename) for filename in filenames]
-  ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
+  ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression=compression)
   if ret is not None:
     return ret
 
@@ -413,7 +428,7 @@ def download_orbits_russia_src(time, cache_dir, ephem_types):
   t = time.as_datetime()
   folder_paths = []
   current_gps_time = GPSTime.from_datetime(datetime.utcnow())
-  filename = "Sta%i%i.sp3" % (time.week, time.day)
+  filename = "Sta%i%i.sp3" % (time.week, time.dow)
   if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
     folder_paths.append(t.strftime('%y%j/final/'))
   if EphemerisType.RAPID_ORBIT in ephem_types:
