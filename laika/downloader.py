@@ -357,9 +357,9 @@ def download_orbits_gps(time, cache_dir, ephem_types):
     # TODO deal with version number
     compression = '.gz'
     ephem_strs =  {
-      EphemerisType.FINAL_ORBIT: ['IGS0OPSFIN_{yyyy}{doy}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
-      EphemerisType.RAPID_ORBIT: ['IGS0OPSRAP_{yyyy}{doy}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
-      EphemerisType.ULTRA_RAPID_ORBIT: ['IGS0OPSULT_{yyyy}{doy}{hh}00_02D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
+      EphemerisType.FINAL_ORBIT: ['IGS0OPSFIN_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.RAPID_ORBIT: ['IGS0OPSRAP_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.ULTRA_RAPID_ORBIT: ['IGS0OPSULT_{yyyy}{doy:03d}{hh}00_02D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
         for hour in ['18', '12', '06', '00']],
     }
 
