@@ -86,7 +86,7 @@ class GPSTime:
   GPS time class to add and subtract [week, tow]
   """
   def __init__(self, week, tow):
-    self.week = week
+    self.week = int(week)
     self.tow = tow
     self.seconds_in_week = 604800
 
@@ -168,7 +168,7 @@ class GPSTime:
 
   @property
   def year(self):
-    return self.as_datetime().year
+    return int(self.as_datetime().year)
 
   @property
   def dow(self):
@@ -176,7 +176,7 @@ class GPSTime:
 
   @property
   def doy(self):
-    return self.as_datetime().timetuple().tm_yday
+    return int(self.as_datetime().timetuple().tm_yday)
 
   def __repr__(self):
     return f"GPSTime(week={self.week}, tow={self.tow})"
