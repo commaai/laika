@@ -97,7 +97,7 @@ class TestDownloader(unittest.TestCase):
 
     with patch("laika.downloader.download_file", side_effect=DownloadFailed), self.assertRaises(DownloadFailed):
       self._download_and_cache_file(self.url_bases, igs_file)
-      self.assertTrue(os.path.exists(self.filepath_attempt), msg="Attempt file should have been written after exception")
+      self.assertTrue(os.path.exists(igs_file.filepath_attempt), msg="Attempt file should have been written after exception")
 
     # Should raise when trying again after failure
     with self.assertRaises(DownloadFailed):
