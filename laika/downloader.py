@@ -19,8 +19,6 @@ from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from .gps_time import GPSTime, tow_to_datetime
 from .helpers import ConstellationId
 
-logging.basicConfig(level=logging.DEBUG)
-
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # mirror of sftp://gdc.cddis.eosdis.nasa.gov
