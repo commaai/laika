@@ -58,7 +58,7 @@ pip install numpy scipy
 ```
 Then laika can be installed with
 ```
-python setup.py install
+pip install .
 ```
 The tests should now pass.
 
