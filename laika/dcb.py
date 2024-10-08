@@ -5,6 +5,7 @@ from .gps_time import GPSTime
 from .helpers import get_constellation
 import warnings
 
+# TODO this whole thing needs more testing and references
 
 class DCB:
   def __init__(self, prn, data):
@@ -22,6 +23,10 @@ class DCB:
       self.C1C_C1W = data['C1C_C1W']
     elif 'C1C_C1P' in data:
       self.C1C_C1W = data['C1C_C1P']
+    elif 'C1C_C2W' in data:
+      self.C1C_C1W = data['C1C_C2W'] - self.C1W_C2W
+    elif 'C1C_C2P' in data:
+      self.C1C_C1W = data['C1C_C2P'] - self.C1W_C2W
     else:
       self.healthy = False
 
@@ -35,7 +40,7 @@ class DCB:
     if signal == 'C2P':
       return (- SPEED_OF_LIGHT*1e-9*self.C1W_C2W*GPS_L1**2/(GPS_L1**2 - GPS_L2**2))
     if signal == 'C1P':
-      return (SPEED_OF_LIGHT*1e-9*self.C1C_C1W)
+      return (- SPEED_OF_LIGHT*1e-9*self.C1W_C2W*GPS_L2**2/(GPS_L1**2 - GPS_L2**2))
     ## Todo: update dcb database and get delay to include additional signals
     if signal == 'C2C':
       warnings.warn("Differential code bias not implemented for signal C2C", UserWarning)
@@ -85,5 +90,9 @@ def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
 
   dcbs = []
   for prn in dcbs_dict:
+    print(f"Found PRN: {prn} in DCBs file_name: {file_name} with data: {dcbs_dict[prn]}")
     dcbs.append(DCB(prn, dcbs_dict[prn]))
+  print(f"Found {len(dcbs)} DCBs file_name: {file_name}")
+  for dcb in dcbs:
+    print(f"PRN: {dcb.prn}, epoch: {dcb.epoch}", dcb.healthy)
   return dcbs
