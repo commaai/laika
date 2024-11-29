@@ -90,9 +90,5 @@ def parse_dcbs(file_name, SUPPORTED_CONSTELLATIONS):
 
   dcbs = []
   for prn in dcbs_dict:
-    print(f"Found PRN: {prn} in DCBs file_name: {file_name} with data: {dcbs_dict[prn]}")
     dcbs.append(DCB(prn, dcbs_dict[prn]))
-  print(f"Found {len(dcbs)} DCBs file_name: {file_name}")
-  for dcb in dcbs:
-    print(f"PRN: {dcb.prn}, epoch: {dcb.epoch}", dcb.healthy)
   return dcbs
