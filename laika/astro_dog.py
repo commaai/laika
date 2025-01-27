@@ -38,6 +38,7 @@ class AstroDog:
                dgps=False,
                valid_const=(ConstellationId.GPS, ConstellationId.GLONASS),
                valid_ephem_types=EphemerisType.all_orbits(),
+               default_delays=False,
                clear_old_ephemeris=False):
 
     for const in valid_const:
@@ -55,6 +56,7 @@ class AstroDog:
     self.use_qcom_poly = EphemerisType.QCOM_POLY in valid_ephem_types
     self.valid_const = valid_const
     self.valid_ephem_types = valid_ephem_types
+    self.default_delays = default_delays
 
     self.orbit_fetched_times = TimeRangeHolder()
     self.navs_fetched_times = TimeRangeHolder()
@@ -362,12 +364,12 @@ class AstroDog:
     if self.dgps and not no_dgps:
       return self._get_delay_dgps(prn, rcv_pos, time)
 
-    ionex = self.get_ionex(time)
+    ionex = self.get_ionex(time) if not self.default_delays else None
     if not freq and ionex is not None:
       freq = self.get_frequency(prn, time, signal)
-    dcb = self.get_dcb(prn, time)
+    dcb = self.get_dcb(prn, time) if not self.default_delays else None
     # When using internet we expect all data or return None
-    if self.auto_update and (ionex is None or dcb is None or freq is None):
+    if self.auto_update and not self.default_delays and (ionex is None or dcb is None or freq is None):
       return None
     if ionex is not None:
       iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq)
