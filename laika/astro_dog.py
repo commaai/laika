@@ -163,7 +163,7 @@ class AstroDog:
   def add_qcom_polys(self, new_ephems: dict[str, list[Ephemeris]]):
     self._add_ephems(new_ephems, self.qcom_polys)
 
-  def add_orbits(self, new_ephems: dict[str, list[Ephemeris]]):
+  def add_orbits(self, new_ephems: dict[str, list[PolyEphemeris]]):
     self._add_ephems(new_ephems, self.orbits)
 
   def add_navs(self, new_ephems: dict[str, list[Ephemeris]]):
