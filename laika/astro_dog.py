@@ -8,7 +8,7 @@ from .constants import SECS_IN_DAY, SECS_IN_HR
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import Ephemeris, EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
-from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src
+from .downloader import download_orbits_gps, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
 from .trop import saast
 from .iono import IonexMap, parse_ionex, get_slant_delay
@@ -212,27 +212,17 @@ class AstroDog:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
-      futures_other = [executor.submit(download_orbits_russia_src, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
-      futures_gps = None
-      if ConstellationId.GPS in self.valid_const:
-        futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
-
-      files_other = [self.fetch_count(f.result()) for f in futures_other if f.result()]
-      ephems_other = parse_sp3_orbits(files_other, self.valid_const, skip_before_epoch)
-      files_gps = [self.fetch_count(f.result()) for f in futures_gps if f.result()] if futures_gps else []
-      ephems_us = parse_sp3_orbits(files_gps, self.valid_const, skip_before_epoch)
-
-    return {k: ephems_other.get(k, []) + ephems_us.get(k, []) for k in set(list(ephems_other.keys()) + list(ephems_us.keys()))}
+      futures = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
+      files = [self.fetch_count(f.result()) for f in futures if f.result()] if futures else []
+      ephems = parse_sp3_orbits(files, self.valid_const, skip_before_epoch)
+    return ephems
+    #{k: ephems_us.get(k, []) for k in set(list([]) + list(ephems_us.keys()))}
 
   def download_parse_prediction_orbit(self, gps_time: GPSTime):
     assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
     skip_until_epoch = gps_time - 2 * SECS_IN_HR
 
-    result = self.fetch_count(download_prediction_orbits_russia_src(gps_time, self.cache_dir))
-    if result is not None:
-      result = [result]
-    elif ConstellationId.GPS in self.valid_const:
-      # Slower fallback. Russia src prediction orbits are published from 2022
+    if ConstellationId.GPS in self.valid_const:
       result = [self.fetch_count(download_orbits_gps(t, self.cache_dir, self.valid_ephem_types)) for t in [gps_time - SECS_IN_DAY, gps_time]]
     if result is None:
       return {}
