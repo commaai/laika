@@ -27,12 +27,6 @@ CDDIS_BASE_URL = os.getenv("CDDIS_BASE_URL", "https://raw.githubusercontent.com/
 # mirror of sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/hourly
 CDDIS_HOURLY_BASE_URL = os.getenv("CDDIS_HOURLY_BASE_URL", "https://raw.githubusercontent.com/commaai/gnss-data-hourly/master")
 
-# mirror of ftp://ftp.glonass-iac.ru
-GLONAS_IAC_BASE_URL = os.getenv("GLONAS_IAC_BASE_URL", "https://raw.githubusercontent.com/commaai/gnss-data-alt/master")
-
-# no mirror
-IGN_BASE_URL = os.getenv("IGN_BASE_URL", "ftp://igs.ign.fr/pub")
-
 
 class DownloadFailed(Exception):
   pass
@@ -325,36 +319,33 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
     mirror_url(CDDIS_BASE_URL, '/gnss/products/'),
-    mirror_url(IGN_BASE_URL, '/igs/products/'),
+    mirror_url(CDDIS_BASE_URL, '/glonass/products/'),
   )
-
-  if time.week < 2238:
-    compression = '.Z'
-    ephem_strs = {
-      EphemerisType.FINAL_ORBIT: ['igs{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)],
-      EphemerisType.RAPID_ORBIT: ['igr{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)],
-      EphemerisType.ULTRA_RAPID_ORBIT: ['igu{wwww}{dow}_{hh}.sp3'.format(wwww=time.week, dow=time.dow, hh=hour) for hour in ['18', '12', '06', '00']]
-    }
-  else:
-    # TODO deal with version number
-    compression = '.gz'
-    ephem_strs =  {
-      EphemerisType.FINAL_ORBIT: ['IGS0OPSFIN_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
-      EphemerisType.RAPID_ORBIT: ['IGS0OPSRAP_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
-      EphemerisType.ULTRA_RAPID_ORBIT: ['IGS0OPSULT_{yyyy}{doy:03d}{hh}00_02D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
-        for hour in ['18', '12', '06', '00']],
-    }
 
   folder_path = "%i/" % time.week
   filenames = []
 
-  # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
-  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
-    filenames.extend(ephem_strs[EphemerisType.FINAL_ORBIT])
-  if EphemerisType.RAPID_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_DAY:
-    filenames.extend(ephem_strs[EphemerisType.RAPID_ORBIT])
-  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    filenames.extend(ephem_strs[EphemerisType.ULTRA_RAPID_ORBIT])
+  if time.week < 2238:
+    assert EphemerisType.FINAL_ORBIT in ephem_types, "Only final orbits are available before 2238"
+    compression = '.Z'
+    filenames.extend(['igs{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)])
+  else:
+    # TODO deal with version number
+    compression = '.gz'
+    ephem_strs =  {
+      EphemerisType.FINAL_ORBIT: ['COD0OPSFIN_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.RAPID_ORBIT: ['COD0OPSRAP_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.ULTRA_RAPID_ORBIT: ['COD0OPSULT_{yyyy}{doy:03d}{hh}00_02D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
+        for hour in ['18', '12', '06', '00']],
+    }
+
+    # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
+    if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
+      filenames.extend(ephem_strs[EphemerisType.FINAL_ORBIT])
+    if EphemerisType.RAPID_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_DAY:
+      filenames.extend(ephem_strs[EphemerisType.RAPID_ORBIT])
+    if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
+      filenames.extend(ephem_strs[EphemerisType.ULTRA_RAPID_ORBIT])
 
   folder_file_names = [(folder_path, filename) for filename in filenames]
   ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression=compression)
@@ -388,7 +379,6 @@ def download_dcb(time, cache_dir):
   folder_paths = []
   url_bases = (
     mirror_url(CDDIS_BASE_URL, '/gnss/products/bias/'),
-    mirror_url(IGN_BASE_URL, '/igs/products/mgex/dcb/'),
   )
   # seem to be a lot of data missing, so try many days
   for time_step in [time - i * SECS_IN_DAY for i in range(14)]:

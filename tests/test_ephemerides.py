@@ -33,6 +33,7 @@ class TestAstroDog(unittest.TestCase):
     dog_nav = AstroDog(valid_ephem_types=EphemerisType.NAV)
     for gps_time in gps_times:
       for svId in svIds:
+        print(svId, gps_time)
         sat_info_nav = dog_nav.get_sat_info(svId, gps_time)
         assert sat_info_nav is not None
         sat_info_orbit = dog_orbit.get_sat_info(svId, gps_time)

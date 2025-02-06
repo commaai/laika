@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import DefaultDict
 from collections.abc import Iterable
 
-from .constants import SECS_IN_DAY, SECS_IN_HR
+from .constants import SECS_IN_DAY
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import Ephemeris, EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
@@ -216,20 +216,9 @@ class AstroDog:
       files = [self.fetch_count(f.result()) for f in futures if f.result()] if futures else []
       ephems = parse_sp3_orbits(files, self.valid_const, skip_before_epoch)
     return ephems
-    #{k: ephems_us.get(k, []) for k in set(list([]) + list(ephems_us.keys()))}
-
-  def download_parse_prediction_orbit(self, gps_time: GPSTime):
-    assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
-    skip_until_epoch = gps_time - 2 * SECS_IN_HR
-
-    result = [self.fetch_count(download_orbits_gps(t, self.cache_dir, self.valid_ephem_types)) for t in [gps_time - SECS_IN_DAY, gps_time]]
-    return parse_sp3_orbits(result, self.valid_const, skip_until_epoch=skip_until_epoch)
 
   def get_orbit_data(self, time: GPSTime, only_predictions=False):
-    if only_predictions:
-      ephems_sp3 = self.download_parse_prediction_orbit(time)
-    else:
-      ephems_sp3 = self.download_parse_orbit(time)
+    ephems_sp3 = self.download_parse_orbit(time)
     if sum([len(v) for v in ephems_sp3.values()]) < 5:
       raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
     self.add_ephem_fetched_time(ephems_sp3, self.orbit_fetched_times)
