@@ -222,8 +222,7 @@ class AstroDog:
     assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
     skip_until_epoch = gps_time - 2 * SECS_IN_HR
 
-    if ConstellationId.GPS in self.valid_const:
-      result = [self.fetch_count(download_orbits_gps(t, self.cache_dir, self.valid_ephem_types)) for t in [gps_time - SECS_IN_DAY, gps_time]]
+    result = [self.fetch_count(download_orbits_gps(t, self.cache_dir, self.valid_ephem_types)) for t in [gps_time - SECS_IN_DAY, gps_time]]
     if result is None:
       return {}
     return parse_sp3_orbits(result, self.valid_const, skip_until_epoch=skip_until_epoch)
