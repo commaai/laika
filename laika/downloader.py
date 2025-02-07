@@ -348,7 +348,6 @@ def download_orbits_gps(time, cache_dir, ephem_types):
 
   folder_file_names = [(folder_path, filename) for filename in filenames]
   ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression=compression)
-  print(filenames)
   return ret
 
 
