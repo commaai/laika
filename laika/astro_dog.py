@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import DefaultDict
+from typing import DefaultDict, Sequence, Mapping
 from collections.abc import Iterable
 
 from .constants import SECS_IN_DAY
@@ -63,11 +63,11 @@ class AstroDog:
     self.dcbs_fetched_times = TimeRangeHolder()
 
     self.dgps_delays = []
-    self.ionex_maps: list[IonexMap] = []
-    self.orbits: DefaultDict[str, list[PolyEphemeris]] = defaultdict(list)
-    self.qcom_polys: DefaultDict[str, list[PolyEphemeris]] = defaultdict(list)
-    self.navs: DefaultDict[str, list[GPSEphemeris | GLONASSEphemeris]] = defaultdict(list)
-    self.dcbs: DefaultDict[str, list[DCB]] = defaultdict(list)
+    self.ionex_maps: Sequence[IonexMap] = []
+    self.orbits: DefaultDict[str, Sequence[PolyEphemeris]] = defaultdict(list)
+    self.qcom_polys: DefaultDict[str, Sequence[PolyEphemeris]] = defaultdict(list)
+    self.navs: DefaultDict[str, Sequence[GPSEphemeris | GLONASSEphemeris]] = defaultdict(list)
+    self.dcbs: DefaultDict[str, Sequence[DCB]] = defaultdict(list)
 
     self.cached_ionex: IonexMap | None = None
     self.cached_dgps = None
@@ -160,16 +160,16 @@ class AstroDog:
       self.cached_dgps = latest_data
     return latest_data
 
-  def add_qcom_polys(self, new_ephems: dict[str, list[Ephemeris]]):
+  def add_qcom_polys(self, new_ephems: Mapping[str, Sequence[Ephemeris]]):
     self._add_ephems(new_ephems, self.qcom_polys)
 
-  def add_orbits(self, new_ephems: dict[str, list[Ephemeris]]):
+  def add_orbits(self, new_ephems: Mapping[str, Sequence[Ephemeris]]):
     self._add_ephems(new_ephems, self.orbits)
 
-  def add_navs(self, new_ephems: dict[str, list[Ephemeris]]):
+  def add_navs(self, new_ephems: Mapping[str, Sequence[Ephemeris]]):
     self._add_ephems(new_ephems, self.navs)
 
-  def _add_ephems(self, new_ephems: dict[str, list[Ephemeris]], ephems_dict):
+  def _add_ephems(self, new_ephems: Mapping[str, Sequence[Ephemeris]], ephems_dict):
     for k, v in new_ephems.items():
       if len(v) > 0:
         if self.clear_old_ephemeris:
@@ -208,7 +208,7 @@ class AstroDog:
     end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
     self.navs_fetched_times.add(begin_day, end_day)
 
-  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> dict[str, list[Ephemeris]]:
+  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> Mapping[str, Sequence[PolyEphemeris]]:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:

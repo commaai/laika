@@ -18,6 +18,7 @@ repos:
         - --warn-return-any
         - --warn-unreachable
         - --warn-unused-ignores
+        - --explicit-package-bases
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.2.2
     hooks:
