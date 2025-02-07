@@ -30,7 +30,7 @@ class TestFetchSatInfo(unittest.TestCase):
     self.assertIsNotNone(sat_info)
 
   def test_get_all_sat_info_gps(self):
-    time = GPSTime.from_datetime(datetime(2020, 5, 1, 12, 0, 0))
+    time = GPSTime.from_datetime(datetime(2024, 5, 1, 12, 0, 0))
     all_ephem_types = (EphemerisType.FINAL_ORBIT, EphemerisType.RAPID_ORBIT, EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV)
     kwargs_list = [
       *[{"valid_const": [ConstellationId.GPS], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],

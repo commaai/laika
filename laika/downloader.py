@@ -324,14 +324,13 @@ def download_orbits_gps(time, cache_dir, ephem_types):
 
   folder_path = "%i/" % time.week
   filenames = []
+  compression = '.gz'
 
   if time.week < 2238:
-    assert EphemerisType.FINAL_ORBIT in ephem_types, "Only final orbits are available before 2238"
-    compression = '.Z'
-    filenames.extend(['igs{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)])
+    assert EphemerisType.FINAL_ORBIT in ephem_types, f"Only final orbits are available before 2238, {ephem_types}"
+    filenames.extend(['COD0MGXFIN_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)])
   else:
     # TODO deal with version number
-    compression = '.gz'
     ephem_strs =  {
       EphemerisType.FINAL_ORBIT: ['COD0OPSFIN_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
       EphemerisType.RAPID_ORBIT: ['COD0OPSRAP_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
@@ -349,6 +348,7 @@ def download_orbits_gps(time, cache_dir, ephem_types):
 
   folder_file_names = [(folder_path, filename) for filename in filenames]
   ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression=compression)
+  print(filenames)
   return ret
 
 

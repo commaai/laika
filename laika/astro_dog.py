@@ -217,7 +217,7 @@ class AstroDog:
       ephems = parse_sp3_orbits(files, self.valid_const, skip_before_epoch)
     return ephems
 
-  def get_orbit_data(self, time: GPSTime, only_predictions=False):
+  def get_orbit_data(self, time: GPSTime):
     ephems_sp3 = self.download_parse_orbit(time)
     if sum([len(v) for v in ephems_sp3.values()]) < 5:
       raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
