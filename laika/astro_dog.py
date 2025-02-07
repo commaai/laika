@@ -163,7 +163,7 @@ class AstroDog:
   def add_qcom_polys(self, new_ephems: dict[str, list[Ephemeris]]):
     self._add_ephems(new_ephems, self.qcom_polys)
 
-  def add_orbits(self, new_ephems: dict[str, list[PolyEphemeris]]):
+  def add_orbits(self, new_ephems: dict[str, list[Ephemeris]]):
     self._add_ephems(new_ephems, self.orbits)
 
   def add_navs(self, new_ephems: dict[str, list[Ephemeris]]):
@@ -208,7 +208,7 @@ class AstroDog:
     end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
     self.navs_fetched_times.add(begin_day, end_day)
 
-  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> dict[str, list[PolyEphemeris]]:
+  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> dict[str, list[Ephemeris]]:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
