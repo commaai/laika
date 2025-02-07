@@ -1,31 +1,35 @@
 import numpy as np
 import unittest
 
+#from datetime import datetime
 from laika.ephemeris import EphemerisType, read_prn_data
 from laika.gps_time import GPSTime
+#from laika.constants import SECS_IN_DAY
 from laika import AstroDog
 
-gps_times_list = [[1999, 415621.0],
-                  [2045, 455457.0],
-                  [1985, 443787.0]]
+gps_times_list = [[2100, 415621.0],
+                  [2200, 455457.0],
+                  [2300, 443787.0]]
 
-svIds = ['G01', 'G31', 'R08']
+svIds = ['G07', 'G31', 'R08']
 gps_times = [GPSTime(*gps_time_list) for gps_time_list in gps_times_list]
 
 
 class TestAstroDog(unittest.TestCase):
   '''
   def test_nav_vs_orbit_now(self):
-    dog_orbit = AstroDog(valid_ephem_types=EphemerisType.orbits())
+    dog_orbit = AstroDog(valid_ephem_types=EphemerisType.all_orbits())
     dog_nav = AstroDog(valid_ephem_types=EphemerisType.NAV)
-    gps_time = GPSTime.from_datetime(datetime.utcnow()) - SECS_IN_DAY*2
+    gps_time = GPSTime.from_datetime(datetime.utcnow()) - SECS_IN_DAY*3
     for svId in svIds:
       sat_info_nav = dog_nav.get_sat_info(svId, gps_time)
+      assert sat_info_nav is not None, f"Failed to get sat info for {svId} at {gps_time}"
       sat_info_orbit = dog_orbit.get_sat_info(svId, gps_time)
-      np.testing.assert_allclose(sat_info_nav[0], sat_info_orbit[0], rtol=0, atol=5)
-      np.testing.assert_allclose(sat_info_nav[1], sat_info_orbit[1], rtol=0, atol=.1)
+      assert sat_info_orbit is not None
+      np.testing.assert_allclose(sat_info_nav[0], sat_info_orbit[0], rtol=0, atol=5e2)
+      np.testing.assert_allclose(sat_info_nav[1], sat_info_orbit[1], rtol=0, atol=1e0)
       np.testing.assert_allclose(sat_info_nav[2], sat_info_orbit[2], rtol=0, atol=1e-7)
-      np.testing.assert_allclose(sat_info_nav[3], sat_info_orbit[3], rtol=0, atol=1e-11)
+      np.testing.assert_allclose(sat_info_nav[3], sat_info_orbit[3], rtol=0, atol=1e-10)
   '''
 
   def test_nav_vs_orbit_old(self):

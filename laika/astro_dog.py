@@ -1,14 +1,14 @@
 import os
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import DefaultDict
+from typing import DefaultDict, Sequence, Mapping
 from collections.abc import Iterable
 
-from .constants import SECS_IN_DAY, SECS_IN_HR
+from .constants import SECS_IN_DAY
 from .helpers import ConstellationId, get_constellation, get_closest, get_el_az, TimeRangeHolder
 from .ephemeris import Ephemeris, EphemerisType, GLONASSEphemeris, GPSEphemeris, PolyEphemeris, parse_sp3_orbits, parse_rinex_nav_msg_gps, \
   parse_rinex_nav_msg_glonass
-from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src
+from .downloader import download_orbits_gps, download_nav, download_ionex, download_dcb
 from .downloader import download_cors_station
 from .trop import saast
 from .iono import IonexMap, parse_ionex, get_slant_delay
@@ -63,11 +63,11 @@ class AstroDog:
     self.dcbs_fetched_times = TimeRangeHolder()
 
     self.dgps_delays = []
-    self.ionex_maps: list[IonexMap] = []
-    self.orbits: DefaultDict[str, list[PolyEphemeris]] = defaultdict(list)
-    self.qcom_polys: DefaultDict[str, list[PolyEphemeris]] = defaultdict(list)
-    self.navs: DefaultDict[str, list[GPSEphemeris | GLONASSEphemeris]] = defaultdict(list)
-    self.dcbs: DefaultDict[str, list[DCB]] = defaultdict(list)
+    self.ionex_maps: Sequence[IonexMap] = []
+    self.orbits: DefaultDict[str, Sequence[PolyEphemeris]] = defaultdict(list)
+    self.qcom_polys: DefaultDict[str, Sequence[PolyEphemeris]] = defaultdict(list)
+    self.navs: DefaultDict[str, Sequence[GPSEphemeris | GLONASSEphemeris]] = defaultdict(list)
+    self.dcbs: DefaultDict[str, Sequence[DCB]] = defaultdict(list)
 
     self.cached_ionex: IonexMap | None = None
     self.cached_dgps = None
@@ -160,16 +160,16 @@ class AstroDog:
       self.cached_dgps = latest_data
     return latest_data
 
-  def add_qcom_polys(self, new_ephems: dict[str, list[Ephemeris]]):
+  def add_qcom_polys(self, new_ephems: Mapping[str, Sequence[Ephemeris]]):
     self._add_ephems(new_ephems, self.qcom_polys)
 
-  def add_orbits(self, new_ephems: dict[str, list[Ephemeris]]):
+  def add_orbits(self, new_ephems: Mapping[str, Sequence[Ephemeris]]):
     self._add_ephems(new_ephems, self.orbits)
 
-  def add_navs(self, new_ephems: dict[str, list[Ephemeris]]):
+  def add_navs(self, new_ephems: Mapping[str, Sequence[Ephemeris]]):
     self._add_ephems(new_ephems, self.navs)
 
-  def _add_ephems(self, new_ephems: dict[str, list[Ephemeris]], ephems_dict):
+  def _add_ephems(self, new_ephems: Mapping[str, Sequence[Ephemeris]], ephems_dict):
     for k, v in new_ephems.items():
       if len(v) > 0:
         if self.clear_old_ephemeris:
@@ -208,41 +208,17 @@ class AstroDog:
     end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
     self.navs_fetched_times.add(begin_day, end_day)
 
-  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> dict[str, list[PolyEphemeris]]:
+  def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> Mapping[str, Sequence[PolyEphemeris]]:
     # Download multiple days to be able to polyfit at the start-end of the day
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
-      futures_other = [executor.submit(download_orbits_russia_src, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
-      futures_gps = None
-      if ConstellationId.GPS in self.valid_const:
-        futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
+      futures = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
+      files = [self.fetch_count(f.result()) for f in futures if f.result()] if futures else []
+      ephems = parse_sp3_orbits(files, self.valid_const, skip_before_epoch)
+    return ephems
 
-      files_other = [self.fetch_count(f.result()) for f in futures_other if f.result()]
-      ephems_other = parse_sp3_orbits(files_other, self.valid_const, skip_before_epoch)
-      files_gps = [self.fetch_count(f.result()) for f in futures_gps if f.result()] if futures_gps else []
-      ephems_us = parse_sp3_orbits(files_gps, self.valid_const, skip_before_epoch)
-
-    return {k: ephems_other.get(k, []) + ephems_us.get(k, []) for k in set(list(ephems_other.keys()) + list(ephems_us.keys()))}
-
-  def download_parse_prediction_orbit(self, gps_time: GPSTime):
-    assert EphemerisType.ULTRA_RAPID_ORBIT in self.valid_ephem_types
-    skip_until_epoch = gps_time - 2 * SECS_IN_HR
-
-    result = self.fetch_count(download_prediction_orbits_russia_src(gps_time, self.cache_dir))
-    if result is not None:
-      result = [result]
-    elif ConstellationId.GPS in self.valid_const:
-      # Slower fallback. Russia src prediction orbits are published from 2022
-      result = [self.fetch_count(download_orbits_gps(t, self.cache_dir, self.valid_ephem_types)) for t in [gps_time - SECS_IN_DAY, gps_time]]
-    if result is None:
-      return {}
-    return parse_sp3_orbits(result, self.valid_const, skip_until_epoch=skip_until_epoch)
-
-  def get_orbit_data(self, time: GPSTime, only_predictions=False):
-    if only_predictions:
-      ephems_sp3 = self.download_parse_prediction_orbit(time)
-    else:
-      ephems_sp3 = self.download_parse_orbit(time)
+  def get_orbit_data(self, time: GPSTime):
+    ephems_sp3 = self.download_parse_orbit(time)
     if sum([len(v) for v in ephems_sp3.values()]) < 5:
       raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
     self.add_ephem_fetched_time(ephems_sp3, self.orbit_fetched_times)

@@ -42,11 +42,11 @@ class EphemerisType(IntEnum):
 
   @classmethod
   def from_file_name(cls, file_name: str):
-    if "/final" in file_name or "/igs" in file_name or 'OPSFIN' in file_name:
+    if "MGXFIN" in file_name or 'OPSFIN' in file_name:
       return EphemerisType.FINAL_ORBIT
-    if "/rapid" in file_name or "/igr" in file_name or 'OPSRAP' in file_name:
+    if 'OPSRAP' in file_name:
       return EphemerisType.RAPID_ORBIT
-    if "/ultra" in file_name or "/igu" in file_name or "COD0OPSULT" in file_name or 'OPSULT' in file_name:
+    if 'OPSULT' in file_name:
       return EphemerisType.ULTRA_RAPID_ORBIT
     raise RuntimeError(f"Ephemeris type not found in filename: {file_name}")
 
@@ -325,8 +325,9 @@ def parse_sp3_orbits(file_names, supported_constellations, skip_until_epoch: GPS
 
 def read_prn_data(data, prn, deg=16, deg_t=1):
   np_data_prn = np.array(data[prn], dtype=object)
-  # Currently, don't even bother with satellites that have unhealthy times
-  if len(np_data_prn) == 0 or (np_data_prn[:, 5] > .99).any():
+  # > .99 is unhealthy time
+  np_data_prn = np_data_prn[np_data_prn[:, 5] < .99]
+  if len(np_data_prn) == 0:
     return []
   ephems = []
   for i in range(len(np_data_prn) - deg):

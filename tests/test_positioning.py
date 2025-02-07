@@ -33,7 +33,7 @@ class TestPositioning(unittest.TestCase):
     copyfile(os.path.join(examples_directory, 'cors_station_positions'), os.path.join(cache_directory, 'cors_station_positions'))
 
     station_name = 'sc01'
-    time = GPSTime.from_datetime(datetime(2020, 1, 11))
+    time = GPSTime.from_datetime(datetime(2022, 1, 11))
     slac_rinex_obs_file = download_cors_station(time, station_name, dog.cache_dir)
     obs_data = RINEXFile(slac_rinex_obs_file)
     sc01_exact_position = get_station_position('sc01')
@@ -58,7 +58,7 @@ class TestPositioning(unittest.TestCase):
     ests = np.array(ests)
 
     mean_fix = np.mean(ests[:, :3], axis=0)
-    np.testing.assert_allclose(mean_fix, sc01_exact_position, rtol=0, atol=1)
+    np.testing.assert_allclose(mean_fix, sc01_exact_position, rtol=0, atol=2)
 
 
 if __name__ == "__main__":

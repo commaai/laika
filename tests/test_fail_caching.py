@@ -5,9 +5,9 @@ from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
 from laika import AstroDog
 
-gps_times_list = [[1950, 415621.0]]
+gps_times_list = [[2350, 415621.0]]
 
-svIds = ['R12']
+svIds = ['R345'] # fake satellite id
 gps_times = [GPSTime(*gps_time_list) for gps_time_list in gps_times_list]
 
 

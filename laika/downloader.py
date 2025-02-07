@@ -16,7 +16,7 @@ from atomicwrites import atomic_write
 
 from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
-from .gps_time import GPSTime, tow_to_datetime
+from .gps_time import GPSTime
 from .helpers import ConstellationId
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -26,12 +26,6 @@ CDDIS_BASE_URL = os.getenv("CDDIS_BASE_URL", "https://raw.githubusercontent.com/
 
 # mirror of sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/hourly
 CDDIS_HOURLY_BASE_URL = os.getenv("CDDIS_HOURLY_BASE_URL", "https://raw.githubusercontent.com/commaai/gnss-data-hourly/master")
-
-# mirror of ftp://ftp.glonass-iac.ru
-GLONAS_IAC_BASE_URL = os.getenv("GLONAS_IAC_BASE_URL", "https://raw.githubusercontent.com/commaai/gnss-data-alt/master")
-
-# no mirror
-IGN_BASE_URL = os.getenv("IGN_BASE_URL", "ftp://igs.ign.fr/pub")
 
 
 class DownloadFailed(Exception):
@@ -322,121 +316,39 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
       folder_and_filenames, cache_dir+'hourly_nav/', compression, overwrite=True)
 
 
-def download_orbits_gps_cod0(time, cache_dir, ephem_types):
-  url_bases = (
-    mirror_url(CDDIS_BASE_URL, '/gnss/products/'),
-  )
-
-  if EphemerisType.ULTRA_RAPID_ORBIT not in ephem_types:
-    # TODO: raise error here
-    return None
-
-  tm = tow_to_datetime(time.tow, time.week).timetuple()
-  doy = str(tm.tm_yday).zfill(3)
-  filename = f"COD0OPSULT_{tm.tm_year}{doy}0000_02D_05M_ORB.SP3"
-  # TODO: add hour management
-
-  folder_path = "%i/" % time.week
-  folder_file_names = [(folder_path, filename)]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.gz')
-
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
     mirror_url(CDDIS_BASE_URL, '/gnss/products/'),
-    mirror_url(IGN_BASE_URL, '/igs/products/'),
+    mirror_url(CDDIS_BASE_URL, '/glonass/products/'),
   )
-
-  if time.week < 2238:
-    compression = '.Z'
-    ephem_strs = {
-      EphemerisType.FINAL_ORBIT: ['igs{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)],
-      EphemerisType.RAPID_ORBIT: ['igr{wwww}{dow}.sp3'.format(wwww=time.week, dow=time.dow)],
-      EphemerisType.ULTRA_RAPID_ORBIT: ['igu{wwww}{dow}_{hh}.sp3'.format(wwww=time.week, dow=time.dow, hh=hour) for hour in ['18', '12', '06', '00']]
-    }
-  else:
-    # TODO deal with version number
-    compression = '.gz'
-    ephem_strs =  {
-      EphemerisType.FINAL_ORBIT: ['IGS0OPSFIN_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
-      EphemerisType.RAPID_ORBIT: ['IGS0OPSRAP_{yyyy}{doy:03d}0000_01D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
-      EphemerisType.ULTRA_RAPID_ORBIT: ['IGS0OPSULT_{yyyy}{doy:03d}{hh}00_02D_15M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
-        for hour in ['18', '12', '06', '00']],
-    }
 
   folder_path = "%i/" % time.week
   filenames = []
+  compression = '.gz'
 
-  # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
-  if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
-    filenames.extend(ephem_strs[EphemerisType.FINAL_ORBIT])
-  if EphemerisType.RAPID_ORBIT in ephem_types:
-    filenames.extend(ephem_strs[EphemerisType.RAPID_ORBIT])
-  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    filenames.extend(ephem_strs[EphemerisType.ULTRA_RAPID_ORBIT])
+  if time.week < 2238:
+    assert EphemerisType.FINAL_ORBIT in ephem_types, f"Only final orbits are available before 2238, {ephem_types}"
+    filenames.extend(['COD0MGXFIN_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)])
+  else:
+    # TODO deal with version number
+    ephem_strs =  {
+      EphemerisType.FINAL_ORBIT: ['COD0OPSFIN_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.RAPID_ORBIT: ['COD0OPSRAP_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
+      EphemerisType.ULTRA_RAPID_ORBIT: ['COD0OPSULT_{yyyy}{doy:03d}{hh}00_02D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
+        for hour in ['18', '12', '06', '00']],
+    }
+
+    # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
+    if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
+      filenames.extend(ephem_strs[EphemerisType.FINAL_ORBIT])
+    if EphemerisType.RAPID_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_DAY:
+      filenames.extend(ephem_strs[EphemerisType.RAPID_ORBIT])
+    if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
+      filenames.extend(ephem_strs[EphemerisType.ULTRA_RAPID_ORBIT])
 
   folder_file_names = [(folder_path, filename) for filename in filenames]
   ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression=compression)
-  if ret is not None:
-    return ret
-
-  # fallback to COD0 Ultra Rapid Orbits
-  return download_orbits_gps_cod0(time, cache_dir, ephem_types)
-
-
-def download_prediction_orbits_russia_src(gps_time, cache_dir):
-  # Download single file that contains Ultra_Rapid predictions for GPS, GLONASS and other constellations
-  t = gps_time.as_datetime()
-  # Files exist starting at 29-01-2022
-  if t < datetime(2022, 1, 29):
-    return None
-  url_bases = (
-    mirror_url(GLONAS_IAC_BASE_URL, '/MCC/PRODUCTS/'),
-  )
-  folder_path = t.strftime('%y%j/ultra/')
-  file_prefix = "Stark_1D_" + t.strftime('%y%m%d')
-
-  # Predictions are 24H so previous day can also be used.
-  prev_day = (t - timedelta(days=1))
-  file_prefix_prev = "Stark_1D_" + prev_day.strftime('%y%m%d')
-  folder_path_prev = prev_day.strftime('%y%j/ultra/')
-
-  current_day = GPSTime.from_datetime(datetime(t.year, t.month, t.day))
-  # Ultra-Orbit is published in gnss-data-alt every 10th minute past the 5,11,17,23 hour.
-  # Predictions published are delayed by around 10 hours.
-  # Download latest file that includes gps_time with 20 minutes margin.:
-  if gps_time > current_day + 23.5 * SECS_IN_HR:
-    prev_day, current_day = [], [6, 12]
-  elif gps_time > current_day + 17.5 * SECS_IN_HR:
-    prev_day, current_day = [], [0, 6]
-  elif gps_time > current_day + 11.5 * SECS_IN_HR:
-    prev_day, current_day = [18], [0]
-  elif gps_time > current_day + 5.5 * SECS_IN_HR:
-    prev_day, current_day = [12, 18], []
-  else:
-    prev_day, current_day = [6, 12], []
-  # Example: Stark_1D_22060100.sp3
-  folder_and_file_names = [(folder_path, file_prefix + f"{h:02}.sp3") for h in reversed(current_day)] + \
-                          [(folder_path_prev, file_prefix_prev + f"{h:02}.sp3") for h in reversed(prev_day)]
-  return download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir+'russian_products/', raise_error=True)
-
-
-def download_orbits_russia_src(time, cache_dir, ephem_types):
-  # Orbits from russian source. Contains GPS, GLONASS, GALILEO, BEIDOU
-  url_bases = (
-    mirror_url(GLONAS_IAC_BASE_URL, '/MCC/PRODUCTS/'),
-  )
-  t = time.as_datetime()
-  folder_paths = []
-  current_gps_time = GPSTime.from_datetime(datetime.utcnow())
-  filename = "Sta%i%i.sp3" % (time.week, time.dow)
-  if EphemerisType.FINAL_ORBIT in ephem_types and current_gps_time - time > 2 * SECS_IN_WEEK:
-    folder_paths.append(t.strftime('%y%j/final/'))
-  if EphemerisType.RAPID_ORBIT in ephem_types:
-    folder_paths.append(t.strftime('%y%j/rapid/'))
-  if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
-    folder_paths.append(t.strftime('%y%j/ultra/'))
-  folder_file_names = [(folder_path, filename) for folder_path in folder_paths]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'russian_products/')
+  return ret
 
 
 def download_ionex(time, cache_dir):
@@ -447,17 +359,16 @@ def download_ionex(time, cache_dir):
   folder_path = t.strftime('%Y/%j/')
   # Format date change
   if time >= GPSTime(2238, 0.0):
-    filenames = [t.strftime('COD0OPSFIN_%Y%j0000_01D_01H_GIM.INX'),
-                 t.strftime('COD0OPSRAP_%Y%j0000_01D_01H_GIM.INX')]
-    compression = '.gz'
+    filenames = [t.strftime('COD0OPSFIN_%Y%j0000_01D_01H_GIM.INX.gz'),
+                 t.strftime('COD0OPSRAP_%Y%j0000_01D_01H_GIM.INX.gz'),
+                 t.strftime("c2pg%j0.%yi.Z")]
   else:
-    filenames = [t.strftime("codg%j0.%yi"),
-                 t.strftime("c1pg%j0.%yi"),
-                 t.strftime("c2pg%j0.%yi")]
-    compression = '.Z'
+    filenames = [t.strftime("codg%j0.%yi.Z"),
+                 t.strftime("c1pg%j0.%yi.Z"),
+                 t.strftime("c2pg%j0.%yi.Z")]
 
   folder_file_names = [(folder_path, f) for f in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'ionex/', compression=compression, raise_error=True)
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'ionex/', raise_error=True)
 
 
 def download_dcb(time, cache_dir):
@@ -467,7 +378,6 @@ def download_dcb(time, cache_dir):
   folder_paths = []
   url_bases = (
     mirror_url(CDDIS_BASE_URL, '/gnss/products/bias/'),
-    mirror_url(IGN_BASE_URL, '/igs/products/mgex/dcb/'),
   )
   # seem to be a lot of data missing, so try many days
   for time_step in [time - i * SECS_IN_DAY for i in range(14)]:
