@@ -335,7 +335,7 @@ def download_orbits_gps(time, cache_dir, ephem_types):
       EphemerisType.FINAL_ORBIT: ['COD0OPSFIN_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
       EphemerisType.RAPID_ORBIT: ['COD0OPSRAP_{yyyy}{doy:03d}0000_01D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy)],
       EphemerisType.ULTRA_RAPID_ORBIT: ['COD0OPSULT_{yyyy}{doy:03d}{hh}00_02D_05M_ORB.SP3'.format(yyyy=time.year, doy=time.doy, hh=hour) \
-        for hour in ['18', '12', '06', '00']],
+        for hour in ['00']],
     }
 
     # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
