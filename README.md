@@ -49,7 +49,7 @@ To confirm the quality of Laika's GNSS processing, we ran laika's processing and
 - [Using laika with a Kalman filter to get more accurate position fixes from a GPS module](https://github.com/commaai/laika/blob/master/examples/Kalman.ipynb)
 
 ## Installation
-Laika runs in Python 3.8.2, and has only been tested on Ubuntu 20.04. Running in a virtual environment is recommended.
+Laika runs in Python 3.11.4, and has only been tested on Ubuntu 24.04. Running in a virtual environment is recommended.
 
 #### laika
 If you do not yet have numpy and scipy installed. Install them with pip. Having accelerated numpy will make laika much faster.
