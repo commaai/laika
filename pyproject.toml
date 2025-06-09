@@ -14,6 +14,7 @@ dependencies = [
   'tqdm',
   'hatanaka',
   'pycapnp',
+  'atomicwrites',
 ]
 classifiers = [
   'Development Status :: 4 - Beta',
