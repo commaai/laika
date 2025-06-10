@@ -7,9 +7,9 @@ from laika.gps_time import GPSTime
 #from laika.constants import SECS_IN_DAY
 from laika import AstroDog
 
-gps_times_list = [[2100, 415621.0],
-                  [2200, 455457.0],
-                  [2300, 443787.0]]
+gps_times_list = [[2300, 415621.0],
+                  [2330, 455457.0],
+                  [2360, 443787.0]]
 
 svIds = ['G07', 'G31', 'R08']
 gps_times = [GPSTime(*gps_time_list) for gps_time_list in gps_times_list]
