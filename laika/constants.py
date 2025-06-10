@@ -32,3 +32,34 @@ SECS_IN_HR = 60*SECS_IN_MIN
 SECS_IN_DAY = 24*SECS_IN_HR
 SECS_IN_WEEK = 7*SECS_IN_DAY
 SECS_IN_YEAR = 365*SECS_IN_DAY
+
+
+# Glonass channel have not changed between 2018 and 2025 for sats 1-24, assume constant
+GLONASS_CHANNELS = {
+                    "R01": 1,
+                    "R02": -4,
+                    "R03": 5,
+                    "R04": 6,
+                    "R05": 1,
+                    "R06": -4,
+                    "R07": 5,
+                    "R08": 6,
+                    "R09": -2,
+                    "R10": -7,
+                    "R11": 0,
+                    "R12": -1,
+                    "R13": -2,
+                    "R14": -7,
+                    "R15": 0,
+                    "R16": -1,
+                    "R17": 4,
+                    "R18": -3,
+                    "R19": 3,
+                    "R20": 2,
+                    "R21": 4,
+                    "R22": -3,
+                    "R23": 3,
+                    "R24": 2,
+                    "R25": None,
+                    "R26": None,
+                    }

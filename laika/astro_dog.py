@@ -296,12 +296,6 @@ class AstroDog:
 
     return {prn: eph.get_sat_info(time) for prn, eph in ephs.items()}
 
-  def get_glonass_channel(self, prn, time):
-    nav = self.get_nav(prn, time)
-    if nav:
-      return nav.channel
-    return None
-
   def get_frequency(self, prn, time, signal='C1C'):
     if get_constellation(prn) == ConstellationId.GPS:
       switch = {'1': constants.GPS_L1,
@@ -315,7 +309,7 @@ class AstroDog:
         return freq
       raise NotImplementedError("Dont know this GPS frequency: ", signal, prn)
     elif get_constellation(prn) == ConstellationId.GLONASS:
-      n = self.get_glonass_channel(prn, time)
+      n = constants.GLONASS_CHANNELS[prn]
       if n is None:
         return None
       switch = {'1': constants.GLONASS_L1 + n * constants.GLONASS_L1_DELTA,
