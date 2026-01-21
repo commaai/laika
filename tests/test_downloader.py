@@ -36,9 +36,9 @@ class TestDownloader(unittest.TestCase):
   files = [
     TestFile(
       folder_path = '2323/',
-      filename = 'IGS0OPSULT_20242021800_02D_15M_ORB.SP3',
+      filename = 'IGS0OPSFIN_20242000000_01D_15M_ORB.SP3',
       compression= '.gz',
-      file_size = 192658,
+      file_size = 100190,
       cache_dir = '/tmp/gnss/'+'cddis_products'
       ),
     TestFile(

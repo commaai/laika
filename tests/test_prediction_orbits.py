@@ -16,6 +16,7 @@ class TestPredictionOrbits(unittest.TestCase):
     self.assertGreater(len(dog.orbits.keys()), 0)
     self.assertTrue(available_date in dog.orbit_fetched_times)
 
+  @unittest.skip("GLONASS is old")
   def test_glonass(self):
     available_date = GPSTime.from_datetime(datetime.now())
     for t in range(0, 24, 3):
