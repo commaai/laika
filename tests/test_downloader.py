@@ -73,17 +73,17 @@ class TestDownloader(unittest.TestCase):
     success = dat and len(dat) == file.file_size
     self.assertTrue(success, f"{url_base + file.folder_path + file.filename_zipped} is incorrect size: {0 if not dat else len(dat)}")
 
-  @parameterized.expand(files)
+  @parameterized.expand([(f,) for f in files])
   def test_download_list(self, file):
     downloaded_file = self._download_and_cache_file(self.url_bases, file)
     self.assertIsNotNone(downloaded_file)
 
-  @parameterized.expand(files)
+  @parameterized.expand([(f,) for f in files])
   def test_download_list_with_disabled_mirror(self, file):
     downloaded_file = self._download_and_cache_file((None, "", self.url_bases[0]), file)
     self.assertIsNotNone(downloaded_file)
 
-  @parameterized.expand(files)
+  @parameterized.expand([(f,) for f in files])
   def test_download_overwrite(self, file):
     downloaded_file = self._download_and_cache_file(self.url_bases, file)
     self.assertIsNotNone(downloaded_file)
@@ -91,7 +91,7 @@ class TestDownloader(unittest.TestCase):
     downloaded_file = self._download_and_cache_file(self.url_bases, file, overwrite=True)
     self.assertIsNotNone(downloaded_file)
 
-  @parameterized.expand(files)
+  @parameterized.expand([(f,) for f in files])
   def test_write_attempt_file_on_error(self, file):
     self.assertFalse(os.path.exists(file.filepath_attempt))
 
@@ -103,7 +103,7 @@ class TestDownloader(unittest.TestCase):
     with self.assertRaises(DownloadFailed):
       self._download_and_cache_file(self.url_bases, file)
 
-  @parameterized.expand(files)
+  @parameterized.expand([(f,) for f in files])
   def test_wait_after_failure(self, file):
     # Verify no failure first.
     self._download_and_cache_file(self.url_bases, file)
