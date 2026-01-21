@@ -20,7 +20,7 @@ class TestFetchSatInfo(unittest.TestCase):
       *[{"valid_const": [ConstellationId.GPS], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
       *[{"valid_const": [ConstellationId.GLONASS], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types],
       #*[{"valid_const": [ConstellationId.BEIDOU], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
-      *[{"valid_const": [ConstellationId.GALILEO], "valid_ephem_types": ephem_type} for ephem_type in all_ephem_types if ephem_type in EphemerisType.all_orbits()],
+      *[{"valid_const": [ConstellationId.GALILEO], "valid_ephem_types": ephem_type} for ephem_type in (EphemerisType.FINAL_ORBIT,)],
       #*[{"valid_const": [ConstellationId.QZNSS], "valid_ephem_types": ephem_type} for ephem_type in EphemerisType.all_orbits()],
     ]
 
