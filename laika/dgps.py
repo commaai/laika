@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .gps_time import GPSTime
 from .constants import SECS_IN_YEAR
@@ -72,7 +72,7 @@ def load_cors_station_positions(cache_dir):
     return np.load(f, allow_pickle=True).item()  # pylint: disable=unexpected-keyword-arg
 
 
-def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_datetime(datetime.utcnow())):
+def get_station_position(station_id, cache_dir='/tmp/gnss/', time=GPSTime.from_datetime(datetime.now(timezone.utc))):
   cors_station_positions_dict = load_cors_station_positions(cache_dir)
   epoch, pos, vel = cors_station_positions_dict[station_id]
   return ((time - epoch)/SECS_IN_YEAR)*np.array(vel) + np.array(pos)
