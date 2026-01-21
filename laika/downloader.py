@@ -7,7 +7,7 @@ import re
 import time
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 from io import BytesIO
 from ftplib import FTP_TLS, FTP
@@ -296,7 +296,7 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
   if constellation not in CONSTELLATION_NASA_CHAR:
     return None
   c = CONSTELLATION_NASA_CHAR[constellation]
-  if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
+  if GPSTime.from_datetime(datetime.now(timezone.utc)) - time > SECS_IN_DAY:
     url_bases = (
       mirror_url(CDDIS_BASE_URL, '/gnss/data/daily/'),
     )
@@ -339,9 +339,9 @@ def download_orbits_gps(time, cache_dir, ephem_types):
     }
 
     # Download filenames in order of quality. Final -> Rapid -> Ultra-Rapid(newest first)
-    if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_WEEK:
+    if EphemerisType.FINAL_ORBIT in ephem_types and GPSTime.from_datetime(datetime.now(timezone.utc)) - time > 3 * SECS_IN_WEEK:
       filenames.extend(ephem_strs[EphemerisType.FINAL_ORBIT])
-    if EphemerisType.RAPID_ORBIT in ephem_types and GPSTime.from_datetime(datetime.utcnow()) - time > 3 * SECS_IN_DAY:
+    if EphemerisType.RAPID_ORBIT in ephem_types and GPSTime.from_datetime(datetime.now(timezone.utc)) - time > 3 * SECS_IN_DAY:
       filenames.extend(ephem_strs[EphemerisType.RAPID_ORBIT])
     if EphemerisType.ULTRA_RAPID_ORBIT in ephem_types:
       filenames.extend(ephem_strs[EphemerisType.ULTRA_RAPID_ORBIT])

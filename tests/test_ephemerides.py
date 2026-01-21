@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-#from datetime import datetime
+#from datetime import datetime, timezone
 from laika.ephemeris import EphemerisType, read_prn_data
 from laika.gps_time import GPSTime
 #from laika.constants import SECS_IN_DAY
@@ -20,7 +20,7 @@ class TestAstroDog(unittest.TestCase):
   def test_nav_vs_orbit_now(self):
     dog_orbit = AstroDog(valid_ephem_types=EphemerisType.all_orbits())
     dog_nav = AstroDog(valid_ephem_types=EphemerisType.NAV)
-    gps_time = GPSTime.from_datetime(datetime.utcnow()) - SECS_IN_DAY*3
+    gps_time = GPSTime.from_datetime(datetime.now(timezone.utc)) - SECS_IN_DAY*3
     for svId in svIds:
       sat_info_nav = dog_nav.get_sat_info(svId, gps_time)
       assert sat_info_nav is not None, f"Failed to get sat info for {svId} at {gps_time}"
