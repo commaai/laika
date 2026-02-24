@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from io import BytesIO
 from ftplib import FTP_TLS, FTP
 
-from atomicwrites import atomic_write
+import tempfile
 
 from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
@@ -272,18 +272,24 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
     except (DownloadFailed, pycurl.error, TimeoutError):
       unix_time = time.time()
       os.makedirs(folder_path_abs, exist_ok=True)
-      with atomic_write(filepath_attempt, mode='w', overwrite=True) as wf:
+      with tempfile.NamedTemporaryFile(mode='w', dir=folder_path_abs, delete=False) as wf:
         wf.write(str(unix_time))
+      os.replace(wf.name, filepath_attempt)
       raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base}")
 
     os.makedirs(folder_path_abs, exist_ok=True)
     ephem_bytes = hatanaka.decompress(data_zipped)
-    try:
-      with atomic_write(filepath, mode='wb', overwrite=overwrite) as f:
+    with tempfile.NamedTemporaryFile(mode='wb', dir=folder_path_abs, delete=False) as f:
         f.write(ephem_bytes)
-    except FileExistsError:
+    try:
+      if overwrite:
+        os.replace(f.name, filepath)
+      else:
+        os.link(f.name, filepath)
+        os.unlink(f.name)
+    except (FileExistsError, OSError):
       # Only happens when same file is downloaded in parallel by another process.
-      pass
+      os.unlink(f.name)
   return filepath
 
 
