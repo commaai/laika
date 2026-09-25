@@ -361,6 +361,7 @@ def download_ionex(time, cache_dir):
   if time >= GPSTime(2238, 0.0):
     filenames = [t.strftime('COD0OPSFIN_%Y%j0000_01D_01H_GIM.INX.gz'),
                  t.strftime('COD0OPSRAP_%Y%j0000_01D_01H_GIM.INX.gz'),
+                 t.strftime('COD0OPSP1D_%Y%j0000_01D_01H_GIM.INX.gz'),
                  t.strftime("c2pg%j0.%yi.Z")]
   else:
     filenames = [t.strftime("codg%j0.%yi.Z"),
