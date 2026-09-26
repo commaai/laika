@@ -43,13 +43,15 @@ def retryable(f):
       return f(url_bases, *args, **kwargs)
 
     # not a string, must be a list of url_bases
+    errors = []
     for url_base in (url for url in url_bases if url):
       try:
         return f(url_base, *args, **kwargs)
       except DownloadFailed as e:
-        logging.warning(e)
+        errors.append(str(e))
+        logging.warning("Download from %s failed: %s", url_base, e)
     # none of them succeeded
-    raise DownloadFailed("Multiple URL failures attempting to pull file(s)")
+    raise DownloadFailed("Multiple URL failures attempting to pull file(s):\n" + "\n".join(errors))
   return wrapped
 
 
@@ -202,7 +204,7 @@ def https_download_file(url):
   crl.close()
 
   if response != 200:
-    raise DownloadFailed('HTTPS error ' + str(response))
+    raise DownloadFailed(f'HTTPS error {response} downloading {url}')
   return buf.getvalue()
 
 
@@ -218,7 +220,7 @@ def ftp_download_file(url):
       ftp.retrbinary('RETR ' + parsed.path, buf.write)
     return buf.getvalue()
   except ftplib.all_errors as e:
-    raise DownloadFailed(e)
+    raise DownloadFailed(f'FTP error downloading {url}: {e}')
 
 
 @retryable
@@ -243,13 +245,18 @@ def download_file(url_base, folder_path, filename_zipped):
 
 def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
   last_error = None
+  errors = []
   for folder_path, filename in folder_and_file_names:
     try:
       file = download_and_cache_file(url_bases, folder_path, cache_dir, filename, compression, overwrite)
       return file
     except DownloadFailed as e:
+      logging.warning("Download attempt failed for %s%s: %s", folder_path, filename, e)
+      errors.append(str(e))
       last_error = e
 
+  if errors:
+    logging.warning("All download attempts failed:\n%s", "\n".join(errors))
   if last_error and raise_error:
     raise last_error
 
@@ -269,12 +276,13 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
   if not os.path.isfile(filepath) or overwrite:
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
-    except (DownloadFailed, pycurl.error, TimeoutError):
+    except (DownloadFailed, pycurl.error, TimeoutError) as e:
       unix_time = time.time()
       os.makedirs(folder_path_abs, exist_ok=True)
       with atomic_write(filepath_attempt, mode='w', overwrite=True) as wf:
         wf.write(str(unix_time))
-      raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base}")
+      logging.warning("Failed to download %s from %s: %s", folder_path + filename_zipped, url_base, e)
+      raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base}: {e}")
 
     os.makedirs(folder_path_abs, exist_ok=True)
     ephem_bytes = hatanaka.decompress(data_zipped)
@@ -412,6 +420,6 @@ def download_cors_station(time, station_name, cache_dir):
   try:
     filepath = download_and_cache_file(url_bases, folder_path, cache_dir+'cors_obs/', filename, compression='.gz')
     return filepath
-  except DownloadFailed:
-    logging.warning("File not downloaded, check availability on server.")
+  except DownloadFailed as e:
+    logging.warning("File not downloaded for station %s: %s", station_name, e)
     return None

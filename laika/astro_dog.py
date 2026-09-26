@@ -1,3 +1,4 @@
+import logging
 import os
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -213,14 +214,21 @@ class AstroDog:
     time_steps = [gps_time - SECS_IN_DAY, gps_time, gps_time + SECS_IN_DAY]
     with ThreadPoolExecutor() as executor:
       futures = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
-      files = [self.fetch_count(f.result()) for f in futures if f.result()] if futures else []
+      files = []
+      for t, future in zip(time_steps, futures):
+        try:
+          result = future.result()
+          if result:
+            files.append(self.fetch_count(result))
+        except Exception as e:
+          logging.warning("Failed to download orbit for %s: %s", t.as_datetime(), e)
       ephems = parse_sp3_orbits(files, self.valid_const, skip_before_epoch)
     return ephems
 
   def get_orbit_data(self, time: GPSTime):
     ephems_sp3 = self.download_parse_orbit(time)
     if sum([len(v) for v in ephems_sp3.values()]) < 5:
-      raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
+      raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}. Check logs above for download failure details.')
     self.add_ephem_fetched_time(ephems_sp3, self.orbit_fetched_times)
     self.add_orbits(ephems_sp3)
 
