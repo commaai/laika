@@ -62,7 +62,16 @@ def get_closest_station_names(pos, k=5, max_distance=100000, cache_dir='/tmp/gns
     station_positions.append(cors_station_positions_dict[station_id][1])
   tree = cKDTree(station_positions)
   distances, idxs = tree.query(pos, k=k, distance_upper_bound=max_distance)
-  return np.array(station_ids)[idxs]
+  # cKDTree marks neighbors beyond max_distance with idx == n (out of bounds)
+  # and distance == inf. Filter them instead of raising a cryptic IndexError,
+  # and fail loudly when no station is in range at all (e.g. outside the US,
+  # which is all CORS covers). (commaai/laika#114)
+  idxs = np.atleast_1d(idxs)
+  valid = idxs < len(station_ids)
+  if not np.any(valid):
+    raise ValueError(f"No CORS station within {max_distance} m of the receiver position; " +
+                     "CORS stations only cover the US, so DGPS corrections are unavailable elsewhere.")
+  return np.array(station_ids)[idxs[valid]]
 
 
 def load_cors_station_positions(cache_dir):
