@@ -5,7 +5,9 @@ from itertools import product
 from unittest.mock import patch
 from parameterized import parameterized
 
-from laika.downloader import download_and_cache_file, download_file, DownloadFailed
+import pycurl
+
+from laika.downloader import download_and_cache_file, download_file, DownloadFailed, https_download_file
 
 @dataclass
 class TestFile:
@@ -113,6 +115,70 @@ class TestDownloader(unittest.TestCase):
       self._download_and_cache_file(self.url_bases, file, overwrite=True)
     with self.assertRaises(DownloadFailed):
       self._download_and_cache_file(self.url_bases, file)
+
+
+class FakeCurl:
+  """Minimal pycurl.Curl stand-in to test cipher-list fallback without network."""
+
+  # pycurl exposes option constants as instance attributes; mirror the ones used.
+  CAINFO = pycurl.CAINFO
+  URL = pycurl.URL
+  FOLLOWLOCATION = pycurl.FOLLOWLOCATION
+  SSL_CIPHER_LIST = pycurl.SSL_CIPHER_LIST
+  COOKIEJAR = pycurl.COOKIEJAR
+  WRITEDATA = pycurl.WRITEDATA
+
+  def __init__(self, fail_first_perform_with=None, payload=b"data"):
+    self.fail_first_perform_with = fail_first_perform_with
+    self.payload = payload
+    self.cipher_lists = []
+    self.perform_calls = 0
+    self.buf = None
+
+  def setopt(self, opt, val):
+    if opt == pycurl.SSL_CIPHER_LIST:
+      self.cipher_lists.append(val)
+    elif opt == pycurl.WRITEDATA:
+      self.buf = val
+
+  def perform(self):
+    self.perform_calls += 1
+    if self.perform_calls == 1 and self.fail_first_perform_with is not None:
+      code, msg = self.fail_first_perform_with
+      raise pycurl.error(code, msg)
+    self.buf.write(self.payload)
+
+  def getinfo(self, opt):
+    return 200
+
+  def close(self):
+    pass
+
+
+class TestHttpsDownloadCipherFallback(unittest.TestCase):
+  # commaai/laika#62: '@SECLEVEL=1' is rejected by OpenSSL >= 1.1.1t / LibreSSL
+  # with pycurl.error 59, which must trigger a fallback, not a crash.
+
+  def test_falls_back_on_ssl_cipher_error(self):
+    fake = FakeCurl(fail_first_perform_with=(pycurl.E_SSL_CIPHER, "failed setting cipher list"))
+    with patch("laika.downloader.pycurl.Curl", return_value=fake):
+      self.assertEqual(https_download_file("https://example.com/file"), b"data")
+    self.assertEqual(fake.cipher_lists, ["DEFAULT", "DEFAULT@SECLEVEL=1"])
+
+  def test_no_retry_on_unrelated_error(self):
+    fake = FakeCurl(fail_first_perform_with=(pycurl.E_COULDNT_CONNECT, "couldn't connect"))
+    with patch("laika.downloader.pycurl.Curl", return_value=fake):
+      with self.assertRaises(pycurl.error):
+        https_download_file("https://example.com/file")
+    self.assertEqual(fake.cipher_lists, ["DEFAULT"])
+    self.assertEqual(fake.perform_calls, 1)
+
+  def test_plain_default_cipher_list_first_try(self):
+    fake = FakeCurl()
+    with patch("laika.downloader.pycurl.Curl", return_value=fake):
+      self.assertEqual(https_download_file("https://example.com/file"), b"data")
+    self.assertEqual(fake.cipher_lists, ["DEFAULT"])
+    self.assertEqual(fake.perform_calls, 1)
 
 
 if __name__ == "__main__":

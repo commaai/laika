@@ -187,17 +187,30 @@ def http_download_files(url_base, folder_path, cacheDir, filenames):
 
 
 def https_download_file(url):
-  crl = pycurl.Curl()
-  crl.setopt(crl.CAINFO, certifi.where())
-  crl.setopt(crl.URL, url)
-  crl.setopt(crl.FOLLOWLOCATION, True)
-  crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
-  crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
-  crl.setopt(pycurl.CONNECTTIMEOUT, 10)
-
+  # OpenSSL >= 1.1.1t / LibreSSL reject the '@SECLEVEL=1' suffix with
+  # pycurl.error 59 (failed setting cipher list), while older setups relied
+  # on it. Try the plain default cipher list first and fall back, so downloads
+  # work on both. (commaai/laika#62)
   buf = BytesIO()
-  crl.setopt(crl.WRITEDATA, buf)
-  crl.perform()
+  for cipher_list in ('DEFAULT', 'DEFAULT@SECLEVEL=1'):
+    crl = pycurl.Curl()
+    crl.setopt(crl.CAINFO, certifi.where())
+    crl.setopt(crl.URL, url)
+    crl.setopt(crl.FOLLOWLOCATION, True)
+    crl.setopt(crl.SSL_CIPHER_LIST, cipher_list)
+    crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
+    crl.setopt(pycurl.CONNECTTIMEOUT, 10)
+    crl.setopt(crl.WRITEDATA, buf)
+    try:
+      crl.perform()
+    except pycurl.error as e:
+      crl.close()
+      if e.args[0] != pycurl.E_SSL_CIPHER or cipher_list == 'DEFAULT@SECLEVEL=1':
+        raise
+      buf.seek(0)
+      buf.truncate()
+      continue
+    break
   response = crl.getinfo(pycurl.RESPONSE_CODE)
   crl.close()
 
